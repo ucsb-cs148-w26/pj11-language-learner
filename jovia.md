@@ -1,0 +1,1 @@
+I'm Jovia! My vision for this project is a platform where students can connect with other language learners and native speakers.
