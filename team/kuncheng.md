@@ -1,0 +1,1 @@
+This is Kun Cheng. My goal for this project is to build a platform where students can connect with fellow language learners and native speakers. Hope that we can work well together.
