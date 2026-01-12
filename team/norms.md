@@ -1,0 +1,11 @@
+# Team #11 Norms
+- Regularly distribute/alternate team “roles” (manager, meeting scribe)
+- Equal workload assigned to each team member(s)
+- Well defined tasks 
+- Strict deadlines, and clear communication if deadlines cannot be met
+- Communicate progress/blockers regularly with team
+- Meet on time, either in person or online
+- Finish work one class before the deadline for review and discussion.
+- Creat a clear schedule and ddl for tasks in different part
+- Time spent on PR reviews is fairly split between the team
+- Everyone creates helpful PR descriptions
