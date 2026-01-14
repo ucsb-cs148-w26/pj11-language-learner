@@ -76,3 +76,11 @@ Ryan Choi
     * PR for Hello World app
 * What obstacles are slowing me down:
     * None
+
+Abhiram Agina
+* What tasks I've completed since the last daily scrum:
+    * Created Hello World app, deployed with github pages
+* What tasks I expect to complete by the next daily scrum:
+    * Start lab02
+* What obstacles are slowing me down:
+    * None
