@@ -1,6 +1,10 @@
-instructions (not to be copied): The beginning of your user journey is a Problem Scenario as discussed in class, which is basically a short story, involving a subset of the concrete Personas you came up with in assignment h02 and expressing what the people eventually will want to achieve with your product and what the problem is with current solutions.
+**Problem Scenario**
 
-Prospective UCSB student #1 is someone who is learning a language that wants to practice speaking with another learner. 
-Prospective UCSB student #2 learning the same language also wants to practice speaking with another learner. 
+Students are at various stages of independent language learning and lack meaningful ways to practice real conversation. Students studying a given language are unaware of the landscape of peers studying the same. Existing formal education or self-learning resources do not prioritize matchmaking peers with similar proficiency and ambition. There is a need for a platform that connects same-level language learners and enriches language learning through informal, peer-to-peer conversation. 
+
+
+Prospective UCSB student #1 is someone who is learning a language that wants to practice speaking with another learner.  
+Prospective UCSB student #2 learning the same language also wants to practice speaking with another learner.  
 #1 and #2 expect to be connected with another student from UCSB (such as each other) through the product. 
+
 
