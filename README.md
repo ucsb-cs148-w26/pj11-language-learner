@@ -16,4 +16,5 @@ A website for students learning the same language to connect and practice togeth
 **Framework:**
 
 **Technologies:** React, next.js, Vercel.
+
 **Reason:** We chose React since it allows us to create a modern, component-based UI development. Next.js is        full-stack capatible and most of our teammate are familar with it. By using Vercel, we are able to deploy       instantly and review the features in the URLS in time.
