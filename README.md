@@ -2,6 +2,8 @@
 
 A website for students learning the same language to connect and practice together. 
 
+URL: https://pj11-language-learner.vercel.app/
+
 | Name          | GitHub ID    |
 |---------------|--------------|
 | Jovia Low     | mintoku      |
@@ -13,7 +15,7 @@ A website for students learning the same language to connect and practice togeth
 | Kun Cheng     | BruceGorman  |
 | Ryan Choi     | ryanchoi07   |
 
-**Framework:**
+## Framework
 
 **Technologies:** React, next.js, Vercel.
 
