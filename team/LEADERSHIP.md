@@ -5,6 +5,7 @@
 | Tues 01/13| Jovia Low         | Led stand-up meeting                                               | 
 | Th 01/15  | Julia Lin         | Led stand-up meeting                                               | 
 | Fri 01/16 | Natalie Forte     | Led sprint meeting                                                 | 
+| Wed 01/21 | Annie Yang        | Led stand-up meeting                                               |
 
 
 * Product Owner: Jovia Low
@@ -15,4 +16,4 @@
 * Design Document Coordinator: Julia Lin
 * Deployment Document Coordinator: Benny Zhang
 * User Manual Coordinator: Ryan Choi
-* Final presentation leader: TBD
+* Final presentation leader: Julia Lin
