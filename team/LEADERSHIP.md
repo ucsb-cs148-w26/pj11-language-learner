@@ -6,6 +6,7 @@
 | Th 01/15  | Julia Lin         | Led stand-up meeting                                               | 
 | Fri 01/16 | Natalie Forte     | Led sprint meeting                                                 | 
 | Wed 01/21 | Annie Yang        | Led stand-up meeting                                               |
+| Fri 01/23 | Kun Cheng         | Led first retrospective                                            |
 
 
 * Product Owner: Jovia Low
