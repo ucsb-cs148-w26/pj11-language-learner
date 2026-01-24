@@ -1,5 +1,5 @@
 // The right-side panel showing the chat with a partner.
-// Made for pages/chat/...
+// Made for Chat.tsx
 
 import ChatHeader from "./ChatHeader";
 import Messages from "./Messages";
@@ -16,7 +16,7 @@ type ChatLayoutProps = {
   partnerId: string;
   partnerFirstName: string;
   partnerLastName: string;
-  partnerAvatarUrl: string;
+  partnerAvatarUrl: string | null;
   language: string;
   messages: Message[];
 };
@@ -29,24 +29,22 @@ export default function ChatLayout({
   language,
   messages,
 }: ChatLayoutProps) {
-  const sorted = [...messages].sort((a, b) => a.sentAt.localeCompare(b.sentAt));
-
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-2xl border bg-white shadow-sm">
+    <div className="flex h-[calc(100dvh)] flex-col overflow-hidden bg-white min-w-0">
       <ChatHeader
         partnerId={partnerId}
         partnerFirstName={partnerFirstName}
         partnerLastName={partnerLastName}
-        partnerAvatarUrl={partnerAvatarUrl}
+        partnerAvatarUrl={partnerAvatarUrl ?? "/default-avatar.jpg"}
         language={language}
       />
 
-      <div className="flex-1 overflow-y-auto px-5 py-4">
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
         <Messages
             messages={messages}
             partnerFirstName={partnerFirstName}
             partnerLastName={partnerLastName}
-            partnerAvatarUrl={partnerAvatarUrl}
+            partnerAvatarUrl={partnerAvatarUrl ?? "/default-avatar.jpg"}
         />
       </div>
 

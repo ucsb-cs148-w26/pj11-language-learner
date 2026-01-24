@@ -1,6 +1,6 @@
 // Displays a chat message bubble, styled differently for messages sent by the user and their partner.
 // Includes time and partner avatar for partner messages.
-// Made for Messages.tsx.
+// Made for Messages.tsx, which is for ChatRightPanel.tsx.
 
 type MessageBubbleProps = {
   text: string;
@@ -8,7 +8,7 @@ type MessageBubbleProps = {
   time?: string;
   partnerFirstName: string;
   partnerLastName: string;
-  partnerAvatarUrl: string;
+  partnerAvatarUrl: string | null;
 };
 
 export default function MessageBubble({
@@ -25,7 +25,7 @@ export default function MessageBubble({
       {!isMe ? (
         <div className="mr-2 flex w-9 items-start">
             <img
-            src={partnerAvatarUrl}
+            src={partnerAvatarUrl ?? "/default-avatar.jpg"}
             alt={`${partnerFirstName} ${partnerLastName} avatar`}
             className="h-8 w-8 rounded-full object-cover"
             />

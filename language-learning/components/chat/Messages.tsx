@@ -1,5 +1,5 @@
 // Combines all message bubbles in a chat.
-// Made for ChatLayout.tsx.
+// Made for ChatRightPanel.tsx.
 
 import MessageBubble from "./MessageBubble";
 

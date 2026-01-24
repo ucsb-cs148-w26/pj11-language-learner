@@ -1,5 +1,5 @@
 // Where the user types their chat message and sends it.
-// Made for ChatLayout.tsx.
+// Made for ChatRightPanel.tsx.
 
 "use client";
 

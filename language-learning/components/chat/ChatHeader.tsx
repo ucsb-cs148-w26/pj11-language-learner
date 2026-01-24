@@ -1,5 +1,5 @@
 // Makes the header for a chat conversation, showing the partner's avatar, name, and language being learned.
-// Made for ChatLayout.tsx.
+// Made for ChatRightPanel.tsx.
 
 import Link from "next/link";
 
@@ -7,7 +7,7 @@ type ChatHeaderProps = {
   partnerId: string; 
   partnerFirstName: string;
   partnerLastName: string;
-  partnerAvatarUrl: string;
+  partnerAvatarUrl: string | null;
   language?: string;
 };
 
@@ -22,7 +22,7 @@ export default function ChatHeader({
     <div className="border-b px-5 py-4">
       <div className="flex items-center gap-3">
         <img
-          src={partnerAvatarUrl}
+          src={partnerAvatarUrl ?? "/default-avatar.jpg"}
           alt={`${partnerFirstName} ${partnerLastName}`}
           className="h-10 w-10 rounded-full object-cover"
         />
