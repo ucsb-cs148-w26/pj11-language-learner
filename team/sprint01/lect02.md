@@ -27,6 +27,7 @@ Jovia Low
     * Make a helloworld app and work agreements with the team
 * What obstacles are slowing me down:
     * Nothing as of right now
+
 Julia Lin
 * What tasks I've completed since the last daily scrum:
     * Made intro markdown file
@@ -35,6 +36,7 @@ Julia Lin
     * Planning to edit the journey/norms and eventually push them to main
 * What obstacles are slowing me down:
     * None
+
 Annie Yang
 * What tasks I've completed since the last daily scrum:
     * Created own branch and did PR
@@ -42,6 +44,7 @@ Annie Yang
     * Do the Hello World app
 * What obstacles are slowing me down:
     * None
+
 Natalie Forte
 * What tasks I've completed since the last daily scrum:
     * Created PR with main with own branch
@@ -49,6 +52,7 @@ Natalie Forte
     * Hello World app
 * What obstacles are slowing me down:
     * None
+
 Abhiram Agina
 * What tasks I've completed since the last daily scrum:
     * Made own branch
@@ -57,6 +61,7 @@ Abhiram Agina
     * Make a helloworld app and work agreements with the team
 * What obstacles are slowing me down:
     * No obstacles
+
 Benny Zhang
 * What tasks I've completed since the last daily scrum:
     * Went through instructions to create own branch
@@ -65,6 +70,7 @@ Benny Zhang
     * Hello World app
 * What obstacles are slowing me down:
     * None
+
 Kun Cheng
 * What tasks I've completed since the last daily scrum:
     * Created own branch, PR
@@ -72,5 +78,6 @@ Kun Cheng
     * Hello World app and work on agreements
 * What obstacles are slowing me down:
     * None
+
 Ryan Choi
 * n/a (absent)
