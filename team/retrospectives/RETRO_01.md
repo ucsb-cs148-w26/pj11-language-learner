@@ -76,11 +76,11 @@ Ryan Choi:
 
 Abhiram Agina:  
 * Start
-    * 1. 
+    * 1. Adding more detailed PR descriptions.
 * Stop
-    * 1. 
+    * 1. Begin assigned work late, near deadline.
 * Continue:
-    * 1. 
+    * 1. Continue to divide tasks and communicate
 
 Collectively decided: 
 * Start
