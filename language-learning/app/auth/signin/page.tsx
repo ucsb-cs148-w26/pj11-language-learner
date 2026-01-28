@@ -4,6 +4,9 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
+// Force dynamic rendering - auth pages shouldn't be prerendered
+export const dynamic = 'force-dynamic';
+
 export default function SignInPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
