@@ -7,6 +7,8 @@
 | Fri 01/16 | Natalie Forte     | Led sprint meeting                                                 | 
 | Wed 01/21 | Annie Yang        | Led stand-up meeting                                               |
 | Fri 01/23 | Kun Cheng         | Led first retrospective                                            |
+| Mon 01/26 | Abhiram Agina     | Led stand-up meeting                                               |
+| Wed 01/28 | Benny Zhang       | Led stand-up meeting                                               |
 
 
 * Product Owner: Jovia Low
