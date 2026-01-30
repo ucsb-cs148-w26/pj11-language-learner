@@ -356,7 +356,7 @@ export default function DashboardPage() {
     );
   }, [state]);
 
-  return <main className="mx-auto max-w-6xl p-6 bg-white min-h-screen">{content}</main>;
+  return <main className="mx-auto w-full p-6 bg-white min-h-screen">{content}</main>;
 }
 
 function SkeletonDashboard() {

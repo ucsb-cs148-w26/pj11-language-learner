@@ -129,7 +129,7 @@ export default function ProfilePage() {
 
   if (state.status === "loading") {
     return (
-      <main className="mx-auto max-w-6xl p-6 bg-white min-h-screen">
+      <main className="mx-auto w-full p-6 bg-white min-h-screen">
         <div className="h-10 w-1/2 animate-pulse rounded-xl bg-zinc-200" />
         <div className="mt-4 h-40 animate-pulse rounded-2xl bg-zinc-200" />
       </main>
@@ -138,7 +138,7 @@ export default function ProfilePage() {
 
   if (state.status === "error") {
     return (
-      <main className="mx-auto max-w-6xl p-6 bg-white min-h-screen">
+      <main className="mx-auto w-full p-6 bg-white min-h-screen">
         <div className="rounded-2xl border border-red-200 bg-red-50 p-4">
           <p className="font-medium text-red-800">Couldn't load profile</p>
           <p className="mt-1 text-sm text-red-700">{state.message}</p>
@@ -150,7 +150,7 @@ export default function ProfilePage() {
   const p = state.data;
 
   return (
-    <main className="mx-auto max-w-6xl p-6 bg-white min-h-screen">
+    <main className="mx-auto w-full p-6 bg-white min-h-screen">
       <div className="space-y-6">
         {/* Header */}
         <header>

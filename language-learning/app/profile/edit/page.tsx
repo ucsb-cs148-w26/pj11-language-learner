@@ -170,7 +170,7 @@ export default function EditProfilePage() {
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-6xl p-6 bg-white min-h-screen">
+      <main className="mx-auto w-full p-6 bg-white min-h-screen">
         <div className="h-10 w-1/2 animate-pulse rounded-xl bg-zinc-200" />
         <div className="mt-4 h-80 animate-pulse rounded-2xl bg-zinc-200" />
       </main>
@@ -178,7 +178,7 @@ export default function EditProfilePage() {
   }
 
   return (
-    <main className="mx-auto max-w-6xl p-6 bg-white min-h-screen">
+    <main className="mx-auto w-full p-6 bg-white min-h-screen">
       <div className="space-y-6">
         <header>
           <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">Edit Profile</h1>

@@ -1,45 +1,48 @@
 'use client'
-import { useState } from 'react';
-import Link from "next/link";
+import { useEffect, useState } from 'react';
 import Header from "../components/Header";
 
 type Partner = {
-  id: number;
-  name: string;
-  language: string;
+  id: string;
+  first_name: string;
+  last_name: string;
   level: string;
+  native_language: string;
+  target_languages: { language: string }[];
+  profile_picture_url: string | null;
+  bio: string | null;
 };
-
-const mockPartners: Partner[] = [
-  { id: 1, name: 'Julia', language: 'Spanish', level: 'Beginner' },
-  { id: 2, name: 'Bob', language: 'French', level: 'Intermediate' },
-  { id: 3, name: 'Charlie', language: 'Japanese', level: 'Advanced' },
-  { id: 4, name: 'David', language: 'Spanish', level: 'Intermediate' },
-  { id: 5, name: 'Eva', language: 'French', level: 'Beginner' },
-  { id: 6, name: 'Frank', language: 'Japanese', level: 'Intermediate' },
-  { id: 7, name: 'Grace', language: 'Spanish', level: 'Advanced' },
-];
 
 export default function DiscoverPage() {
   const [search, setSearch] = useState('');
   const [levelFilter, setLevelFilter] = useState<string>('All');
+  const [partners, setPartners] = useState<Partner[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const levels = ['All', 'Beginner', 'Intermediate', 'Advanced'];
 
-  const filtersApplied = search !== '' || levelFilter !== 'All';
+  useEffect(() => {
+    const fetchPartners = async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (search) params.append('language', search);
+        if (levelFilter && levelFilter !== 'All') params.append('level', levelFilter);
 
-  // 5 recommended options (top: horizontal scroll)
-  // PLACEHOLDER FOR LATER LOGIC (app/api/discover/route.ts)
-  const recommendedPartners = mockPartners.slice(0, 5);
+        const res = await fetch(`/api/discover?${params.toString()}`);
+        const data: Partner[] = await res.json();
+        setPartners(data);
+      } catch (err) {
+        console.error('Failed to fetch partners', err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // all peers (bottom: filtered list)
-  const filteredPartners = mockPartners.filter((partner) => {
-    const matchesSearch = partner.language
-      .toLowerCase()
-      .includes(search.toLowerCase());
-    const matchesLevel = levelFilter === 'All' || partner.level === levelFilter;
-    return matchesSearch && matchesLevel;
-  });
+    fetchPartners();
+  }, [search, levelFilter]);
+
+  const recommendedPartners = partners.slice(0, 5);
 
   const resetFilters = () => {
     setSearch('');
@@ -62,9 +65,9 @@ export default function DiscoverPage() {
               key={partner.id}
               className="min-w-[200px] flex-shrink-0 border rounded-xl shadow-lg p-4 bg-white text-black hover:shadow-2xl transition transform hover:-translate-y-1"
             >
-              <p className="font-bold text-lg mb-1">{partner.name}</p>
+              <p className="font-bold text-lg mb-1">{partner.first_name}</p>
               <p className="text-gray-800 mb-1">
-                Learning {partner.language} ({partner.level})
+                Learning {partner.target_languages.map(t => t.language).join(', ')} ({partner.level})
               </p>
               <button className="mt-2 w-full py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition">
                 Connect
@@ -120,20 +123,20 @@ export default function DiscoverPage() {
             </button>
           </aside>
 
-          {/* matches list */}
+          {/* partners list */}
           <div className="md:w-3/4 flex-1">
-            {filteredPartners.length === 0 ? (
+            {partners.length === 0 ? (
               <p className="text-gray-500">No partners found.</p>
             ) : (
               <ul className="space-y-4">
-                {filteredPartners.map((partner) => (
+                {partners.map((partner) => (
                   <li
                     key={partner.id}
                     className="border p-4 rounded-lg shadow-sm hover:shadow-md transition bg-white text-black"
                   >
-                    <p className="font-semibold text-lg">{partner.name}</p>
+                    <p className="font-semibold text-lg">{partner.first_name}</p>
                     <p className="text-gray-800">
-                      Learning {partner.language} ({partner.level})
+                      Learning {partner.target_languages.map(t => t.language).join(', ')} ({partner.level})
                     </p>
                   </li>
                 ))}
