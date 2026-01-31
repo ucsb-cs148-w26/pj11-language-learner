@@ -36,11 +36,19 @@ type LoadState<T> =
 
 async function getUserId(): Promise<string> {
   try {
+    // First check for existing session
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      return session.user.id;
+    }
+    
+    // If no session, try to get user (this will refresh if needed)
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (!authError && user) {
       return user.id;
     }
   } catch (e) {
+    console.error("Error getting user ID:", e);
     // Ignore auth errors in test mode
   }
   // TEST MODE: Use a test user ID when not authenticated
@@ -49,17 +57,41 @@ async function getUserId(): Promise<string> {
 
 async function fetchDashboard(): Promise<DashboardData> {
   const userId = await getUserId();
+  
+  // If using test user ID, return empty data instead of querying
+  if (userId === "test-user-id") {
+    return {
+      user: {
+        targetLanguage: null,
+        profilePicture: null,
+        level: null,
+        nativeLanguage: null,
+      },
+      friends: [],
+      chats: [],
+    };
+  }
 
   // Fetch user profile
+  console.log("Fetching profile for userId:", userId);
   const { data: profileData, error: profileError } = await supabase
     .from('profiles')
     .select('level, native_language')
     .eq('user_id', userId)
-    .single();
+    .maybeSingle(); // Use maybeSingle to avoid errors when no row exists
 
-  if (profileError && profileError.code !== 'PGRST116') {
-    throw profileError;
+  if (profileError) {
+    console.error("Error fetching profile:", profileError);
+    console.error("Error code:", profileError.code);
+    console.error("Error message:", profileError.message);
+    console.error("Error details:", profileError.details);
+    // Don't throw on PGRST116 (no rows) - that's expected for new users
+    if (profileError.code !== 'PGRST116') {
+      throw profileError;
+    }
   }
+  
+  console.log("Profile data:", profileData);
 
   // Fetch target languages from separate table
   const { data: targetLanguagesData } = await supabase
