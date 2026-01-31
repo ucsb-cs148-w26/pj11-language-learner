@@ -5,6 +5,15 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 
+// Helper function to convert database level to display format
+function levelToDisplay(level: string | null | undefined): "Beginner" | "Intermediate" | "Advanced" | null {
+  if (!level) return null;
+  const lower = level.toLowerCase();
+  if (lower === "intermediate") return "Intermediate";
+  if (lower === "advanced") return "Advanced";
+  return "Beginner";
+}
+
 type DashboardData = {
   user: {
     targetLanguage?: string | null;
@@ -107,7 +116,7 @@ async function fetchDashboard(): Promise<DashboardData> {
   const userProfile = profileData ? {
     targetLanguage: targetLanguage,
     profilePicture: null, // profile_picture column doesn't exist in table
-    level: profileData.level,
+    level: levelToDisplay(profileData.level),
     nativeLanguage: profileData.native_language,
   } : {
     targetLanguage: null,

@@ -5,7 +5,26 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
-type Level = "Beginner" | "Intermediate" | "Advanced";
+// Database stores lowercase values
+type LevelDB = "beginner" | "intermediate" | "advanced";
+// UI displays capitalized values
+type LevelDisplay = "Beginner" | "Intermediate" | "Advanced";
+
+// Helper functions to convert between database and display formats
+function levelToDisplay(level: LevelDB | null | undefined): LevelDisplay {
+  if (!level) return "Beginner";
+  const lower = level.toLowerCase();
+  if (lower === "intermediate") return "Intermediate";
+  if (lower === "advanced") return "Advanced";
+  return "Beginner";
+}
+
+function levelToDB(level: LevelDisplay): LevelDB {
+  const lower = level.toLowerCase();
+  if (lower === "intermediate") return "intermediate";
+  if (lower === "advanced") return "advanced";
+  return "beginner";
+}
 
 type ProfileForm = {
   firstName: string;
@@ -13,7 +32,7 @@ type ProfileForm = {
   bio: string;
   targetLanguage: string;
   nativeLanguage: string;
-  level: Level;
+  level: LevelDisplay; // Form uses display format
 };
 
 type ProfileAPI = {
@@ -22,7 +41,16 @@ type ProfileAPI = {
   bio?: string | null;
   targetLanguage: string;
   nativeLanguage?: string | null;
-  level: Level;
+  level: LevelDB; // API uses database format
+};
+
+type ProfileDisplay = {
+  firstName?: string | null;
+  lastName?: string | null;
+  bio?: string | null;
+  targetLanguage: string;
+  nativeLanguage?: string | null;
+  level: LevelDisplay; // Display format
 };
 
 async function getUserId(): Promise<string> {
@@ -38,7 +66,7 @@ async function getUserId(): Promise<string> {
   return "test-user-id";
 }
 
-async function fetchMyProfile(): Promise<ProfileAPI> {
+async function fetchMyProfile(): Promise<ProfileDisplay> {
   const userId = await getUserId();
   console.log("Fetching profile for user:", userId);
 
@@ -61,7 +89,7 @@ async function fetchMyProfile(): Promise<ProfileAPI> {
         bio: "",
         targetLanguage: "",
         nativeLanguage: "",
-        level: "Beginner",
+        level: "Beginner", // Display format
       };
     }
     console.error("Profile fetch error:", profileError);
@@ -87,7 +115,7 @@ async function fetchMyProfile(): Promise<ProfileAPI> {
     bio: profileData.bio || "",
     targetLanguage: targetLanguage,
     nativeLanguage: profileData.native_language || "",
-    level: profileData.level || "Beginner",
+    level: levelToDisplay(profileData.level as LevelDB | null),
   };
 
   console.log("Returning profile data:", result);
@@ -118,6 +146,9 @@ async function saveMyProfile(payload: ProfileAPI): Promise<void> {
   }
 
   // Update profile in profiles table
+  console.log("Saving profile with level:", payload.level);
+  console.log("Full payload:", payload);
+  
   const { error: profileError } = await supabase
     .from('profiles')
     .upsert({
@@ -127,11 +158,18 @@ async function saveMyProfile(payload: ProfileAPI): Promise<void> {
       last_name: payload.lastName?.trim() || null,
       bio: payload.bio || null,
       native_language: payload.nativeLanguage?.trim() || null,
-      level: payload.level, // Always required - defaults to "Beginner" in form if not set
+      level: payload.level, // Database format (lowercase)
       updated_at: new Date().toISOString()
     }, { onConflict: 'user_id' });
 
-  if (profileError) throw profileError;
+  if (profileError) {
+    console.error("Profile update error:", profileError);
+    console.error("Error code:", profileError.code);
+    console.error("Error message:", profileError.message);
+    console.error("Error details:", profileError.details);
+    console.error("Error hint:", profileError.hint);
+    throw profileError;
+  }
 
   // Handle target language in separate table
   if (payload.targetLanguage.trim()) {
@@ -164,7 +202,7 @@ export default function EditProfilePage() {
     bio: "",
     targetLanguage: "",
     nativeLanguage: "",
-    level: "Beginner",
+    level: "Beginner", // Display format
   });
 
   useEffect(() => {
@@ -187,7 +225,7 @@ export default function EditProfilePage() {
           bio: p.bio ?? "",
           targetLanguage: p.targetLanguage ?? "",
           nativeLanguage: p.nativeLanguage ?? "",
-          level: p.level ?? "Beginner",
+          level: p.level ?? "Beginner", // Already in display format from fetchMyProfile
         });
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Unknown error";
@@ -216,7 +254,7 @@ export default function EditProfilePage() {
       bio: form.bio.trim(),
       targetLanguage: form.targetLanguage.trim(),
       nativeLanguage: form.nativeLanguage.trim(),
-      level: form.level
+      level: levelToDB(form.level) // Convert display format to database format
     };
 
     // super light client validation
@@ -230,7 +268,23 @@ export default function EditProfilePage() {
       await saveMyProfile(payload);
       router.push("/profile");
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Unknown error";
+      console.error("Error saving profile:", e);
+      // Handle Supabase errors which have a different structure
+      let msg = "Unknown error";
+      if (e && typeof e === 'object') {
+        // Supabase PostgREST errors have message, code, details, hint properties
+        if ('message' in e && e.message) {
+          msg = String(e.message);
+        } else if ('details' in e && e.details) {
+          msg = String(e.details);
+        } else if ('hint' in e && e.hint) {
+          msg = String(e.hint);
+        } else if ('code' in e) {
+          msg = `Database error (code: ${String(e.code)})`;
+        }
+      } else if (e instanceof Error) {
+        msg = e.message;
+      }
       setError(msg);
     } finally {
       setSaving(false);
@@ -326,7 +380,7 @@ export default function EditProfilePage() {
                 <select
                   className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:border-transparent"
                   value={form.level}
-                  onChange={(e) => setForm((f) => ({ ...f, level: e.target.value as Level }))}
+                  onChange={(e) => setForm((f) => ({ ...f, level: e.target.value as LevelDisplay }))}
                 >
                   <option value="Beginner">Beginner</option>
                   <option value="Intermediate">Intermediate</option>
