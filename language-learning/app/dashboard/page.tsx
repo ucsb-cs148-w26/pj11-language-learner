@@ -1,6 +1,6 @@
 // app/(app)/dashboard/page.tsx
 "use client";
-
+import Header from "../components/Header";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
@@ -160,7 +160,9 @@ export default function DashboardPage() {
 
     return (
       <div className="space-y-6">
+        
         {/* Header */}
+        
         <header>
           <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">Dashboard</h1>
         </header>
@@ -356,7 +358,14 @@ export default function DashboardPage() {
     );
   }, [state]);
 
-  return <main className="mx-auto max-w-6xl p-6 bg-white min-h-screen">{content}</main>;
+  return(
+    <>
+      <Header />
+      <main className="mx-auto max-w-6xl p-6 bg-white min-h-screen">
+        {content}
+      </main>
+    </>
+  );
 }
 
 function SkeletonDashboard() {

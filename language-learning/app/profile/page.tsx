@@ -1,5 +1,6 @@
 // app/(app)/profile/page.tsx
 "use client";
+import Header from "@/app/components/Header";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -150,173 +151,176 @@ export default function ProfilePage() {
   const p = state.data;
 
   return (
-    <main className="mx-auto max-w-6xl p-6 bg-white min-h-screen">
-      <div className="space-y-6">
-        {/* Header */}
-        <header>
-          <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">Profile</h1>
-        </header>
+    <>
+    <Header/>
+      <main className="mx-auto max-w-6xl p-6 bg-white min-h-screen">
+        <div className="space-y-6">
+          {/* Header */}
+          <header>
+            <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">Profile</h1>
+          </header>
 
-        {/* Profile Card */}
-        <div className="rounded-2xl border border-zinc-200 bg-white p-6">
-          <div className="flex items-start gap-4">
-            <div className="relative">
-              {p.profilePhotoUrl ? (
-                <img
-                  src={p.profilePhotoUrl}
-                  alt="Profile"
-                  className="w-20 h-20 rounded-full object-cover border-2 border-zinc-200"
-                />
-              ) : (
-                <div className="w-20 h-20 rounded-full bg-zinc-100 border-2 border-zinc-200 flex items-center justify-center">
-                  <svg
-                    className="w-10 h-10 text-zinc-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
+          {/* Profile Card */}
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6">
+            <div className="flex items-start gap-4">
+              <div className="relative">
+                {p.profilePhotoUrl ? (
+                  <img
+                    src={p.profilePhotoUrl}
+                    alt="Profile"
+                    className="w-20 h-20 rounded-full object-cover border-2 border-zinc-200"
+                  />
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-zinc-100 border-2 border-zinc-200 flex items-center justify-center">
+                    <svg
+                      className="w-10 h-10 text-zinc-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      />
+                    </svg>
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-xl font-semibold text-zinc-900">
+                  {p.displayName || "Your Name"}
+                </h2>
+                <div className="mt-2 space-y-1">
+                  {p.targetLanguage && (
+                    <p className="text-sm text-zinc-700">
+                      <span className="font-medium">Learning:</span> {p.targetLanguage}
+                      {p.level && ` • ${p.level}`}
+                    </p>
+                  )}
+                  {p.nativeLanguages && p.nativeLanguages.length > 0 && (
+                    <p className="text-sm text-zinc-700">
+                      <span className="font-medium">Native:</span> {p.nativeLanguages.join(", ")}
+                    </p>
+                  )}
                 </div>
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-xl font-semibold text-zinc-900">
-                {p.displayName || "Your Name"}
-              </h2>
-              <div className="mt-2 space-y-1">
-                {p.targetLanguage && (
-                  <p className="text-sm text-zinc-700">
-                    <span className="font-medium">Learning:</span> {p.targetLanguage}
-                    {p.level && ` • ${p.level}`}
-                  </p>
-                )}
-                {p.nativeLanguages && p.nativeLanguages.length > 0 && (
-                  <p className="text-sm text-zinc-700">
-                    <span className="font-medium">Native:</span> {p.nativeLanguages.join(", ")}
-                  </p>
-                )}
               </div>
             </div>
           </div>
+
+          {/* Editable Fields */}
+          <section className="space-y-4">
+            {/* Name */}
+            <div className="rounded-2xl border border-zinc-200 bg-white p-6">
+              <label className="block text-sm font-medium text-zinc-700 mb-2">Name</label>
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={nameInput}
+                  onChange={(e) => setNameInput(e.target.value)}
+                  placeholder="Enter your name"
+                  className="flex-1 rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:border-transparent"
+                  onKeyDown={(e) => e.key === "Enter" && handleSave("name")}
+                />
+                <button
+                  onClick={() => handleSave("name")}
+                  disabled={isSaving === "name"}
+                  className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSaving === "name" ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </div>
+
+            {/* Native Languages */}
+            <div className="rounded-2xl border border-zinc-200 bg-white p-6">
+              <label className="block text-sm font-medium text-zinc-700 mb-2">Native Languages</label>
+              <p className="text-xs text-zinc-600 mb-3">Separate multiple languages with commas</p>
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={nativeLanguagesInput}
+                  onChange={(e) => setNativeLanguagesInput(e.target.value)}
+                  placeholder="e.g., English, Spanish"
+                  className="flex-1 rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:border-transparent"
+                  onKeyDown={(e) => e.key === "Enter" && handleSave("nativeLanguages")}
+                />
+                <button
+                  onClick={() => handleSave("nativeLanguages")}
+                  disabled={isSaving === "nativeLanguages"}
+                  className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSaving === "nativeLanguages" ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </div>
+
+            {/* Target Language */}
+            <div className="rounded-2xl border border-zinc-200 bg-white p-6">
+              <label className="block text-sm font-medium text-zinc-700 mb-2">Target Language</label>
+              <div className="flex gap-3 mb-3">
+                <input
+                  type="text"
+                  value={targetLanguageInput}
+                  onChange={(e) => setTargetLanguageInput(e.target.value)}
+                  placeholder="e.g., Japanese, Spanish, French"
+                  className="flex-1 rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:border-transparent"
+                  onKeyDown={(e) => e.key === "Enter" && handleSave("targetLanguage")}
+                />
+                <button
+                  onClick={() => handleSave("targetLanguage")}
+                  disabled={isSaving === "targetLanguage"}
+                  className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSaving === "targetLanguage" ? "Saving..." : "Save"}
+                </button>
+              </div>
+              <div className="flex gap-3">
+                <select
+                  value={levelInput}
+                  onChange={(e) => setLevelInput(e.target.value as "Beginner" | "Intermediate" | "Advanced" | "")}
+                  className="flex-1 rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:border-transparent"
+                >
+                  <option value="">Select proficiency level</option>
+                  <option value="Beginner">Beginner</option>
+                  <option value="Intermediate">Intermediate</option>
+                  <option value="Advanced">Advanced</option>
+                </select>
+                <button
+                  onClick={() => handleSave("level")}
+                  disabled={!levelInput || isSaving === "level"}
+                  className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSaving === "level" ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </div>
+
+            {/* Bio */}
+            <div className="rounded-2xl border border-zinc-200 bg-white p-6">
+              <label className="block text-sm font-medium text-zinc-700 mb-2">Bio</label>
+              <div className="flex flex-col gap-3">
+                <textarea
+                  value={bioInput}
+                  onChange={(e) => setBioInput(e.target.value)}
+                  placeholder="Tell others about yourself..."
+                  rows={4}
+                  className="flex-1 rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:border-transparent resize-none"
+                />
+                <button
+                  onClick={() => handleSave("bio")}
+                  disabled={isSaving === "bio"}
+                  className="self-end rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSaving === "bio" ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </div>
+          </section>
         </div>
-
-        {/* Editable Fields */}
-        <section className="space-y-4">
-          {/* Name */}
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6">
-            <label className="block text-sm font-medium text-zinc-700 mb-2">Name</label>
-            <div className="flex gap-3">
-              <input
-                type="text"
-                value={nameInput}
-                onChange={(e) => setNameInput(e.target.value)}
-                placeholder="Enter your name"
-                className="flex-1 rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:border-transparent"
-                onKeyDown={(e) => e.key === "Enter" && handleSave("name")}
-              />
-              <button
-                onClick={() => handleSave("name")}
-                disabled={isSaving === "name"}
-                className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSaving === "name" ? "Saving..." : "Save"}
-              </button>
-            </div>
-          </div>
-
-          {/* Native Languages */}
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6">
-            <label className="block text-sm font-medium text-zinc-700 mb-2">Native Languages</label>
-            <p className="text-xs text-zinc-600 mb-3">Separate multiple languages with commas</p>
-            <div className="flex gap-3">
-              <input
-                type="text"
-                value={nativeLanguagesInput}
-                onChange={(e) => setNativeLanguagesInput(e.target.value)}
-                placeholder="e.g., English, Spanish"
-                className="flex-1 rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:border-transparent"
-                onKeyDown={(e) => e.key === "Enter" && handleSave("nativeLanguages")}
-              />
-              <button
-                onClick={() => handleSave("nativeLanguages")}
-                disabled={isSaving === "nativeLanguages"}
-                className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSaving === "nativeLanguages" ? "Saving..." : "Save"}
-              </button>
-            </div>
-          </div>
-
-          {/* Target Language */}
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6">
-            <label className="block text-sm font-medium text-zinc-700 mb-2">Target Language</label>
-            <div className="flex gap-3 mb-3">
-              <input
-                type="text"
-                value={targetLanguageInput}
-                onChange={(e) => setTargetLanguageInput(e.target.value)}
-                placeholder="e.g., Japanese, Spanish, French"
-                className="flex-1 rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:border-transparent"
-                onKeyDown={(e) => e.key === "Enter" && handleSave("targetLanguage")}
-              />
-              <button
-                onClick={() => handleSave("targetLanguage")}
-                disabled={isSaving === "targetLanguage"}
-                className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSaving === "targetLanguage" ? "Saving..." : "Save"}
-              </button>
-            </div>
-            <div className="flex gap-3">
-              <select
-                value={levelInput}
-                onChange={(e) => setLevelInput(e.target.value as "Beginner" | "Intermediate" | "Advanced" | "")}
-                className="flex-1 rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:border-transparent"
-              >
-                <option value="">Select proficiency level</option>
-                <option value="Beginner">Beginner</option>
-                <option value="Intermediate">Intermediate</option>
-                <option value="Advanced">Advanced</option>
-              </select>
-              <button
-                onClick={() => handleSave("level")}
-                disabled={!levelInput || isSaving === "level"}
-                className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSaving === "level" ? "Saving..." : "Save"}
-              </button>
-            </div>
-          </div>
-
-          {/* Bio */}
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6">
-            <label className="block text-sm font-medium text-zinc-700 mb-2">Bio</label>
-            <div className="flex flex-col gap-3">
-              <textarea
-                value={bioInput}
-                onChange={(e) => setBioInput(e.target.value)}
-                placeholder="Tell others about yourself..."
-                rows={4}
-                className="flex-1 rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:border-transparent resize-none"
-              />
-              <button
-                onClick={() => handleSave("bio")}
-                disabled={isSaving === "bio"}
-                className="self-end rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSaving === "bio" ? "Saving..." : "Save"}
-              </button>
-            </div>
-          </div>
-        </section>
-      </div>
-    </main>
+      </main>
+    </>
   );
 }
 

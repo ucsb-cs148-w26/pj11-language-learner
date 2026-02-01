@@ -1,4 +1,5 @@
 import Chat, { Conversation } from "@/components/chat/Chat";
+import Header from "@/app/components/Header";
 
 export default function Chats() {
   const now = Date.now();
@@ -151,9 +152,26 @@ export default function Chats() {
     },
   ];
 
-  return (
-    <main className="h-screen overflow-hidden bg-zinc-50">
-        <Chat conversations={conversations} initialConversationId="c1" />
-    </main>
+/*  return (
+    <>
+      <Header />
+        <main className="h-screen overflow-hidden bg-zinc-50">
+          <Chat conversations={conversations} initialConversationId="c1" />
+        </main>
+    </>
+
   );
+*/
+return (
+  <div className="h-screen flex flex-col bg-zinc-50">
+    <Header />
+
+    <main className="flex-1 min-h-0 overflow-hidden">
+      <Chat conversations={conversations} initialConversationId="c1" />
+    </main>
+  </div>
+);
+
+
+
 }
