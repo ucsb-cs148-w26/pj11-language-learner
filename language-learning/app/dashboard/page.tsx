@@ -3,14 +3,23 @@
 import Header from "../components/Header";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { supabase } from "@/lib/supabaseClient";
+
+// Helper function to convert database level to display format
+function levelToDisplay(level: string | null | undefined): "Beginner" | "Intermediate" | "Advanced" | null {
+  if (!level) return null;
+  const lower = level.toLowerCase();
+  if (lower === "intermediate") return "Intermediate";
+  if (lower === "advanced") return "Advanced";
+  return "Beginner";
+}
 
 type DashboardData = {
   user: {
-    displayName?: string | null;
     targetLanguage?: string | null;
-    profilePhotoUrl?: string | null;
+    profilePicture?: string | null;
     level?: "Beginner" | "Intermediate" | "Advanced" | null;
-    nativeLanguages?: string[] | null;
+    nativeLanguage?: string | null;
   };
   friends: Array<{
     id: string;
@@ -34,65 +43,95 @@ type LoadState<T> =
   | { status: "error"; message: string }
   | { status: "success"; data: T };
 
-async function fetchDashboard(): Promise<DashboardData> {
-  // TODO: Replace with Supabase calls when API is ready
-  // Example Supabase calls:
-  // const { data: user } = await supabase.from('profiles').select('*').eq('user_id', userId).single();
-  // const { data: friends } = await supabase.from('friendships').select('...').eq('user_id', userId);
-  // const { data: chats } = await supabase.from('chats').select('...').eq('user_id', userId);
-  // return { user, friends, chats };
-  
+async function getUserId(): Promise<string> {
   try {
-    const res = await fetch("/api/dashboard", { method: "GET" });
-    if (!res.ok) throw new Error(`Request failed: ${res.status}`);
-    return (await res.json()) as DashboardData;
-  } catch {
-    // Mock fallback for frontend-only dev
-    // Remove this when Supabase is connected
+    // First check for existing session
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      return session.user.id;
+    }
+    
+    // If no session, try to get user (this will refresh if needed)
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (!authError && user) {
+      return user.id;
+    }
+  } catch (e) {
+    console.error("Error getting user ID:", e);
+    // Ignore auth errors in test mode
+  }
+  // TEST MODE: Use a test user ID when not authenticated
+  return "test-user-id";
+}
+
+async function fetchDashboard(): Promise<DashboardData> {
+  const userId = await getUserId();
+  
+  // If using test user ID, return empty data instead of querying
+  if (userId === "test-user-id") {
     return {
       user: {
-        displayName: null,
         targetLanguage: null,
-        profilePhotoUrl: null,
+        profilePicture: null,
         level: null,
-        nativeLanguages: ["English"],
+        nativeLanguage: null,
       },
-      friends: [
-        {
-          id: "f1",
-          name: "Alex",
-          targetLanguage: "Japanese",
-          level: "Beginner",
-          lastActive: new Date().toISOString(),
-        },
-        {
-          id: "f2",
-          name: "Mina",
-          targetLanguage: "Japanese",
-          level: "Intermediate",
-          lastActive: new Date(Date.now() - 86400000).toISOString(),
-        },
-      ],
-      chats: [
-        {
-          id: "c1",
-          partnerId: "f1",
-          partnerName: "Alex",
-          lastMessage: "Hey! How's your practice going?",
-          lastMessageAt: new Date().toISOString(),
-          unreadCount: 2,
-        },
-        {
-          id: "c2",
-          partnerId: "f2",
-          partnerName: "Mina",
-          lastMessage: "Thanks for the conversation yesterday!",
-          lastMessageAt: new Date(Date.now() - 3600000).toISOString(),
-          unreadCount: 0,
-        },
-      ],
+      friends: [],
+      chats: [],
     };
   }
+
+  // Fetch user profile
+  console.log("Fetching profile for userId:", userId);
+  const { data: profileData, error: profileError } = await supabase
+    .from('profiles')
+    .select('level, native_language')
+    .eq('user_id', userId)
+    .maybeSingle(); // Use maybeSingle to avoid errors when no row exists
+
+  if (profileError) {
+    console.error("Error fetching profile:", profileError);
+    console.error("Error code:", profileError.code);
+    console.error("Error message:", profileError.message);
+    console.error("Error details:", profileError.details);
+    // Don't throw on PGRST116 (no rows) - that's expected for new users
+    if (profileError.code !== 'PGRST116') {
+      throw profileError;
+    }
+  }
+  
+  console.log("Profile data:", profileData);
+
+  // Fetch target languages from separate table
+  const { data: targetLanguagesData } = await supabase
+    .from('profile_target_languages')
+    .select('language')
+    .eq('user_id', userId);
+
+  // Get first target language (or null if none)
+  const targetLanguage = targetLanguagesData && targetLanguagesData.length > 0 
+    ? targetLanguagesData[0].language 
+    : null;
+
+  const userProfile = profileData ? {
+    targetLanguage: targetLanguage,
+    profilePicture: null, // profile_picture column doesn't exist in table
+    level: levelToDisplay(profileData.level),
+    nativeLanguage: profileData.native_language,
+  } : {
+    targetLanguage: null,
+    profilePicture: null,
+    level: null,
+    nativeLanguage: null,
+  };
+
+  // TODO: Fetch friends and chats when those tables are set up
+  // For now, return empty arrays
+  return {
+    user: userProfile,
+    friends: [],
+    chats: [],
+  };
 }
 
 export default function DashboardPage() {
@@ -174,9 +213,9 @@ export default function DashboardPage() {
         >
           <div className="flex items-start gap-4">
             <div className="relative">
-              {user.profilePhotoUrl ? (
+              {user.profilePicture ? (
                 <img
-                  src={user.profilePhotoUrl}
+                  src={user.profilePicture}
                   alt="Profile"
                   className="w-20 h-20 rounded-full object-cover border-2 border-zinc-200"
                 />
@@ -202,7 +241,7 @@ export default function DashboardPage() {
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <h2 className="text-xl font-semibold text-zinc-900">
-                    {user.displayName || "Your Name"}
+                    Profile
                   </h2>
                   <div className="mt-2 space-y-1">
                     {user.targetLanguage && (
@@ -211,9 +250,9 @@ export default function DashboardPage() {
                         {user.level && ` • ${user.level}`}
                       </p>
                     )}
-                    {user.nativeLanguages && user.nativeLanguages.length > 0 && (
+                    {user.nativeLanguage && (
                       <p className="text-sm text-zinc-700">
-                        <span className="font-medium">Native:</span> {user.nativeLanguages.join(", ")}
+                        <span className="font-medium">Native:</span> {user.nativeLanguage}
                       </p>
                     )}
                     {!user.targetLanguage && (
@@ -365,6 +404,7 @@ export default function DashboardPage() {
         {content}
       </main>
     </>
+
   );
 }
 
