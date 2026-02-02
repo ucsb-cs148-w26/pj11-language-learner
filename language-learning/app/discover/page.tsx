@@ -1,6 +1,9 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react';
 import Link from "next/link";
+import Header from "@/components/Header";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabaseClient";
 
 const levels = ['All', 'Beginner', 'Intermediate', 'Advanced'];
 
