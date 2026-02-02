@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
     id: p.user_id,
     first_name: p.first_name,
     level: p.level,
-    target_language: p.profile_target_languages?.[0]?.language || "None",
+    target_language: p.profile_target_languages?.language || "None",
   }));
 
   return NextResponse.json(partners);
