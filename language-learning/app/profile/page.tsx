@@ -4,7 +4,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import Header from "../components/Header";
 import { HeadersAdapter } from "next/dist/server/web/spec-extension/adapters/headers";
 
 // Helper function to convert database level to display format
@@ -169,11 +168,9 @@ export default function ProfilePage() {
 
   return (
     <>
-      <Header />
       <div className="min-h-screen bg-white w-full">
         <main className="mx-auto max-w-6xl p-6">
         <div className="space-y-6">
-          {/* Header */}
           <header className="flex items-center justify-between">
             <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">Profile</h1>
             <Link

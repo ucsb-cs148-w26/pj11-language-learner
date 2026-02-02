@@ -1,7 +1,6 @@
 'use client'
 import { useState } from 'react';
 import Link from "next/link";
-import Header from "../components/Header";
 
 type Partner = {
   id: number;
@@ -48,7 +47,6 @@ export default function DiscoverPage() {
 
   return (
     <div className="min-h-screen bg-white text-black w-full">
-      <Header />
       <main className="w-full p-6">
         <h2 className="text-3xl font-bold mb-6 text-center">
           Discover Language Partners
