@@ -5,16 +5,21 @@
 
 import { useState } from "react";
 
-export default function MessageComposer() {
+type MessageComposerProps = {
+  onSend: (text: string) => Promise<void> | void;
+};
+
+export default function MessageComposer({ onSend }: MessageComposerProps) {
   const [text, setText] = useState("");
   const [suppressDisabledStyle, setSuppressDisabledStyle] = useState(false);
 
   const canSend = text.trim().length > 0;
 
-  function onSend() {
+  async function handleSend() {
     if (!canSend) return;
-    // TO DO: actually send the message somewhere
+    const trimmed = text.trim();
     setText("");
+    await onSend(trimmed);
     setSuppressDisabledStyle(true)
   }
 
@@ -42,7 +47,7 @@ export default function MessageComposer() {
         {/* Send button */}
         <button
             type="button"
-            onClick={onSend}
+            onClick={handleSend}
             onMouseLeave={() => setSuppressDisabledStyle(false)}
             disabled={!canSend}
             className={[
