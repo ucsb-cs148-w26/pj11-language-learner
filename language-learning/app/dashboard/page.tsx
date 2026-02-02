@@ -1,6 +1,5 @@
 // app/(app)/dashboard/page.tsx
 "use client";
-
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
@@ -199,7 +198,7 @@ export default function DashboardPage() {
 
     return (
       <div className="space-y-6">
-        {/* Header */}
+        
         <header>
           <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">Dashboard</h1>
         </header>
@@ -395,10 +394,13 @@ export default function DashboardPage() {
     );
   }, [state]);
 
-  return (
-    <div className="min-h-screen bg-white w-full">
-      <main className="mx-auto max-w-6xl p-6">{content}</main>
-    </div>
+  return(
+    <>
+      <main className="mx-auto w-full p-6 bg-white min-h-screen">
+        {content}
+      </main>
+    </>
+
   );
 }
 

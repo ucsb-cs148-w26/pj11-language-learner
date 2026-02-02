@@ -7,7 +7,7 @@ export default function Header() {
 
   const links = [
     { href: "/profile", label: "Profile" },
-    { href: "/connections", label: "Connections" },
+    { href: "/chats", label: "Chats" },
     { href: "/discover", label: "Discover" },
     { href: "/dashboard", label: "Dashboard" },
   ];

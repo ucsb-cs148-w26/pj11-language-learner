@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { HeadersAdapter } from "next/dist/server/web/spec-extension/adapters/headers";
 
 // Helper function to convert database level to display format
 function levelToDisplay(level: string | null | undefined): "Beginner" | "Intermediate" | "Advanced" | null {
@@ -166,106 +167,106 @@ export default function ProfilePage() {
   const p = state.data;
 
   return (
-    <div className="min-h-screen bg-white w-full">
-      <main className="mx-auto max-w-6xl p-6">
-      <div className="space-y-6">
-        {/* Header */}
-        <header className="flex items-center justify-between">
-          <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">Profile</h1>
-          <Link
-            href="/profile/edit"
-            className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-          >
-            Edit Profile
-          </Link>
-        </header>
+    <>
+      <div className="min-h-screen bg-white w-full">
+        <main className="mx-auto max-w-6xl p-6">
+        <div className="space-y-6">
+          <header className="flex items-center justify-between">
+            <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">Profile</h1>
+            <Link
+              href="/profile/edit"
+              className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+            >
+              Edit Profile
+            </Link>
+          </header>
 
-        {/* Profile Card */}
-        <div className="rounded-2xl border border-zinc-200 bg-white p-6">
-          <div className="flex items-start gap-4">
-            <div className="relative">
-              {p.profilePicture ? (
-                <img
-                  src={p.profilePicture}
-                  alt="Profile"
-                  className="w-20 h-20 rounded-full object-cover border-2 border-zinc-200"
-                />
-              ) : (
-                <div className="w-20 h-20 rounded-full bg-zinc-100 border-2 border-zinc-200 flex items-center justify-center">
-                  <svg
-                    className="w-10 h-10 text-zinc-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
+          {/* Profile Card */}
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6">
+            <div className="flex items-start gap-4">
+              <div className="relative">
+                {p.profilePicture ? (
+                  <img
+                    src={p.profilePicture}
+                    alt="Profile"
+                    className="w-20 h-20 rounded-full object-cover border-2 border-zinc-200"
+                  />
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-zinc-100 border-2 border-zinc-200 flex items-center justify-center">
+                    <svg
+                      className="w-10 h-10 text-zinc-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      />
+                    </svg>
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-xl font-semibold text-zinc-900">
+                  {[p.firstName, p.lastName].filter(Boolean).join(" ") || "User"}
+                </h2>
+                <div className="mt-2 space-y-1">
+                  {p.targetLanguage && (
+                    <p className="text-sm text-zinc-700">
+                      <span className="font-medium">Learning:</span> {p.targetLanguage}
+                      {p.level && ` • ${p.level}`}
+                    </p>
+                  )}
+                  {p.nativeLanguage && (
+                    <p className="text-sm text-zinc-700">
+                      <span className="font-medium">Native:</span> {p.nativeLanguage}
+                    </p>
+                  )}
                 </div>
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-xl font-semibold text-zinc-900">
-                {[p.firstName, p.lastName].filter(Boolean).join(" ") || "User"}
-              </h2>
-              <div className="mt-2 space-y-1">
-                {p.targetLanguage && (
-                  <p className="text-sm text-zinc-700">
-                    <span className="font-medium">Learning:</span> {p.targetLanguage}
-                    {p.level && ` • ${p.level}`}
-                  </p>
-                )}
-                {p.nativeLanguage && (
-                  <p className="text-sm text-zinc-700">
-                    <span className="font-medium">Native:</span> {p.nativeLanguage}
-                  </p>
-                )}
               </div>
             </div>
           </div>
+
+          {/* Profile Information */}
+          <section className="space-y-4">
+            {/* Bio */}
+            {p.bio && (
+              <div className="rounded-2xl border border-zinc-200 bg-white p-6">
+                <h3 className="text-sm font-medium text-zinc-700 mb-2">Bio</h3>
+                <p className="text-sm text-zinc-900 whitespace-pre-wrap">{p.bio}</p>
+              </div>
+            )}
+
+            {/* Native Language */}
+            {p.nativeLanguage && (
+              <div className="rounded-2xl border border-zinc-200 bg-white p-6">
+                <h3 className="text-sm font-medium text-zinc-700 mb-2">Native Language</h3>
+                <p className="text-sm text-zinc-900">{p.nativeLanguage}</p>
+              </div>
+            )}
+
+            {/* Target Language */}
+            {p.targetLanguage && (
+              <div className="rounded-2xl border border-zinc-200 bg-white p-6">
+                <h3 className="text-sm font-medium text-zinc-700 mb-2">Target Language</h3>
+                <p className="text-sm text-zinc-900">{p.targetLanguage}</p>
+              </div>
+            )}
+
+            {/* Level */}
+            {p.level && (
+              <div className="rounded-2xl border border-zinc-200 bg-white p-6">
+                <h3 className="text-sm font-medium text-zinc-700 mb-2">Proficiency Level</h3>
+                <p className="text-sm text-zinc-900">{p.level}</p>
+              </div>
+            )}
+          </section>
         </div>
-
-        {/* Profile Information */}
-        <section className="space-y-4">
-          {/* Bio */}
-          {p.bio && (
-            <div className="rounded-2xl border border-zinc-200 bg-white p-6">
-              <h3 className="text-sm font-medium text-zinc-700 mb-2">Bio</h3>
-              <p className="text-sm text-zinc-900 whitespace-pre-wrap">{p.bio}</p>
-            </div>
-          )}
-
-          {/* Native Language */}
-          {p.nativeLanguage && (
-            <div className="rounded-2xl border border-zinc-200 bg-white p-6">
-              <h3 className="text-sm font-medium text-zinc-700 mb-2">Native Language</h3>
-              <p className="text-sm text-zinc-900">{p.nativeLanguage}</p>
-            </div>
-          )}
-
-          {/* Target Language */}
-          {p.targetLanguage && (
-            <div className="rounded-2xl border border-zinc-200 bg-white p-6">
-              <h3 className="text-sm font-medium text-zinc-700 mb-2">Target Language</h3>
-              <p className="text-sm text-zinc-900">{p.targetLanguage}</p>
-            </div>
-          )}
-
-          {/* Level */}
-          {p.level && (
-            <div className="rounded-2xl border border-zinc-200 bg-white p-6">
-              <h3 className="text-sm font-medium text-zinc-700 mb-2">Proficiency Level</h3>
-              <p className="text-sm text-zinc-900">{p.level}</p>
-            </div>
-          )}
-        </section>
+        </main>
       </div>
-      </main>
-    </div>
+    </>
   );
 }
-
