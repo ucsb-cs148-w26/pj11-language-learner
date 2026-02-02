@@ -1,8 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { Session } from "@supabase/supabase-js";
 import { Nunito } from "next/font/google";
+
+import Header from "./components/Header";
+import { supabase } from "@/lib/supabaseClient";
+import DashboardPage from "./dashboard/page";
 
 const bodyFont = Nunito({
   subsets: ["latin"],
@@ -15,6 +20,34 @@ const FONTS = {
 };
 
 export default function Home() {
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session ?? null);
+      setLoading(false);
+    });
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+    });
+
+    return () => {
+      sub.subscription.unsubscribe();
+    };
+  }, []);
+
+  return (
+    <>
+      <Header />
+
+      {loading ? null : session ? <DashboardPage /> : <Landing />}
+    </>
+  );
+}
+
+function Landing() {
   const [hover, setHover] = useState(false);
 
   return (
