@@ -7,13 +7,13 @@ export default function Header() {
 
   const links = [
     { href: "/profile", label: "Profile" },
-    { href: "/connections", label: "Connections" },
+    { href: "/chats", label: "Chats" },
     { href: "/discover", label: "Discover" },
     { href: "/dashboard", label: "Dashboard" },
   ];
 
   return (
-    <nav className="w-full border-b bg-white shadow-sm">
+    <nav className="w-full border-b bg-white shadow-sm mb-10">
       <div className="mx-auto max-w-5xl px-8 py-5 flex gap-10 text-lg justify-center">
         {links.map(({ href, label }) => {
           const active = pathname === href;
