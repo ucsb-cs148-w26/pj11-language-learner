@@ -40,8 +40,6 @@ export default function Home() {
 
   return (
     <>
-      {/* <Header /> */}
-
       {loading ? null : session ? <DashboardPage /> : <Landing />}
     </>
   );

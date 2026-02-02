@@ -1,44 +1,50 @@
 'use client'
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from "next/link";
 
-type Partner = {
-  id: number;
-  name: string;
-  language: string;
-  level: string;
-};
-
-const mockPartners: Partner[] = [
-  { id: 1, name: 'Julia', language: 'Spanish', level: 'Beginner' },
-  { id: 2, name: 'Bob', language: 'French', level: 'Intermediate' },
-  { id: 3, name: 'Charlie', language: 'Japanese', level: 'Advanced' },
-  { id: 4, name: 'David', language: 'Spanish', level: 'Intermediate' },
-  { id: 5, name: 'Eva', language: 'French', level: 'Beginner' },
-  { id: 6, name: 'Frank', language: 'Japanese', level: 'Intermediate' },
-  { id: 7, name: 'Grace', language: 'Spanish', level: 'Advanced' },
-];
+const levels = ['All', 'Beginner', 'Intermediate', 'Advanced'];
 
 export default function DiscoverPage() {
+  const [recommended, setRecommended] = useState<any[]>([]);
+  const [filtered, setFiltered] = useState<any[]>([]);
+
+  const[loadingRecs, setLoadingRecs] = useState(true);
+  const[loadingFilt, setLoadingFilt] = useState(true);
+
   const [search, setSearch] = useState('');
   const [levelFilter, setLevelFilter] = useState<string>('All');
 
-  const levels = ['All', 'Beginner', 'Intermediate', 'Advanced'];
+  useEffect(() => {
+    const fetchRecs = async () => {
+      setLoadingRecs(true)
+      try {
+        const res = await fetch(`/api/discover?recommended=true`);
+        if (res.ok) {
+          const data = await res.json();
+          setRecommended(data);
+        }
+      } catch (e) { console.error(e); }
+      setLoadingRecs(false);
+    };
+    fetchRecs();
+  }, []);
 
-  const filtersApplied = search !== '' || levelFilter !== 'All';
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      setLoadingFilt(true)
+      try {
+        const url = `/api/discover?language=${search}&level=${levelFilter}`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          setFiltered(data);
+        }
+      } catch (e) { console.error(e); }
+      setLoadingFilt(false)
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [search, levelFilter]);
 
-  // 5 recommended options (top: horizontal scroll)
-  // PLACEHOLDER FOR LATER LOGIC (app/api/discover/route.ts)
-  const recommendedPartners = mockPartners.slice(0, 5);
-
-  // all peers (bottom: filtered list)
-  const filteredPartners = mockPartners.filter((partner) => {
-    const matchesSearch = partner.language
-      .toLowerCase()
-      .includes(search.toLowerCase());
-    const matchesLevel = levelFilter === 'All' || partner.level === levelFilter;
-    return matchesSearch && matchesLevel;
-  });
 
   const resetFilters = () => {
     setSearch('');
@@ -47,29 +53,31 @@ export default function DiscoverPage() {
 
   return (
     <div className="min-h-screen bg-white text-black w-full">
+
       <main className="w-full p-6">
         <h2 className="text-3xl font-bold mb-6 text-center">
           Discover Language Partners
         </h2>
       
-        {/* horizontal cards */}
+        {/* recommended */}
         <section className="mb-8">
           <h3 className="text-xl font-semibold mb-4">Recommended for You</h3>
           <div className="flex space-x-4 overflow-x-auto pb-2 pt-2">
-            {recommendedPartners.map((partner) => (
-              <div
-                key={partner.id}
-                className="min-w-[200px] flex-shrink-0 border rounded-xl shadow-lg p-4 bg-white text-black hover:shadow-2xl transition transform hover:-translate-y-1"
-              >
-                <p className="font-bold text-lg mb-1">{partner.name}</p>
-                <p className="text-gray-800 mb-1">
-                  Learning {partner.language} ({partner.level})
-                </p>
-                <button className="mt-2 w-full py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition">
-                  Connect
-                </button>
+            {loadingRecs ? (
+              <div className="flex space-x-4 animate-pulse">
+                {[1,2,3].map(i => <div key={i} className="h-32 w-48 bg-gray-200 rounded-xl" />)}
               </div>
-            ))}
+            ) : (
+              <div className="flex space-x-4 overflow-x-auto pb-2 pt-2">
+                {recommended.length > 0 ? recommended.map((partner) => (
+                  <div key={partner.id} className="min-w-[200px] flex-shrink-0 border rounded-xl shadow-lg p-4 bg-white hover:shadow-2xl transition">
+                    <p className="font-bold text-lg mb-1">{partner.first_name}</p>
+                    <p className="text-gray-800 mb-1">Learning {partner.target_language} ({partner.level})</p>
+                    <button className="mt-2 w-full py-1 bg-blue-500 text-white rounded-md">Connect</button>
+                  </div>
+                )) : <p className="text-gray-500">No recommendations found.</p>}
+              </div>
+            )}
           </div>
         </section>
 
@@ -121,19 +129,21 @@ export default function DiscoverPage() {
 
             {/* matches list */}
             <div className="md:w-3/4 flex-1">
-              {filteredPartners.length === 0 ? (
-                <p className="text-gray-500">No partners found.</p>
+              {loadingFilt ? (
+                <div className="space-y-4">
+                   {[1,2,3].map(i => <div key={i} className="h-20 w-full bg-gray-100 animate-pulse rounded-lg" />)}
+                </div>
+              ) : filtered.length === 0 ? (
+                <div className="text-center py-10 border-2 border-dashed rounded-lg">
+                  <p className="text-gray-500">No partners match your search.</p>
+                  <button onClick={resetFilters} className="text-blue-500 underline mt-2">Clear all filters</button>
+                </div>
               ) : (
                 <ul className="space-y-4">
-                  {filteredPartners.map((partner) => (
-                    <li
-                      key={partner.id}
-                      className="border p-4 rounded-lg shadow-sm hover:shadow-md transition bg-white text-black"
-                    >
-                      <p className="font-semibold text-lg">{partner.name}</p>
-                      <p className="text-gray-800">
-                        Learning {partner.language} ({partner.level})
-                      </p>
+                  {filtered.map((partner) => (
+                    <li key={partner.id} className="border p-4 rounded-lg shadow-sm hover:shadow-md transition bg-white">
+                      <p className="font-semibold text-lg">{partner.first_name}</p>
+                      <p className="text-gray-800">Learning {partner.target_language} ({partner.level})</p>
                     </li>
                   ))}
                 </ul>
