@@ -13,7 +13,7 @@ export default function Header() {
   ];
 
   return (
-    <nav className="w-full border-b bg-white shadow-sm mb-10">
+    <nav className="w-full border-b bg-white shadow-sm">
       <div className="mx-auto max-w-5xl px-8 py-5 flex gap-10 text-lg justify-center">
         {links.map(({ href, label }) => {
           const active = pathname === href;
