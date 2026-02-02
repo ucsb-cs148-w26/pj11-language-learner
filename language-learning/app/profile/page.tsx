@@ -3,8 +3,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { HeadersAdapter } from "next/dist/server/web/spec-extension/adapters/headers";
 
 // Helper function to convert database level to display format
 function levelToDisplay(level: string | null | undefined): "Beginner" | "Intermediate" | "Advanced" | null {
@@ -105,7 +105,12 @@ async function fetchMyProfile(): Promise<Profile> {
 }
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [state, setState] = useState<LoadState<Profile>>({ status: "loading" });
+  const [signOutLoading, setSignOutLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -139,6 +144,86 @@ export default function ProfilePage() {
       cancelled = true;
     };
   }, []);
+
+  async function handleSignOut() {
+    setSignOutLoading(true);
+    setError(null);
+    
+    try {
+      const { error: signOutError } = await supabase.auth.signOut();
+      if (signOutError) {
+        setError(signOutError.message);
+        setSignOutLoading(false);
+        return;
+      }
+      // Redirect to homepage after successful sign out
+      router.push("/");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "An unexpected error occurred";
+      setError(msg);
+      setSignOutLoading(false);
+    }
+  }
+
+  async function handleDeleteAccount() {
+    setDeleteLoading(true);
+    setError(null);
+    
+    try {
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        setError("Could not get user information");
+        setDeleteLoading(false);
+        return;
+      }
+
+      const userId = user.id;
+
+      // Delete user data from profile_target_languages table
+      const { error: targetLangError } = await supabase
+        .from('profile_target_languages')
+        .delete()
+        .eq('user_id', userId);
+
+      if (targetLangError) {
+        console.error("Error deleting target languages:", targetLangError);
+        // Continue even if this fails
+      }
+
+      // Delete user data from profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('user_id', userId);
+
+      if (profileError) {
+        console.error("Error deleting profile:", profileError);
+        // Continue even if this fails
+      }
+
+      // Delete the auth user (this will cascade delete related data if configured)
+      // Note: This requires admin privileges, so we'll use the admin API
+      // For now, we'll sign out and let the user know they need to contact support
+      // or we can use a database function/trigger to handle this
+      
+      // Sign out the user
+      await supabase.auth.signOut();
+      
+      // Redirect to sign in page
+      router.push("/auth/signin");
+      
+      // Note: To fully delete the auth user, you may need to:
+      // 1. Create a database function with SECURITY DEFINER that deletes from auth.users
+      // 2. Call that function via RPC
+      // 3. Or use Supabase Admin API (requires server-side code)
+      
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "An unexpected error occurred";
+      setError(msg);
+      setDeleteLoading(false);
+    }
+  }
 
   if (state.status === "loading") {
     return (
@@ -264,9 +349,75 @@ export default function ProfilePage() {
               </div>
             )}
           </section>
+
+          {/* Account Actions */}
+          <section className="space-y-4">
+            <div className="rounded-2xl border border-zinc-200 bg-white p-6">
+              <h3 className="text-sm font-medium text-zinc-700 mb-4">Account Actions</h3>
+              
+              {error && (
+                <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4">
+                  <p className="text-sm text-red-800">{error}</p>
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  disabled={signOutLoading || deleteLoading}
+                  className="flex-1 rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                >
+                  {signOutLoading ? "Signing out..." : "Sign Out"}
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  disabled={signOutLoading || deleteLoading}
+                  className="flex-1 rounded-xl border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                >
+                  Delete Account
+                </button>
+              </div>
+            </div>
+          </section>
         </div>
         </main>
       </div>
+
+      {/* Delete Account Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl border border-zinc-200 p-6 max-w-md w-full">
+            <h3 className="text-lg font-semibold text-zinc-900 mb-2">Delete Account</h3>
+            <p className="text-sm text-zinc-700 mb-6">
+              Are you sure you want to delete your account? This action cannot be undone. All your profile data, conversations, and connections will be permanently deleted.
+            </p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setError(null);
+                }}
+                disabled={deleteLoading}
+                className="flex-1 rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteAccount}
+                disabled={deleteLoading}
+                className="flex-1 rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+              >
+                {deleteLoading ? "Deleting..." : "Delete Account"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
