@@ -2,8 +2,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { useEffect, useState } from "react";
+import type { Session } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabaseClient";
+
 export default function Header() {
   const pathname = usePathname();
+
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const links = [
     { href: "/profile", label: "Profile" },
@@ -12,15 +19,43 @@ export default function Header() {
     { href: "/dashboard", label: "Dashboard" },
   ];
 
+  useEffect(() => {
+    // 1) Initial session check
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session ?? null);
+      setLoading(false);
+    });
+
+    // 2) Listen for auth changes (login/logout)
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+    });
+
+    return () => {
+      sub.subscription.unsubscribe();
+    };
+  }, []);
+
+  const navItems =
+    !loading && session
+      ? links
+      : !loading
+        ? [
+            { href: "/auth/signin", label: "Log in" },
+            { href: "/auth/signin", label: "Sign up" },
+          ]
+        : [];
+  
+
   return (
     <nav className="w-full border-b bg-white shadow-sm mb-10">
       <div className="mx-auto max-w-5xl px-8 py-5 flex gap-10 text-lg justify-center">
-        {links.map(({ href, label }) => {
+        {navItems.map(({ href, label }) => {
           const active = pathname === href;
 
           return (
             <Link
-              key={href}
+              key={`${href}-${label}`}
               href={href}
               className={`relative group transition ${
                 active
