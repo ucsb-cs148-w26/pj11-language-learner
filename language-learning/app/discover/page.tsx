@@ -1,9 +1,6 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import Link from "next/link";
-import Header from "@/components/Header";
-import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
 
 const levels = ['All', 'Beginner', 'Intermediate', 'Advanced'];
 
@@ -55,105 +52,129 @@ export default function DiscoverPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-black w-full">
+    <div className="min-h-screen bg-white text-zinc-900 w-full">
+      <main className="mx-auto max-w-6xl p-6">
+        <header className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
+            Discover Partners
+          </h1>
+        </header>
 
-      <main className="w-full p-6">
-        <h2 className="text-3xl font-bold mb-6 text-center">
-          Discover Language Partners
-        </h2>
-      
-        {/* recommended */}
-        <section className="mb-8">
-          <h3 className="text-xl font-semibold mb-4">Recommended for You</h3>
-          <div className="flex space-x-4 overflow-x-auto pb-2 pt-2">
+        {/* Recommended Section */}
+        <section className="mb-12">
+          <h3 className="text-sm font-medium text-zinc-500 uppercase tracking-wider mb-4">
+            Recommended for You
+          </h3>
+          <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
             {loadingRecs ? (
-              <div className="flex space-x-4 animate-pulse">
-                {[1,2,3].map(i => <div key={i} className="h-32 w-48 bg-gray-200 rounded-xl" />)}
-              </div>
+              [1, 2, 3].map(i => (
+                <div key={i} className="h-40 min-w-[280px] animate-pulse rounded-2xl bg-zinc-100 border border-zinc-200" />
+              ))
             ) : (
-              <div className="flex space-x-4 overflow-x-auto pb-2 pt-2">
-                {recommended.length > 0 ? recommended.map((partner) => (
-                  <div key={partner.id} className="min-w-[200px] flex-shrink-0 border rounded-xl shadow-lg p-4 bg-white hover:shadow-2xl transition">
-                    <p className="font-bold text-lg mb-1">{partner.first_name}</p>
-                    <p className="text-gray-800 mb-1">Learning {partner.target_language} ({partner.level})</p>
-                    <button className="mt-2 w-full py-1 bg-blue-500 text-white rounded-md">Connect</button>
+              recommended.map((partner) => (
+                <div key={partner.id} className="min-w-[280px] flex-shrink-0 border border-zinc-200 rounded-2xl p-6 bg-white hover:border-zinc-300 transition-all shadow-sm">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-600 border border-zinc-200">
+                      {partner.first_name?.[0] || 'U'}
+                    </div>
+                    <p className="font-semibold text-zinc-900">{partner.first_name}</p>
                   </div>
-                )) : <p className="text-gray-500">No recommendations found.</p>}
-              </div>
+                  <p className="text-sm text-zinc-600 mb-4">
+                    Learning <span className="text-zinc-900 font-medium">{partner.target_language}</span>
+                    <span className="mx-1">•</span>
+                    {partner.level}
+                  </p>
+                  <button className="w-full py-2 bg-zinc-900 text-white text-sm font-medium rounded-xl hover:opacity-90 transition">
+                    Connect
+                  </button>
+                </div>
+              ))
             )}
           </div>
         </section>
 
-        {/* filtered list */}
-        <section>
-          <h3 className="text-xl font-semibold mb-4">All Learners</h3>
-          <div className="flex flex-col md:flex-row gap-6">
+        {/* Main Grid: Filters + List */}
+        <div className="flex flex-col md:flex-row gap-8">
+          {/* Sidebar Filters */}
+          <aside className="md:w-64 space-y-6">
+            <div className="rounded-2xl border border-zinc-200 p-6 bg-white shadow-sm">
+              <h3 className="font-semibold text-zinc-900 mb-4">Filters</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-medium text-zinc-500 uppercase mb-1.5 block">Language</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Spanish"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full p-2.5 text-sm border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-zinc-900/5 transition bg-zinc-50"
+                  />
+                </div>
 
-            {/* sidebar */}
-            <aside className="md:w-1/4 border border-gray-200 p-4 rounded-lg shadow-sm bg-white">
-              <h3 className="font-semibold mb-4 text-lg">Filters</h3>
+                <div>
+                  <label className="text-xs font-medium text-zinc-500 uppercase mb-1.5 block">Proficiency</label>
+                  <select
+                    value={levelFilter}
+                    onChange={(e) => setLevelFilter(e.target.value)}
+                    className="w-full p-2.5 text-sm border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-zinc-900/5 transition bg-zinc-50"
+                  >
+                    {levels.map((level) => (
+                      <option key={level} value={level}>{level}</option>
+                    ))}
+                  </select>
+                </div>
 
-              {/* language search */}
-              <div className="mb-4">
-                <label className="block mb-1 font-medium">Language</label>
-                <input
-                  type="text"
-                  placeholder="Search language..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black"
-                />
-              </div>
-
-              {/* level filter */}
-              <div className="mb-4">
-                <label className="block mb-1 font-medium">Level</label>
-                <select
-                  value={levelFilter}
-                  onChange={(e) => setLevelFilter(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black"
+                <button
+                  onClick={resetFilters}
+                  className="w-full py-2 text-xs font-medium text-zinc-500 hover:text-zinc-900 transition"
                 >
-                  {levels.map((level) => (
-                    <option key={level} value={level}>
-                      {level}
-                    </option>
-                  ))}
-                </select>
+                  Clear all filters
+                </button>
               </div>
-
-              {/* reset button */}
-              <button
-                onClick={resetFilters}
-                className="w-full py-2 mt-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition"
-              >
-                Reset Filters
-              </button>
-            </aside>
-
-            {/* matches list */}
-            <div className="md:w-3/4 flex-1">
-              {loadingFilt ? (
-                <div className="space-y-4">
-                   {[1,2,3].map(i => <div key={i} className="h-20 w-full bg-gray-100 animate-pulse rounded-lg" />)}
-                </div>
-              ) : filtered.length === 0 ? (
-                <div className="text-center py-10 border-2 border-dashed rounded-lg">
-                  <p className="text-gray-500">No partners match your search.</p>
-                  <button onClick={resetFilters} className="text-blue-500 underline mt-2">Clear all filters</button>
-                </div>
-              ) : (
-                <ul className="space-y-4">
-                  {filtered.map((partner) => (
-                    <li key={partner.id} className="border p-4 rounded-lg shadow-sm hover:shadow-md transition bg-white">
-                      <p className="font-semibold text-lg">{partner.first_name}</p>
-                      <p className="text-gray-800">Learning {partner.target_language} ({partner.level})</p>
-                    </li>
-                  ))}
-                </ul>
-              )}
             </div>
+          </aside>
+
+          {/* Results List */}
+          <div className="flex-1">
+            <h3 className="text-sm font-medium text-zinc-500 uppercase tracking-wider mb-4">
+              All Potential Matches
+            </h3>
+            {loadingFilt ? (
+              <div className="space-y-4">
+                {[1, 2, 3, 4].map(i => <div key={i} className="h-24 w-full bg-zinc-100 animate-pulse rounded-2xl border border-zinc-200" />)}
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 border border-dashed border-zinc-200 rounded-2xl">
+                <p className="text-zinc-500 text-sm">No partners match your current filters.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4">
+                {filtered.map((partner) => (
+                  <div key={partner.id} className="group border border-zinc-200 p-5 rounded-2xl hover:border-zinc-300 transition bg-white shadow-sm flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-zinc-50 border border-zinc-200 flex items-center justify-center text-zinc-400 group-hover:bg-zinc-100 transition">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-zinc-900">{partner.first_name}</p>
+                        <p className="text-sm text-zinc-600">
+                          Learning {partner.target_language} • {partner.level}
+                        </p>
+                      </div>
+                    </div>
+                    <Link 
+                      href={`/profile/${partner.id}`} // TBDDDD link to public profile by id
+                      className="px-4 py-2 text-sm font-medium border border-zinc-200 rounded-xl hover:bg-zinc-50 transition"
+                    >
+                      View Profile
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        </section>
+        </div>
       </main>
     </div>
   );

@@ -7,12 +7,8 @@ export async function GET(req: NextRequest) {
   const levelFilter = searchParams.get("level");
   const isRecommended = searchParams.get("recommended") === "true";
 
-  // auth check
-  const { data: { session } } = await supabaseClient.auth.getSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  const currentUserId = session.user.id;
+  // auth check TBD
+  // const currentUserId = "45c9d31c-0a1f-4b59-8db5-f980e91c8075";
 
   let query = supabaseClient
     .from("profiles")
@@ -22,10 +18,10 @@ export async function GET(req: NextRequest) {
       level, 
       profile_target_languages!inner(language)
     `)
-    .neq('user_id', currentUserId);
+    // .neq('user_id', currentUserId);
 
   if (levelFilter && levelFilter !== "All") {
-    query = query.eq('level', levelFilter);
+    query = query.ilike('level', levelFilter);
   }
 
   if (languageFilter && languageFilter.trim() !== "") {
@@ -50,6 +46,6 @@ export async function GET(req: NextRequest) {
     level: p.level,
     target_language: p.profile_target_languages?.language || "None",
   }));
-
+  
   return NextResponse.json(partners);
 }
