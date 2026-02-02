@@ -43,11 +43,18 @@ export type Conversation = {
 type ChatProps = {
   conversations: Conversation[];
   initialConversationId?: string;
+  onSelectConversationId?: (conversationId: string) => void;
+  onSendMessage?: (conversationId: string, text: string) => Promise<void>;
 };
 
-export default function Chat({ conversations, initialConversationId }: ChatProps) {
+export default function Chat({ conversations, initialConversationId, onSelectConversationId, onSendMessage }: ChatProps) {
   const defaultId = initialConversationId ?? conversations[0]?.conversationId ?? "";
   const [selectedConversationId, setSelectedConversationId] = useState(defaultId);
+
+  function handleSelectConversation(id: string) {
+    setSelectedConversationId(id);
+    onSelectConversationId?.(id); 
+  }
 
   const selected = useMemo(
     () => conversations.find((c) => c.conversationId === selectedConversationId) ?? conversations[0],
@@ -71,7 +78,7 @@ export default function Chat({ conversations, initialConversationId }: ChatProps
               unreadCount: c.unreadCount,
             }))}
             selectedConversationId={selectedConversationId}
-            onSelectConversation={setSelectedConversationId}
+            onSelectConversation={handleSelectConversation}
           />
         </div>
 
@@ -85,6 +92,9 @@ export default function Chat({ conversations, initialConversationId }: ChatProps
               partnerAvatarUrl={selected.partnerAvatarUrl}
               language={selected.language}
               messages={selected.messages}
+              conversationId={selected.conversationId}
+              onSendMessage={async (conversationId, text) => {
+                await onSendMessage?.(conversationId, text); }}
             />
           ) : (
             <div className="flex h-full items-center justify-center rounded-2xl border bg-white px-6 text-zinc-600 shadow-sm">

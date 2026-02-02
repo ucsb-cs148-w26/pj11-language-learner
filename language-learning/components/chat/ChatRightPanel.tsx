@@ -19,6 +19,8 @@ type ChatLayoutProps = {
   partnerAvatarUrl: string | null;
   language: string;
   messages: Message[];
+  conversationId: string;
+  onSendMessage: (conversationId: string, text: string) => Promise<void>;
 };
 
 export default function ChatLayout({
@@ -28,6 +30,8 @@ export default function ChatLayout({
   partnerAvatarUrl,
   language,
   messages,
+  conversationId,
+  onSendMessage,
 }: ChatLayoutProps) {
   return (
     <div className="flex h-[calc(100dvh)] flex-col overflow-hidden bg-white min-w-0">
@@ -49,7 +53,7 @@ export default function ChatLayout({
       </div>
 
       <div className="border-t px-4 py-3">
-        <MessageComposer />
+        <MessageComposer onSend={(text) => onSendMessage(conversationId, text)} />
       </div>
     </div>
   );

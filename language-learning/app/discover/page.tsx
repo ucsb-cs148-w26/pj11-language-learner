@@ -1,22 +1,26 @@
 'use client'
 import { useState } from 'react';
 import Link from "next/link";
+import Header from "@/components/Header";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabaseClient";
 
 type Partner = {
-  id: number;
+  id: string;
   name: string;
   language: string;
   level: string;
 };
 
+// test starting a new conversation with Bruce (read user ID)
 const mockPartners: Partner[] = [
-  { id: 1, name: 'Julia', language: 'Spanish', level: 'Beginner' },
-  { id: 2, name: 'Bob', language: 'French', level: 'Intermediate' },
-  { id: 3, name: 'Charlie', language: 'Japanese', level: 'Advanced' },
-  { id: 4, name: 'David', language: 'Spanish', level: 'Intermediate' },
-  { id: 5, name: 'Eva', language: 'French', level: 'Beginner' },
-  { id: 6, name: 'Frank', language: 'Japanese', level: 'Intermediate' },
-  { id: 7, name: 'Grace', language: 'Spanish', level: 'Advanced' },
+  { id: '56f72357-b6cc-4bb0-8d05-17155a8b3d26', name: 'Bruce', language: 'German', level: 'Beginner' },
+  { id: '2', name: 'Bob', language: 'French', level: 'Intermediate' },
+  { id: '3', name: 'Charlie', language: 'Japanese', level: 'Advanced' },
+  { id: '4', name: 'David', language: 'Spanish', level: 'Intermediate' },
+  { id: '5', name: 'Eva', language: 'French', level: 'Beginner' },
+  { id: '6', name: 'Frank', language: 'Japanese', level: 'Intermediate' },
+  { id: '7', name: 'Grace', language: 'Spanish', level: 'Advanced' },
 ];
 
 export default function DiscoverPage() {
@@ -26,6 +30,31 @@ export default function DiscoverPage() {
   const levels = ['All', 'Beginner', 'Intermediate', 'Advanced'];
 
   const filtersApplied = search !== '' || levelFilter !== 'All';
+
+  const router = useRouter();
+  const [connectingId, setConnectingId] = useState<string | null>(null);
+
+  async function handleConnect(partnerUserId: string) {
+    try {
+      setConnectingId(partnerUserId);
+
+      const { data, error } = await supabase.rpc("start_conversation_no_dupe", {
+        partner_id: partnerUserId,
+      });
+
+      if (error) throw error;
+
+      const conversationId = data as string;
+
+      // Navigate to chats and auto-select that conversation
+      router.push(`/chats?c=${encodeURIComponent(conversationId)}`);
+    } catch (e) {
+      console.error(e);
+      alert("Could not start conversation. Check console for details.");
+    } finally {
+      setConnectingId(null);
+    }
+  }
 
   // 5 recommended options (top: horizontal scroll)
   // PLACEHOLDER FOR LATER LOGIC (app/api/discover/route.ts)
@@ -52,26 +81,30 @@ export default function DiscoverPage() {
           Discover Language Partners
         </h2>
       
-        {/* horizontal cards */}
-        <section className="mb-8">
-          <h3 className="text-xl font-semibold mb-4">Recommended for You</h3>
-          <div className="flex space-x-4 overflow-x-auto pb-2 pt-2">
-            {recommendedPartners.map((partner) => (
-              <div
-                key={partner.id}
-                className="min-w-[200px] flex-shrink-0 border rounded-xl shadow-lg p-4 bg-white text-black hover:shadow-2xl transition transform hover:-translate-y-1"
+      {/* horizontal cards */}
+      <section className="mb-8">
+        <h3 className="text-xl font-semibold mb-4">Recommended for You</h3>
+        <div className="flex space-x-4 overflow-x-auto pb-2 pt-2">
+          {recommendedPartners.map((partner) => (
+            <div
+              key={partner.id}
+              className="min-w-[200px] flex-shrink-0 border rounded-xl shadow-lg p-4 bg-white text-black hover:shadow-2xl transition transform hover:-translate-y-1"
+            >
+              <p className="font-bold text-lg mb-1">{partner.name}</p>
+              <p className="text-gray-800 mb-1">
+                Learning {partner.language} ({partner.level})
+              </p>
+              <button
+                onClick={() => handleConnect(partner.id)}
+                disabled={connectingId === partner.id}
+                className="mt-2 w-full py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition disabled:opacity-50"
               >
-                <p className="font-bold text-lg mb-1">{partner.name}</p>
-                <p className="text-gray-800 mb-1">
-                  Learning {partner.language} ({partner.level})
-                </p>
-                <button className="mt-2 w-full py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition">
-                  Connect
-                </button>
-              </div>
-            ))}
-          </div>
-        </section>
+                {connectingId === partner.id ? "Connecting..." : "Connect"}
+              </button>
+            </div>
+          ))}
+        </div>
+      </section>
 
         {/* filtered list */}
         <section>
