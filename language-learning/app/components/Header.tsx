@@ -41,8 +41,8 @@ export default function Header() {
       ? links
       : !loading
         ? [
-            { href: "/login", label: "Log in" },
-            { href: "/signup", label: "Sign up" },
+            { href: "/auth/signin", label: "Log in" },
+            { href: "/auth/signin", label: "Sign up" },
           ]
         : [];
   
@@ -55,7 +55,7 @@ export default function Header() {
 
           return (
             <Link
-              key={href}
+              key={`${href}-${label}`}
               href={href}
               className={`relative group transition ${
                 active
