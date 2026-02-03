@@ -1,5 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react';
+import { supabase } from "@/lib/supabaseClient";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 const levels = ['All', 'Beginner', 'Intermediate', 'Advanced'];
@@ -13,6 +15,9 @@ export default function DiscoverPage() {
 
   const [search, setSearch] = useState('');
   const [levelFilter, setLevelFilter] = useState<string>('All');
+
+  const router = useRouter();
+  const [connectingId, setConnectingId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchRecs = async () => {
@@ -45,6 +50,27 @@ export default function DiscoverPage() {
     return () => clearTimeout(timer);
   }, [search, levelFilter]);
 
+  async function handleConnect(partnerUserId: string) {
+    try {
+      setConnectingId(partnerUserId);
+
+      const { data, error } = await supabase.rpc("start_conversation_no_dupe", {
+        partner_id: partnerUserId,
+      });
+
+      if (error) throw error;
+
+      const conversationId = data as string;
+
+      // Navigate to chats and auto-select that conversation
+      router.push(`/chats?c=${encodeURIComponent(conversationId)}`);
+    } catch (e) {
+      console.error(e);
+      alert("Could not start conversation. Check console for details.");
+    } finally {
+      setConnectingId(null);
+    }
+  }
 
   const resetFilters = () => {
     setSearch('');
@@ -84,9 +110,13 @@ export default function DiscoverPage() {
                     <span className="mx-1">•</span>
                     {partner.level}
                   </p>
-                  <button className="w-full py-2 bg-zinc-900 text-white text-sm font-medium rounded-xl hover:opacity-90 transition">
-                    Connect
-                  </button>
+                  <button
+                    onClick={() => handleConnect(partner.id)}
+                    disabled={connectingId === partner.id}
+                    className="w-full py-2 bg-zinc-900 text-white text-sm font-medium rounded-xl hover:opacity-90 transition"
+                  >
+                    {connectingId === partner.id ? "Connecting..." : "Connect"}
+                </button>
                 </div>
               ))
             )}
