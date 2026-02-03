@@ -45,7 +45,6 @@ export default function Header() {
             { href: "/auth/signin", label: "Sign up" },
           ]
         : [];
-  
 
   return (
     <nav className="w-full border-b bg-white shadow-sm">
