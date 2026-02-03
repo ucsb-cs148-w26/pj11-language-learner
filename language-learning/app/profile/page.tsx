@@ -170,6 +170,8 @@ export default function ProfilePage() {
     setError(null);
     
     try {
+      console.log("Starting account deletion process...");
+      
       // Get current user
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) {
@@ -179,44 +181,54 @@ export default function ProfilePage() {
       }
 
       const userId = user.id;
+      console.log("Deleting account for user ID:", userId);
 
-      // Delete user data from profile_target_languages table
-      const { error: targetLangError } = await supabase
-        .from('profile_target_languages')
-        .delete()
-        .eq('user_id', userId);
+      // Delete the auth user and all related data using a database function
+      // The function handles all deletions with SECURITY DEFINER privileges to bypass RLS
+      // This function must be created in Supabase (see delete_user_account.sql)
+      console.log("Calling delete_user_account function...");
+      console.log("This will delete: messages, conversation_participants, profile_target_languages, profiles, and auth.users");
+      const { data: rpcData, error: deleteAuthError } = await supabase.rpc('delete_user_account', {
+        user_uuid: userId
+      });
 
-      if (targetLangError) {
-        console.error("Error deleting target languages:", targetLangError);
-        // Continue even if this fails
+      if (deleteAuthError) {
+        console.error("Error deleting auth user:", deleteAuthError);
+        console.error("Error code:", deleteAuthError.code);
+        console.error("Error message:", deleteAuthError.message);
+        console.error("Error details:", deleteAuthError.details);
+        console.error("Error hint:", deleteAuthError.hint);
+        
+        // Check if it's because the function doesn't exist
+        if (deleteAuthError.message?.includes('function') || 
+            deleteAuthError.code === '42883' ||
+            deleteAuthError.message?.includes('does not exist')) {
+          setError("Delete account function not set up. Please run delete_user_account.sql in Supabase SQL Editor, or contact support.");
+        } else if (deleteAuthError.message?.includes('Not authenticated')) {
+          setError("Authentication error. Please try signing out and back in.");
+        } else if (deleteAuthError.message?.includes('only delete your own')) {
+          setError("Security error: You can only delete your own account.");
+        } else {
+          setError(`Account data deleted, but auth user deletion failed: ${deleteAuthError.message || 'Unknown error'}. Please contact support.`);
+        }
+        // Sign out the user anyway
+        await supabase.auth.signOut();
+        setDeleteLoading(false);
+        router.push("/auth/signin");
+        return;
       }
 
-      // Delete user data from profiles table
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('user_id', userId);
+      console.log("✅ Account and all related data deleted successfully!");
+      console.log("RPC response:", rpcData);
 
-      if (profileError) {
-        console.error("Error deleting profile:", profileError);
-        // Continue even if this fails
-      }
-
-      // Delete the auth user (this will cascade delete related data if configured)
-      // Note: This requires admin privileges, so we'll use the admin API
-      // For now, we'll sign out and let the user know they need to contact support
-      // or we can use a database function/trigger to handle this
-      
-      // Sign out the user
+      // Sign out the user (in case RPC didn't handle it)
+      console.log("Signing out...");
       await supabase.auth.signOut();
       
-      // Redirect to sign in page
-      router.push("/auth/signin");
+      console.log("✅ Account deletion complete! Redirecting to homepage...");
       
-      // Note: To fully delete the auth user, you may need to:
-      // 1. Create a database function with SECURITY DEFINER that deletes from auth.users
-      // 2. Call that function via RPC
-      // 3. Or use Supabase Admin API (requires server-side code)
+      // Redirect to homepage
+      router.push("/");
       
     } catch (e) {
       const msg = e instanceof Error ? e.message : "An unexpected error occurred";
