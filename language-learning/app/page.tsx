@@ -110,7 +110,7 @@ function Landing() {
                 lineHeight: 1.05,
               }}
             >
-              Practice A Language Here
+              Practice a Language Here
             </h1>
 
             <p
