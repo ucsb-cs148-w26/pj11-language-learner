@@ -1,6 +1,7 @@
 // app/(app)/profile/page.tsx
 "use client";
 
+
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -105,6 +106,8 @@ async function fetchMyProfile(): Promise<Profile> {
 }
 
 export default function ProfilePage() {
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
   const router = useRouter();
   const [state, setState] = useState<LoadState<Profile>>({ status: "loading" });
   const [signOutLoading, setSignOutLoading] = useState(false);
@@ -281,7 +284,10 @@ export default function ProfilePage() {
           {/* Profile Card */}
           <div className="rounded-2xl border border-zinc-200 bg-white p-6">
             <div className="flex items-start gap-4">
-              <div className="relative">
+              <div
+                className="relative cursor-pointer group"
+                onClick={() => setShowUploadModal(true)}
+              >
                 {p.profilePicture ? (
                   <img
                     src={p.profilePicture}
@@ -324,6 +330,9 @@ export default function ProfilePage() {
                   )}
                 </div>
               </div>
+            <div className="absolute bottom-0 right-0 rounded-full bg-zinc-900 text-white text-[10px] px-2 py-0.5 opacity-0 group-hover:opacity-100 transition">
+            Edit
+            </div>
             </div>
           </div>
 
@@ -397,6 +406,64 @@ export default function ProfilePage() {
         </div>
         </main>
       </div>
+      
+      {showUploadModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl border border-zinc-200 p-6 max-w-md w-full">
+            <h3 className="text-lg font-semibold text-zinc-900 mb-3">
+              Upload Profile Picture
+            </h3>
+
+            <p className="text-sm text-zinc-700 mb-4">
+              This is a demo version. The file will not actually be uploaded.
+            </p>
+
+            {/* Fake file input */}
+            <div className="mb-6">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setSelectedFileName(file.name);
+                  }
+                }}
+                className="text-sm"
+              />
+              {selectedFileName && (
+                <p className="text-xs text-zinc-600 mt-2">
+                  Selected: <span className="font-medium">{selectedFileName}</span>
+                </p>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedFileName(null);
+                  setShowUploadModal(false);
+                }}
+                className="rounded-xl bg-white border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedFileName(null);
+                  setShowUploadModal(false);
+                  alert("Demo only: Upload not implemented yet.");
+                }}
+                className="rounded-xl bg-zinc-900 text-white px-4 py-2 text-sm font-medium hover:opacity-90"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Account Confirmation Modal */}
       {showDeleteConfirm && (
@@ -430,6 +497,7 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+
     </>
   );
 }
