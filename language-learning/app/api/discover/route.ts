@@ -11,21 +11,20 @@ export async function GET(req: NextRequest) {
   // const currentUserId = "45c9d31c-0a1f-4b59-8db5-f980e91c8075";
 
   let query = supabaseClient
-    .from("profiles")
+    .from("profile_target_languages")
     .select(`
-      user_id, 
-      first_name, 
-      level, 
-      profile_target_languages!inner(language)
-    `)
-    // .neq('user_id', currentUserId);
+      user_id,
+      level,
+      profiles!inner(first_name),
+      lang:languages!profile_target_languages_language_id_fkey!inner(name)
+    `);
 
   if (levelFilter && levelFilter !== "All") {
-    query = query.ilike('level', levelFilter);
+    query = query.eq("level", levelFilter.toLowerCase());
   }
 
   if (languageFilter && languageFilter.trim() !== "") {
-    query = query.ilike('profile_target_languages.language', `%${languageFilter}%`);
+    query = query.eq("lang.name", languageFilter.trim());
   }
 
   // edit for real logic
@@ -40,11 +39,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const partners = (profiles || []).map((p: any) => ({
-    id: p.user_id,
-    first_name: p.first_name,
-    level: p.level,
-    target_language: p.profile_target_languages?.language || "None",
+  const partners = (profiles || []).map((r: any) => ({
+    id: r.user_id,
+    first_name: r.profiles?.first_name,
+    level: r.level
+      ? (r.level.charAt(0).toUpperCase() + r.level.slice(1))
+      : "Beginner",
+    target_language: r.lang?.name || "None",
   }));
   
   return NextResponse.json(partners);

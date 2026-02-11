@@ -15,6 +15,7 @@ export default function DiscoverPage() {
 
   const [search, setSearch] = useState('');
   const [levelFilter, setLevelFilter] = useState<string>('All');
+  const [languages, setLanguages] = useState<any[]>([]);
 
   const router = useRouter();
   const [connectingId, setConnectingId] = useState<string | null>(null);
@@ -32,6 +33,21 @@ export default function DiscoverPage() {
       setLoadingRecs(false);
     };
     fetchRecs();
+  }, []);
+
+  useEffect(() => {
+    const fetchLanguages = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("languages")
+          .select("id, name")
+          .order("name", { ascending: true });
+
+        if (error) throw error;
+        setLanguages(data || []);
+      } catch (e) { console.error(e); }
+    };
+    fetchLanguages();
   }, []);
 
   useEffect(() => {
@@ -141,13 +157,16 @@ export default function DiscoverPage() {
               <div className="space-y-4">
                 <div>
                   <label className="text-xs font-medium text-zinc-500 uppercase mb-1.5 block">Language</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Spanish"
+                  <select
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="w-full p-2.5 text-sm border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-zinc-900/5 transition bg-zinc-50"
-                  />
+                  >
+                    <option value="">All</option>
+                    {languages.map((l) => (
+                      <option key={l.id} value={l.name}>{l.name}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
@@ -196,7 +215,7 @@ export default function DiscoverPage() {
                   >
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-full bg-zinc-50 border border-zinc-200 flex items-center justify-center text-zinc-400 group-hover:bg-zinc-100 transition">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                       </div>
                       <div>
                         <p className="font-semibold text-zinc-900">{partner.first_name}</p>
