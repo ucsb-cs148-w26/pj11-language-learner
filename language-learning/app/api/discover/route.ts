@@ -1,33 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from '@/lib/supabaseServer'
+import { supabase as supabaseClient } from "@/lib/supabaseClient";
 
 export async function GET(req: NextRequest) {
-  const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (!user || authError) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const { searchParams } = new URL(req.url);
   const languageFilter = searchParams.get("language");
   const levelFilter = searchParams.get("level");
   const isRecommended = searchParams.get("recommended") === "true";
 
-  let query = supabase
+  // auth check TBD
+  // const currentUserId = "45c9d31c-0a1f-4b59-8db5-f980e91c8075";
+
+  let query = supabaseClient
     .from("profiles")
     .select(`
       user_id, 
       first_name, 
-      profile_target_languages!inner(language_id, level)
+      level, 
+      profile_target_languages!inner(language)
     `)
-    .neq('user_id', user.id);
+    // .neq('user_id', currentUserId);
 
   if (levelFilter && levelFilter !== "All") {
-    query = query.ilike('profile_target_languages.level', levelFilter);
+    query = query.ilike('level', levelFilter);
   }
 
   if (languageFilter && languageFilter.trim() !== "") {
-    query = query.ilike('profile_target_languages.language_id', `%${languageFilter}%`);
+    query = query.ilike('profile_target_languages.language', `%${languageFilter}%`);
   }
 
   // edit for real logic
@@ -45,8 +43,8 @@ export async function GET(req: NextRequest) {
   const partners = (profiles || []).map((p: any) => ({
     id: p.user_id,
     first_name: p.first_name,
-    level: p.profile_target_languages[0]?.level,
-    target_language: p.profile_target_languages[0]?.language_id || "None",
+    level: p.level,
+    target_language: p.profile_target_languages?.language || "None",
   }));
   
   return NextResponse.json(partners);
