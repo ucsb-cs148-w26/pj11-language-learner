@@ -112,7 +112,9 @@ async function fetchDashboard(): Promise<DashboardData> {
   const firstTL =
     targetLanguagesData && targetLanguagesData.length > 0 ? targetLanguagesData[0] : null;
 
-  const targetLanguage = firstTL?.lang?.name ?? null;
+  const langObj = Array.isArray((firstTL as any)?.lang) ? (firstTL as any).lang[0] : (firstTL as any)?.lang;
+  const targetLanguage = langObj?.name ?? null;
+  // const targetLanguage = firstTL?.lang?.name ?? null; 
 
   const userProfile = profileData ? {
     targetLanguage: targetLanguage,
