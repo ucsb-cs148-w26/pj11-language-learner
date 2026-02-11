@@ -390,8 +390,8 @@ export default function EditProfilePage() {
               <Field label="Native language">
                 <select
                   className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:border-transparent"
-                  value={form.targetLanguage}
-                  onChange={(e) => setForm((f) => ({ ...f, targetLanguage: e.target.value }))}
+                  value={form.nativeLanguage}
+                  onChange={(e) => setForm((f) => ({ ...f, nativeLanguage: e.target.value }))}
                 >
                   <option value="" disabled>
                     Select a language...
