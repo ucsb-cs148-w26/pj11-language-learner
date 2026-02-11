@@ -170,14 +170,14 @@ export default function Chats() {
       if (partnerIds.length > 0) {
         const { data: tlRows, error: tlErr } = await supabase
           .from("profile_target_languages")
-          .select("user_id, language")
+          .select("user_id, lang:languages!profile_target_languages_language_id_fkey(name)")
           .in("user_id", partnerIds);
 
         if (tlErr) throw tlErr;
 
-        for (const r of tlRows ?? []) {
+        for (const r of (tlRows as any[]) ?? []) {
           if (!targetLangByUser.has(r.user_id)) {
-            targetLangByUser.set(r.user_id, r.language);
+            targetLangByUser.set(r.user_id, r.lang?.name ?? "Unknown");
           }
         }
       }

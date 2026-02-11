@@ -84,7 +84,7 @@ async function fetchDashboard(): Promise<DashboardData> {
   console.log("Fetching profile for userId:", userId);
   const { data: profileData, error: profileError } = await supabase
     .from('profiles')
-    .select('level, native_language')
+    .select('native_language, profile_picture_url')
     .eq('user_id', userId)
     .maybeSingle(); // Use maybeSingle to avoid errors when no row exists
 
@@ -103,19 +103,21 @@ async function fetchDashboard(): Promise<DashboardData> {
 
   // Fetch target languages from separate table
   const { data: targetLanguagesData } = await supabase
-    .from('profile_target_languages')
-    .select('language')
-    .eq('user_id', userId);
+    .from("profile_target_languages")
+    .select("level, lang:languages!profile_target_languages_language_id_fkey(name)")
+    .eq("user_id", userId)
+    .limit(1);
 
   // Get first target language (or null if none)
-  const targetLanguage = targetLanguagesData && targetLanguagesData.length > 0 
-    ? targetLanguagesData[0].language 
-    : null;
+  const firstTL =
+    targetLanguagesData && targetLanguagesData.length > 0 ? targetLanguagesData[0] : null;
+
+  const targetLanguage = firstTL?.lang?.name ?? null;
 
   const userProfile = profileData ? {
     targetLanguage: targetLanguage,
-    profilePicture: null, // profile_picture column doesn't exist in table
-    level: levelToDisplay(profileData.level),
+    profilePicture: profileData.profile_picture_url,
+    level: levelToDisplay(firstTL?.level),
     nativeLanguage: profileData.native_language,
   } : {
     targetLanguage: null,
