@@ -388,12 +388,20 @@ export default function EditProfilePage() {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-2xl border border-zinc-200 bg-white p-6">
               <Field label="Native language">
-                <input
-                  className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:border-transparent"
-                  value={form.nativeLanguage}
-                  onChange={(e) => setForm((f) => ({ ...f, nativeLanguage: e.target.value }))}
-                  placeholder="e.g. English"
-                />
+                <select
+                  className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:border-transparent"
+                  value={form.targetLanguage}
+                  onChange={(e) => setForm((f) => ({ ...f, targetLanguage: e.target.value }))}
+                >
+                  <option value="" disabled>
+                    Select a language...
+                  </option>
+                  {languages.map((l) => (
+                    <option key={l.id} value={l.name}>
+                      {l.name}
+                    </option>
+                  ))}
+                </select>
               </Field>
             </div>
 
