@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
+import FriendsList from "@/components/friends/list";
 
 // Helper function to convert database level to display format
 function levelToDisplay(level: string | null | undefined): "Beginner" | "Intermediate" | "Advanced" | null {
@@ -200,9 +201,17 @@ export default function DashboardPage() {
 
     const { user, friends, chats } = state.data;
 
+    const friendsForUI =
+      friends.length > 0
+        ? friends
+        : [
+            { id: "b73dc898-2c56-464d-a43f-6bc5b804f09c", name: "Natalie Forte", targetLanguage: "Spanish", level: "Advanced" as const },
+            { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
+          ];
+
     return (
       <div className="space-y-6">
-        
+
         <header>
           <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">Dashboard</h1>
         </header>
@@ -296,43 +305,16 @@ export default function DashboardPage() {
               </Link>
             </div>
 
-            <div className="rounded-2xl border border-zinc-200 bg-white">
-              {friends.length === 0 ? (
-                <div className="p-6 text-center">
-                  <p className="text-sm text-zinc-700">No friends yet.</p>
-                  <Link
-                    href="/discover"
-                    className="mt-3 inline-block rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-                  >
-                    Find partners
-                  </Link>
-                </div>
-              ) : (
-                <div className="divide-y divide-zinc-100">
-                  {friends.map((friend: DashboardData["friends"][0]) => (
-                    <div
-                      key={friend.id}
-                      className="p-4 hover:bg-zinc-50 transition-colors"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <p className="font-medium text-zinc-900">{friend.name}</p>
-                          <p className="mt-1 text-sm text-zinc-700">
-                            {friend.targetLanguage} • {friend.level}
-                          </p>
-                        </div>
-                        <Link
-                          href={`/chat/${friend.id}`}
-                          className="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-50"
-                        >
-                          Chat
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <FriendsList
+              showHeader={false}
+              friends={friendsForUI.map((f) => ({
+                id: f.id,
+                name: f.name,
+                profileHref: `/profile/${f.id}`,
+                chatHref: "/chats",
+              }))}
+            />
+
           </section>
 
           {/* Chats section */}
