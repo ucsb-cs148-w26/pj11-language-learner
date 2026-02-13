@@ -9,6 +9,8 @@ const levels = ['All', 'Beginner', 'Intermediate', 'Advanced'];
 export default function DiscoverPage() {
   const [recommended, setRecommended] = useState<any[]>([]);
   const [filtered, setFiltered] = useState<any[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [excludeUserIds, setExcludeUserIds] = useState<string[]>([]);
 
   const[loadingRecs, setLoadingRecs] = useState(true);
   const[loadingFilt, setLoadingFilt] = useState(true);
@@ -21,10 +23,58 @@ export default function DiscoverPage() {
   const [connectingId, setConnectingId] = useState<string | null>(null);
 
   useEffect(() => {
+    let mounted = true;
+    const loadCurrentUserAndExclusions = async () => {
+      try {
+        const { data } = await supabase.auth.getUser();
+        const me = data.user?.id ?? null;
+        if (!mounted) return;
+        setCurrentUserId(me);
+
+        if (!me) {
+          setExcludeUserIds([]);
+          return;
+        }
+
+        const excluded = new Set<string>([me]);
+
+        const { data: myParticipation } = await supabase
+          .from("conversation_participants")
+          .select("conversation_id")
+          .eq("user_id", me);
+
+        const conversationIds = (myParticipation || []).map((row: any) => row.conversation_id);
+        if (conversationIds.length > 0) {
+          const { data: partnerRows } = await supabase
+            .from("conversation_participants")
+            .select("user_id")
+            .in("conversation_id", conversationIds)
+            .neq("user_id", me);
+
+          for (const row of partnerRows || []) {
+            if (row.user_id) excluded.add(row.user_id);
+          }
+        }
+
+        setExcludeUserIds([...excluded]);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    loadCurrentUserAndExclusions();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
     const fetchRecs = async () => {
       setLoadingRecs(true)
       try {
-        const res = await fetch(`/api/discover?recommended=true`);
+        const params = new URLSearchParams({ recommended: "true" });
+        if (currentUserId) params.set("currentUserId", currentUserId);
+        if (excludeUserIds.length > 0) params.set("excludeUserIds", excludeUserIds.join(","));
+        const res = await fetch(`/api/discover?${params.toString()}`);
         if (res.ok) {
           const data = await res.json();
           setRecommended(data);
@@ -33,7 +83,7 @@ export default function DiscoverPage() {
       setLoadingRecs(false);
     };
     fetchRecs();
-  }, []);
+  }, [currentUserId, excludeUserIds]);
 
   useEffect(() => {
     const fetchLanguages = async () => {
@@ -54,7 +104,13 @@ export default function DiscoverPage() {
     const timer = setTimeout(async () => {
       setLoadingFilt(true)
       try {
-        const url = `/api/discover?language=${search}&level=${levelFilter}`;
+        const params = new URLSearchParams({
+          language: search,
+          level: levelFilter,
+        });
+        if (currentUserId) params.set("currentUserId", currentUserId);
+        if (excludeUserIds.length > 0) params.set("excludeUserIds", excludeUserIds.join(","));
+        const url = `/api/discover?${params.toString()}`;
         const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
@@ -64,7 +120,7 @@ export default function DiscoverPage() {
       setLoadingFilt(false)
     }, 400);
     return () => clearTimeout(timer);
-  }, [search, levelFilter]);
+  }, [search, levelFilter, currentUserId, excludeUserIds]);
 
   async function handleConnect(partnerUserId: string) {
     try {
