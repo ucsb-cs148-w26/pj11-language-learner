@@ -106,13 +106,7 @@ Collectively decided:
   * Each task has an Issue on the Kanban board with an assignee.
   * Each PR links to its Issue (`#issue-id`), includes tags/labels, and has a short “How to review” section.
   * Kanban status is updated within 24 hours when work moves stages.
-* **Assessment of results:** (Fill in next retro)
-  * Traceability rate: ___%
-  * Stale work rate (>48h no update): ___
-  * Median cycle time (In Progress → Done): ___
-  * Last-minute PRs (last 24h): ___%
-  * Notes: ______________________________________
+* **Assessment of results:**
+  * Natalie cites having only had to make one comment on improving PR descriptions. Otherwise, descriptions have been comprehensive, Kanban has been timely updated. 
 * **Decision going forward:** (Fill in next retro)
-  * ☐ Keep the change
-  * ☐ Revert to previous procedure
-  * ☐ Modify the procedure / new experiment: ______________________
+  * ☐ Keep the change, work toward 0 deficient PR descriptions
