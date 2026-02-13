@@ -5,22 +5,22 @@ type DiscoverRow = {
   user_id: string;
   language_id: number;
   level: string | null;
-  profiles: {
+  profiles: Array<{
     first_name: string | null;
     native_language: string | null;
     updated_at: string | null;
-  } | null;
-  lang: {
+  }> | null;
+  lang: Array<{
     name: string | null;
-  } | null;
+  }> | null;
 };
 
 type UserTargetRow = {
   language_id: number;
   level: string | null;
-  lang: {
+  lang: Array<{
     name: string | null;
-  } | null;
+  }> | null;
 };
 
 type CandidateTarget = {
@@ -94,16 +94,16 @@ export async function GET(req: NextRequest) {
     const existing = grouped.get(row.user_id);
     const nextTarget: CandidateTarget = {
       language_id: row.language_id,
-      name: row.lang?.name ?? "None",
+      name: row.lang?.[0]?.name ?? "None",
       level: (row.level ?? "beginner").toLowerCase(),
     };
 
     if (!existing) {
       grouped.set(row.user_id, {
         id: row.user_id,
-        first_name: row.profiles?.first_name ?? null,
-        native_language: row.profiles?.native_language ?? null,
-        updated_at: row.profiles?.updated_at ?? null,
+        first_name: row.profiles?.[0]?.first_name ?? null,
+        native_language: row.profiles?.[0]?.native_language ?? null,
+        updated_at: row.profiles?.[0]?.updated_at ?? null,
         targets: [nextTarget],
       });
       continue;
@@ -140,7 +140,7 @@ export async function GET(req: NextRequest) {
       .eq("user_id", currentUserId);
 
     for (const row of (userTargetRows as UserTargetRow[]) ?? []) {
-      const targetName = row.lang?.name ?? "";
+      const targetName = row.lang?.[0]?.name ?? "";
       const normalizedTargetName = normalizeLanguage(targetName);
       userTargets.set(row.language_id, {
         name: targetName,
