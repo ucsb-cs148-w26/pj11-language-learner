@@ -15,6 +15,7 @@ export default function DiscoverPage() {
 
   const [search, setSearch] = useState('');
   const [levelFilter, setLevelFilter] = useState<string>('All');
+  const [languages, setLanguages] = useState<any[]>([]);
 
   const router = useRouter();
   const [connectingId, setConnectingId] = useState<string | null>(null);
@@ -32,6 +33,21 @@ export default function DiscoverPage() {
       setLoadingRecs(false);
     };
     fetchRecs();
+  }, []);
+
+  useEffect(() => {
+    const fetchLanguages = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("languages")
+          .select("id, name")
+          .order("name", { ascending: true });
+
+        if (error) throw error;
+        setLanguages(data || []);
+      } catch (e) { console.error(e); }
+    };
+    fetchLanguages();
   }, []);
 
   useEffect(() => {
@@ -98,7 +114,11 @@ export default function DiscoverPage() {
               ))
             ) : (
               recommended.map((partner) => (
-                <div key={partner.id} className="min-w-[280px] flex-shrink-0 border border-zinc-200 rounded-2xl p-6 bg-white hover:border-zinc-300 transition-all shadow-sm">
+                <Link 
+                  key={partner.id} 
+                  href={`/profile/${partner.id}`}
+                  className="min-w-[280px] flex-shrink-0 border border-zinc-200 rounded-2xl p-6 bg-white hover:border-zinc-300 transition-all shadow-sm cursor-pointer"
+                >
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-10 h-10 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-600 border border-zinc-200">
                       {partner.first_name?.[0] || 'U'}
@@ -111,13 +131,17 @@ export default function DiscoverPage() {
                     {partner.level}
                   </p>
                   <button
-                    onClick={() => handleConnect(partner.id)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleConnect(partner.id);
+                    }}
                     disabled={connectingId === partner.id}
                     className="w-full py-2 bg-zinc-900 text-white text-sm font-medium rounded-xl hover:opacity-90 transition"
                   >
                     {connectingId === partner.id ? "Connecting..." : "Connect"}
-                </button>
-                </div>
+                  </button>
+                </Link>
               ))
             )}
           </div>
@@ -133,13 +157,16 @@ export default function DiscoverPage() {
               <div className="space-y-4">
                 <div>
                   <label className="text-xs font-medium text-zinc-500 uppercase mb-1.5 block">Language</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Spanish"
+                  <select
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="w-full p-2.5 text-sm border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-zinc-900/5 transition bg-zinc-50"
-                  />
+                  >
+                    <option value="">All</option>
+                    {languages.map((l) => (
+                      <option key={l.id} value={l.name}>{l.name}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
@@ -181,10 +208,14 @@ export default function DiscoverPage() {
             ) : (
               <div className="grid grid-cols-1 gap-4">
                 {filtered.map((partner) => (
-                  <div key={partner.id} className="group border border-zinc-200 p-5 rounded-2xl hover:border-zinc-300 transition bg-white shadow-sm flex items-center justify-between">
+                  <Link
+                    key={partner.id}
+                    href={`/profile/${partner.id}`}
+                    className="group border border-zinc-200 p-5 rounded-2xl hover:border-zinc-300 transition bg-white shadow-sm flex items-center justify-between cursor-pointer"
+                  >
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-full bg-zinc-50 border border-zinc-200 flex items-center justify-center text-zinc-400 group-hover:bg-zinc-100 transition">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                       </div>
                       <div>
                         <p className="font-semibold text-zinc-900">{partner.first_name}</p>
@@ -193,13 +224,10 @@ export default function DiscoverPage() {
                         </p>
                       </div>
                     </div>
-                    <Link 
-                      href={`/profile/${partner.id}`} // TBDDDD link to public profile by id
-                      className="px-4 py-2 text-sm font-medium border border-zinc-200 rounded-xl hover:bg-zinc-50 transition"
-                    >
+                    <div className="px-4 py-2 text-sm font-medium border border-zinc-200 rounded-xl bg-zinc-50 transition">
                       View Profile
-                    </Link>
-                  </div>
+                    </div>
+                  </Link>
                 ))}
               </div>
             )}
