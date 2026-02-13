@@ -5,12 +5,18 @@ type DiscoverRow = {
   user_id: string;
   language_id: number;
   level: string | null;
-  profiles: Array<{
+  profiles: {
+    first_name: string | null;
+    native_language: string | null;
+    updated_at: string | null;
+  } | Array<{
     first_name: string | null;
     native_language: string | null;
     updated_at: string | null;
   }> | null;
-  lang: Array<{
+  lang: {
+    name: string | null;
+  } | Array<{
     name: string | null;
   }> | null;
 };
@@ -18,7 +24,9 @@ type DiscoverRow = {
 type UserTargetRow = {
   language_id: number;
   level: string | null;
-  lang: Array<{
+  lang: {
+    name: string | null;
+  } | Array<{
     name: string | null;
   }> | null;
 };
@@ -43,10 +51,6 @@ const LEVEL_RANK: Record<string, number> = {
   advanced: 3,
 };
 
-function normalizeLanguage(value: string | null | undefined): string {
-  return (value ?? "").trim().toLowerCase();
-}
-
 function toDisplayLevel(level: string | null | undefined): string {
   if (!level) return "Beginner";
   return level.charAt(0).toUpperCase() + level.slice(1);
@@ -56,6 +60,11 @@ function rankLevel(level: string | null | undefined): number {
   return LEVEL_RANK[(level ?? "").toLowerCase()] ?? 0;
 }
 
+function firstRelation<T>(value: T | T[] | null | undefined): T | null {
+  if (!value) return null;
+  return Array.isArray(value) ? (value[0] ?? null) : value;
+}
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const languageFilter = searchParams.get("language");
@@ -63,6 +72,10 @@ export async function GET(req: NextRequest) {
   const isRecommended = searchParams.get("recommended") === "true";
   const currentUserId = searchParams.get("currentUserId");
   const excludeUserIdsParam = searchParams.get("excludeUserIds");
+  const rawPage = Number.parseInt(searchParams.get("page") ?? "1", 10);
+  const rawPageSize = Number.parseInt(searchParams.get("pageSize") ?? "10", 10);
+  const page = Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1;
+  const pageSize = Number.isFinite(rawPageSize) && rawPageSize > 0 ? Math.min(rawPageSize, 50) : 10;
 
   let query = supabaseClient
     .from("profile_target_languages")
@@ -92,18 +105,20 @@ export async function GET(req: NextRequest) {
   const grouped = new Map<string, Candidate>();
   for (const row of (profiles as DiscoverRow[]) ?? []) {
     const existing = grouped.get(row.user_id);
+    const lang = firstRelation(row.lang);
+    const profile = firstRelation(row.profiles);
     const nextTarget: CandidateTarget = {
       language_id: row.language_id,
-      name: row.lang?.[0]?.name ?? "None",
+      name: lang?.name ?? "None",
       level: (row.level ?? "beginner").toLowerCase(),
     };
 
     if (!existing) {
       grouped.set(row.user_id, {
         id: row.user_id,
-        first_name: row.profiles?.[0]?.first_name ?? null,
-        native_language: row.profiles?.[0]?.native_language ?? null,
-        updated_at: row.profiles?.[0]?.updated_at ?? null,
+        first_name: profile?.first_name ?? null,
+        native_language: profile?.native_language ?? null,
+        updated_at: profile?.updated_at ?? null,
         targets: [nextTarget],
       });
       continue;
@@ -121,7 +136,7 @@ export async function GET(req: NextRequest) {
 
   if (currentUserId) excludedUserIds.add(currentUserId);
 
-  let userNativeNorm = "";
+  let userNativeLanguage = "";
   const userTargets = new Map<number, { name: string; level: string }>();
   const userTargetNameSet = new Set<string>();
 
@@ -132,7 +147,7 @@ export async function GET(req: NextRequest) {
       .eq("user_id", currentUserId)
       .maybeSingle();
 
-    userNativeNorm = normalizeLanguage(userProfile?.native_language ?? "");
+    userNativeLanguage = userProfile?.native_language ?? "";
 
     const { data: userTargetRows } = await supabaseClient
       .from("profile_target_languages")
@@ -140,33 +155,32 @@ export async function GET(req: NextRequest) {
       .eq("user_id", currentUserId);
 
     for (const row of (userTargetRows as UserTargetRow[]) ?? []) {
-      const targetName = row.lang?.[0]?.name ?? "";
-      const normalizedTargetName = normalizeLanguage(targetName);
+      const targetName = firstRelation(row.lang)?.name ?? "";
       userTargets.set(row.language_id, {
         name: targetName,
         level: (row.level ?? "beginner").toLowerCase(),
       });
-      if (normalizedTargetName) userTargetNameSet.add(normalizedTargetName);
+      if (targetName) userTargetNameSet.add(targetName);
     }
   }
 
-  const hasRankingContext = Boolean(userNativeNorm) && userTargets.size > 0;
+  const hasRankingContext = Boolean(userNativeLanguage) && userTargets.size > 0;
   const userTargetIdSet = new Set<number>([...userTargets.keys()]);
 
   const scored = [...grouped.values()]
     .filter((candidate) => !excludedUserIds.has(candidate.id))
     .map((candidate) => {
-      const candidateNativeNorm = normalizeLanguage(candidate.native_language);
+      const candidateNativeLanguage = candidate.native_language ?? "";
       const sharedTargets = candidate.targets.filter((target) =>
         userTargetIdSet.has(target.language_id),
       );
       const hasSharedTarget = sharedTargets.length > 0;
 
-      const candidateLearnsUserNative = userNativeNorm
-        ? candidate.targets.some((target) => normalizeLanguage(target.name) === userNativeNorm)
+      const candidateLearnsUserNative = userNativeLanguage
+        ? candidate.targets.some((target) => target.name === userNativeLanguage)
         : false;
-      const userLearnsCandidateNative = candidateNativeNorm
-        ? userTargetNameSet.has(candidateNativeNorm)
+      const userLearnsCandidateNative = candidateNativeLanguage
+        ? userTargetNameSet.has(candidateNativeLanguage)
         : false;
       const isMutualExchange = hasRankingContext && candidateLearnsUserNative && userLearnsCandidateNative;
 
@@ -220,6 +234,21 @@ export async function GET(req: NextRequest) {
   });
 
   const partners = scored.map(({ tier: _tier, levelDelta: _levelDelta, updated_at: _updatedAt, ...rest }) => rest);
-  const response = isRecommended ? partners.slice(0, 5) : partners;
-  return NextResponse.json(response);
+  if (isRecommended) {
+    return NextResponse.json(partners.slice(0, 5));
+  }
+
+  const total = partners.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const start = (safePage - 1) * pageSize;
+  const items = partners.slice(start, start + pageSize);
+
+  return NextResponse.json({
+    items,
+    total,
+    page: safePage,
+    pageSize,
+    totalPages,
+  });
 }
