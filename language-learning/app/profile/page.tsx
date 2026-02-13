@@ -50,7 +50,7 @@ async function fetchMyProfile(): Promise<Profile> {
     // Fetch profile data
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
-      .select('first_name, last_name, bio, level, native_language')
+      .select('first_name, last_name, bio, native_language, profile_picture_url')
       .eq('user_id', userId)
       .single();
 
@@ -77,22 +77,25 @@ async function fetchMyProfile(): Promise<Profile> {
 
     // Fetch target languages from separate table
     const { data: targetLanguagesData, error: targetLanguagesError } = await supabase
-      .from('profile_target_languages')
-      .select('language')
-      .eq('user_id', userId);
+      .from("profile_target_languages")
+      .select("level, languages(name)")
+      .eq("user_id", userId)
+      .limit(1);
 
     // Get first target language (or null if none)
-    const targetLanguage = targetLanguagesData && targetLanguagesData.length > 0 
-      ? targetLanguagesData[0].language 
-      : null;
+    const firstTL =
+      targetLanguagesData && targetLanguagesData.length > 0 ? targetLanguagesData[0] : null;
+
+    const targetLanguage = (firstTL as any)?.languages?.name ?? null;
+    const level = firstTL?.level ?? null;
 
     return {
       firstName: profileData.first_name,
       lastName: profileData.last_name,
       bio: profileData.bio,
       targetLanguage: targetLanguage,
-      level: levelToDisplay(profileData.level),
-      profilePicture: null, // profile_picture column doesn't exist in table
+      level: levelToDisplay(level),
+      profilePicture: profileData.profile_picture_url,
       nativeLanguage: profileData.native_language,
     };
   } catch (e) {
