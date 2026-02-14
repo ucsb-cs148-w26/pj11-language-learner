@@ -6,19 +6,9 @@ import type { DiscoverListResponse, DiscoverPartner } from "./types";
 
 const PAGE_SIZE = 10;
 
-type ConversationIdRow = {
-  conversation_id: string;
-};
-
-type ConversationUserRow = {
-  user_id: string;
-};
-
 export function useDiscoverData() {
   const [recommended, setRecommended] = useState<DiscoverPartner[]>([]);
   const [filtered, setFiltered] = useState<DiscoverPartner[]>([]);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [excludeUserIds, setExcludeUserIds] = useState<string[]>([]);
 
   const [loadingRecs, setLoadingRecs] = useState(true);
   const [loadingFilt, setLoadingFilt] = useState(true);
@@ -32,72 +22,17 @@ export function useDiscoverData() {
   const [showingCount, setShowingCount] = useState(0);
 
   useEffect(() => {
-    let mounted = true;
-    const loadCurrentUserAndExclusions = async () => {
-      try {
-        const { data } = await supabase.auth.getUser();
-        const me = data.user?.id ?? null;
-        if (!mounted) return;
-        setCurrentUserId(me);
-
-        if (!me) {
-          setExcludeUserIds([]);
-          return;
-        }
-
-        const excluded = new Set<string>([me]);
-
-        const { data: myParticipation } = await supabase
-          .from("conversation_participants")
-          .select("conversation_id")
-          .eq("user_id", me);
-
-        const conversationIds = ((myParticipation as ConversationIdRow[]) ?? []).map(
-          (row) => row.conversation_id,
-        );
-
-        if (conversationIds.length > 0) {
-          const { data: partnerRows } = await supabase
-            .from("conversation_participants")
-            .select("user_id")
-            .in("conversation_id", conversationIds)
-            .neq("user_id", me);
-
-          for (const row of (partnerRows as ConversationUserRow[]) ?? []) {
-            if (row.user_id) excluded.add(row.user_id);
-          }
-        }
-
-        setExcludeUserIds([...excluded]);
-      } catch (e) {
-        console.error(e);
-      }
-    };
-    loadCurrentUserAndExclusions();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    const fetchRecs = async () => {
-      setLoadingRecs(true);
-      try {
-        const params = new URLSearchParams({ recommended: "true" });
-        if (currentUserId) params.set("currentUserId", currentUserId);
-        if (excludeUserIds.length > 0) params.set("excludeUserIds", excludeUserIds.join(","));
-        const res = await fetch(`/api/discover?${params.toString()}`);
-        if (res.ok) {
-          const data = (await res.json()) as DiscoverPartner[];
-          setRecommended(data);
-        }
-      } catch (e) {
-        console.error(e);
-      }
-      setLoadingRecs(false);
-    };
-    fetchRecs();
-  }, [currentUserId, excludeUserIds]);
+  async function fetchRecs() {
+    setLoadingRecs(true);
+    const res = await fetch(`/api/discover?recommended=true`);
+    if (res.ok) {
+      const data = await res.json();
+      setRecommended(data);
+    }
+    setLoadingRecs(false);
+  }
+  fetchRecs();
+}, []);
 
   useEffect(() => {
     const fetchLanguages = async () => {
@@ -130,8 +65,7 @@ export function useDiscoverData() {
           page: String(page),
           pageSize: String(PAGE_SIZE),
         });
-        if (currentUserId) params.set("currentUserId", currentUserId);
-        if (excludeUserIds.length > 0) params.set("excludeUserIds", excludeUserIds.join(","));
+  
         const res = await fetch(`/api/discover?${params.toString()}`);
         if (res.ok) {
           const data = (await res.json()) as DiscoverListResponse | DiscoverPartner[];
@@ -149,21 +83,7 @@ export function useDiscoverData() {
       setLoadingFilt(false);
     }, 400);
     return () => clearTimeout(timer);
-  }, [search, levelFilter, page, currentUserId, excludeUserIds]);
-
-  const resetFilters = () => {
-    setSearch("");
-    setLevelFilter("All");
-    setPage(1);
-  };
-
-  const goPrevPage = () => {
-    setPage((p) => Math.max(1, p - 1));
-  };
-
-  const goNextPage = () => {
-    setPage((p) => Math.min(totalPages, p + 1));
-  };
+  }, [search, levelFilter, page]);
 
   return {
     recommended,
@@ -178,9 +98,9 @@ export function useDiscoverData() {
     showingCount,
     setSearch,
     setLevelFilter,
-    resetFilters,
-    goPrevPage,
-    goNextPage,
+    resetFilters: () => { setSearch(""); setLevelFilter("All"); setPage(1); },
+    goPrevPage: () => setPage((p) => Math.max(1, p - 1)),
+    goNextPage: () => setPage((p) => Math.min(totalPages, p + 1)),
   };
 }
 

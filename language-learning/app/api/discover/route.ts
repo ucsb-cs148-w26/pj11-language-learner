@@ -1,49 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase as supabaseClient } from "@/lib/supabaseClient";
+import { createClient } from '@/lib/supabaseServer'
 
-type DiscoverRow = {
-  user_id: string;
-  language_id: number;
-  level: string | null;
-  profiles: {
-    first_name: string | null;
-    native_language: string | null;
-    updated_at: string | null;
-  } | Array<{
-    first_name: string | null;
-    native_language: string | null;
-    updated_at: string | null;
-  }> | null;
-  lang: {
-    name: string | null;
-  } | Array<{
-    name: string | null;
-  }> | null;
-};
-
-type UserTargetRow = {
-  language_id: number;
-  level: string | null;
-  lang: {
-    name: string | null;
-  } | Array<{
-    name: string | null;
-  }> | null;
-};
-
-type CandidateTarget = {
-  language_id: number;
-  name: string;
-  level: string;
-};
-
-type Candidate = {
-  id: string;
-  first_name: string | null;
-  native_language: string | null;
-  updated_at: string | null;
-  targets: CandidateTarget[];
-};
+import { 
+  DiscoverRow, 
+  Candidate, 
+  CandidateTarget, 
+} from "@/app/discover/types";
 
 const LEVEL_RANK: Record<string, number> = {
   beginner: 1,
@@ -66,33 +28,67 @@ function firstRelation<T>(value: T | T[] | null | undefined): T | null {
 }
 
 export async function GET(req: NextRequest) {
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (!user || authError) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { searchParams } = new URL(req.url);
   const languageFilter = searchParams.get("language");
   const levelFilter = searchParams.get("level");
   const isRecommended = searchParams.get("recommended") === "true";
-  const currentUserId = searchParams.get("currentUserId");
-  const excludeUserIdsParam = searchParams.get("excludeUserIds");
   const rawPage = Number.parseInt(searchParams.get("page") ?? "1", 10);
   const rawPageSize = Number.parseInt(searchParams.get("pageSize") ?? "10", 10);
   const page = Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1;
   const pageSize = Number.isFinite(rawPageSize) && rawPageSize > 0 ? Math.min(rawPageSize, 50) : 10;
 
-  let query = supabaseClient
+  const [
+    { data: userProfile }, 
+    { data: userTargetRows },
+    { data: existingConversations }
+  ] = await Promise.all([
+    supabase.from("profiles").select("native_language").eq("user_id", user.id).maybeSingle(),
+    supabase.from("profile_target_languages").select("language_id, level, lang:languages!inner(name)").eq("user_id", user.id),
+    supabase.from("conversation_participants").select("conversation_id").eq("user_id", user.id)
+  ]);
+
+  const userNative = userProfile?.native_language ?? "";
+  const userTargets = new Map(userTargetRows?.map(r => [r.language_id, { name: (r.lang as any).name, level: r.level }]) ?? []);
+  const userTargetNameSet = new Set(userTargetRows?.map(r => (r.lang as any).name));
+  const userTargetIdSet = new Set(userTargets.keys());
+
+  const myConvIds = existingConversations?.map(c => c.conversation_id) || [];
+  let partnerIds: string[] = [];
+
+  if (myConvIds.length > 0) {
+    const { data: partners } = await supabase
+      .from("conversation_participants")
+      .select("user_id")
+      .in("conversation_id", myConvIds)
+      .neq("user_id", user.id);
+    
+    partnerIds = partners?.map(p => p.user_id) || [];
+  }
+  const excludeList = [user.id, ...partnerIds];
+
+  let query = supabase
     .from("profile_target_languages")
     .select(`
       user_id,
       language_id,
       level,
       profiles!inner(first_name, native_language, updated_at),
-      lang:languages!profile_target_languages_language_id_fkey!inner(name)
-    `);
+      lang:languages!inner(name)
+    `)
+    .not('user_id', 'in', `(${excludeList.join(',')})`);
 
   if (levelFilter && levelFilter !== "All") {
-    query = query.eq("level", levelFilter.toLowerCase());
+    query = query.ilike('level', levelFilter);
   }
 
   if (languageFilter && languageFilter.trim() !== "") {
-    query = query.eq("lang.name", languageFilter.trim());
+    query = query.ilike('lang.name', `%${languageFilter.trim()}%`);
   }
 
   const { data: profiles, error } = await query;
@@ -127,64 +123,22 @@ export async function GET(req: NextRequest) {
     existing.targets.push(nextTarget);
   }
 
-  const excludedUserIds = new Set<string>(
-    (excludeUserIdsParam ?? "")
-      .split(",")
-      .map((id) => id.trim())
-      .filter(Boolean),
-  );
-
-  if (currentUserId) excludedUserIds.add(currentUserId);
-
-  let userNativeLanguage = "";
-  const userTargets = new Map<number, { name: string; level: string }>();
-  const userTargetNameSet = new Set<string>();
-
-  if (currentUserId) {
-    const { data: userProfile } = await supabaseClient
-      .from("profiles")
-      .select("native_language")
-      .eq("user_id", currentUserId)
-      .maybeSingle();
-
-    userNativeLanguage = userProfile?.native_language ?? "";
-
-    const { data: userTargetRows } = await supabaseClient
-      .from("profile_target_languages")
-      .select("language_id, level, lang:languages!profile_target_languages_language_id_fkey(name)")
-      .eq("user_id", currentUserId);
-
-    for (const row of (userTargetRows as UserTargetRow[]) ?? []) {
-      const targetName = firstRelation(row.lang)?.name ?? "";
-      userTargets.set(row.language_id, {
-        name: targetName,
-        level: (row.level ?? "beginner").toLowerCase(),
-      });
-      if (targetName) userTargetNameSet.add(targetName);
-    }
-  }
-
-  const hasRankingContext = Boolean(userNativeLanguage) && userTargets.size > 0;
-  const userTargetIdSet = new Set<number>([...userTargets.keys()]);
-
-  const scored = [...grouped.values()]
-    .filter((candidate) => !excludedUserIds.has(candidate.id))
-    .map((candidate) => {
+  const scored = [...grouped.values()].map((candidate) => {
       const candidateNativeLanguage = candidate.native_language ?? "";
       const sharedTargets = candidate.targets.filter((target) =>
         userTargetIdSet.has(target.language_id),
       );
       const hasSharedTarget = sharedTargets.length > 0;
 
-      const candidateLearnsUserNative = userNativeLanguage
-        ? candidate.targets.some((target) => target.name === userNativeLanguage)
+      const candidateLearnsUserNative = userNative
+        ? candidate.targets.some((target) => target.name === userNative)
         : false;
       const userLearnsCandidateNative = candidateNativeLanguage
         ? userTargetNameSet.has(candidateNativeLanguage)
         : false;
-      const isMutualExchange = hasRankingContext && candidateLearnsUserNative && userLearnsCandidateNative;
+      const isMutualExchange = candidateLearnsUserNative && userLearnsCandidateNative;
 
-      let levelDelta = Number.NEGATIVE_INFINITY;
+      let levelDelta = 0;
       for (const target of sharedTargets) {
         const myTarget = userTargets.get(target.language_id);
         if (!myTarget) continue;
@@ -192,7 +146,7 @@ export async function GET(req: NextRequest) {
         if (delta > levelDelta) levelDelta = delta;
       }
 
-      const tier = !hasRankingContext ? 2 : isMutualExchange ? 0 : hasSharedTarget ? 1 : 2;
+      const tier = isMutualExchange ? 0 : hasSharedTarget ? 1 : 2;
 
       const sortedTargets = [...candidate.targets].sort((a, b) => {
         const sharedA = userTargetIdSet.has(a.language_id) ? 1 : 0;
