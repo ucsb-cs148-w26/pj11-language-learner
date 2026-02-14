@@ -11,7 +11,7 @@
 
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ChatLeftPanel from "./ChatLeftPanel";
 import ChatRightPanel from "./ChatRightPanel";
 import Link from 'next/link'
@@ -42,18 +42,14 @@ export type Conversation = {
 
 type ChatProps = {
   conversations: Conversation[];
-  initialConversationId?: string;
+  selectedConversationId: string;
   onSelectConversationId?: (conversationId: string) => void;
   onSendMessage?: (conversationId: string, text: string) => Promise<void>;
 };
 
-export default function Chat({ conversations, initialConversationId, onSelectConversationId, onSendMessage }: ChatProps) {
-  const defaultId = initialConversationId ?? conversations[0]?.conversationId ?? "";
-  const [selectedConversationId, setSelectedConversationId] = useState(defaultId);
-
+export default function Chat({ conversations, selectedConversationId, onSelectConversationId, onSendMessage }: ChatProps) {
   function handleSelectConversation(id: string) {
-    setSelectedConversationId(id);
-    onSelectConversationId?.(id); 
+    onSelectConversationId?.(id);
   }
 
   const selected = useMemo(
