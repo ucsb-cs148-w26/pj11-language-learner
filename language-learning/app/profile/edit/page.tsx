@@ -1,7 +1,7 @@
 // app/(app)/profile/edit/page.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -220,6 +220,44 @@ async function saveMyProfile(payload: ProfileAPI): Promise<void> {
 
 export default function EditProfilePage() {
   const router = useRouter();
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
+
+  function onClickAvatar() {
+    fileInputRef.current?.click();
+  }
+
+  function onAvatarSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setError("Please select an image file.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Image is too large (max 5MB).");
+      return;
+    }
+
+    setError(null);
+
+    // avoid memory leak if user re-selects
+    if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+
+    const url = URL.createObjectURL(file);
+    setAvatarPreviewUrl(url);
+
+    // allow selecting same file again
+    e.target.value = "";
+  }
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+    };
+  }, [avatarPreviewUrl]);
+
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -350,6 +388,54 @@ export default function EditProfilePage() {
         )}
 
         <form onSubmit={onSubmit} className="space-y-4">
+            {/* Avatar uploader */}
+        <div className="rounded-2xl border border-zinc-200 bg-white p-6">
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={onClickAvatar}
+              className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-zinc-100 border border-zinc-200"
+              aria-label="Upload profile photo"
+            >
+              {avatarPreviewUrl ? (
+                <img
+                  src={avatarPreviewUrl}
+                  alt="Uploaded avatar preview"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-10 w-10 text-zinc-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
+                </svg>
+              )}
+            </button>
+
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-zinc-900">Profile photo</p>
+              <p className="text-xs text-zinc-600">Click the avatar to upload a new one (max 5MB).</p>
+            </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={onAvatarSelected}
+            />
+          </div>
+        </div>
+
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-2xl border border-zinc-200 bg-white p-6">
               <Field label="First name">
