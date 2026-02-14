@@ -1,70 +1,34 @@
 'use client'
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import DiscoverPagination from "./DiscoverPagination";
+import { useDiscoverData } from "./useDiscoverData";
 
 const levels = ['All', 'Beginner', 'Intermediate', 'Advanced'];
 
 export default function DiscoverPage() {
-  const [recommended, setRecommended] = useState<any[]>([]);
-  const [filtered, setFiltered] = useState<any[]>([]);
-
-  const[loadingRecs, setLoadingRecs] = useState(true);
-  const[loadingFilt, setLoadingFilt] = useState(true);
-
-  const [search, setSearch] = useState('');
-  const [levelFilter, setLevelFilter] = useState<string>('All');
-  const [languages, setLanguages] = useState<any[]>([]);
+  const {
+    recommended,
+    filtered,
+    loadingRecs,
+    loadingFilt,
+    search,
+    levelFilter,
+    languages,
+    page,
+    totalPages,
+    showingCount,
+    setSearch,
+    setLevelFilter,
+    resetFilters,
+    goPrevPage,
+    goNextPage,
+  } = useDiscoverData();
 
   const router = useRouter();
   const [connectingId, setConnectingId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchRecs = async () => {
-      setLoadingRecs(true)
-      try {
-        const res = await fetch(`/api/discover?recommended=true`);
-        if (res.ok) {
-          const data = await res.json();
-          setRecommended(data);
-        }
-      } catch (e) { console.error(e); }
-      setLoadingRecs(false);
-    };
-    fetchRecs();
-  }, []);
-
-  useEffect(() => {
-    const fetchLanguages = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("languages")
-          .select("id, name")
-          .order("name", { ascending: true });
-
-        if (error) throw error;
-        setLanguages(data || []);
-      } catch (e) { console.error(e); }
-    };
-    fetchLanguages();
-  }, []);
-
-  useEffect(() => {
-    const timer = setTimeout(async () => {
-      setLoadingFilt(true)
-      try {
-        const url = `/api/discover?language=${search}&level=${levelFilter}`;
-        const res = await fetch(url);
-        if (res.ok) {
-          const data = await res.json();
-          setFiltered(data);
-        }
-      } catch (e) { console.error(e); }
-      setLoadingFilt(false)
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [search, levelFilter]);
 
   async function handleConnect(partnerUserId: string) {
     try {
@@ -87,11 +51,6 @@ export default function DiscoverPage() {
       setConnectingId(null);
     }
   }
-
-  const resetFilters = () => {
-    setSearch('');
-    setLevelFilter('All');
-  };
 
   return (
     <div className="min-h-screen bg-white text-zinc-900 w-full">
@@ -206,29 +165,38 @@ export default function DiscoverPage() {
                 <p className="text-zinc-500 text-sm">No partners match your current filters.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-4">
-                {filtered.map((partner) => (
-                  <Link
-                    key={partner.id}
-                    href={`/profile/${partner.id}`}
-                    className="group border border-zinc-200 p-5 rounded-2xl hover:border-zinc-300 transition bg-white shadow-sm flex items-center justify-between cursor-pointer"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-zinc-50 border border-zinc-200 flex items-center justify-center text-zinc-400 group-hover:bg-zinc-100 transition">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+              <div className="space-y-4">
+                <DiscoverPagination
+                  page={page}
+                  totalPages={totalPages}
+                  showingCount={showingCount}
+                  onPrev={goPrevPage}
+                  onNext={goNextPage}
+                />
+                <div className="grid grid-cols-1 gap-4">
+                  {filtered.map((partner) => (
+                    <Link
+                      key={partner.id}
+                      href={`/profile/${partner.id}`}
+                      className="group border border-zinc-200 p-5 rounded-2xl hover:border-zinc-300 transition bg-white shadow-sm flex items-center justify-between cursor-pointer"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-zinc-50 border border-zinc-200 flex items-center justify-center text-zinc-400 group-hover:bg-zinc-100 transition">
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-zinc-900">{partner.first_name}</p>
+                          <p className="text-sm text-zinc-600">
+                            Learning {partner.target_language} • {partner.level}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-semibold text-zinc-900">{partner.first_name}</p>
-                        <p className="text-sm text-zinc-600">
-                          Learning {partner.target_language} • {partner.level}
-                        </p>
+                      <div className="px-4 py-2 text-sm font-medium border border-zinc-200 rounded-xl bg-zinc-50 transition">
+                        View Profile
                       </div>
-                    </div>
-                    <div className="px-4 py-2 text-sm font-medium border border-zinc-200 rounded-xl bg-zinc-50 transition">
-                      View Profile
-                    </div>
-                  </Link>
-                ))}
+                    </Link>
+                  ))}
+                </div>
               </div>
             )}
           </div>
