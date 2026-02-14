@@ -62,10 +62,10 @@ export default function Chat({ conversations, initialConversationId, onSelectCon
   );
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-white">
-      <div className="grid h-full grid-cols-1 md:grid-cols-[320px_1fr]">
+    <div className="h-full w-full min-h-0 overflow-hidden bg-white">
+      <div className="grid h-full min-h-0 grid-cols-1 md:grid-cols-[320px_1fr]">
         {/* Left sidebar */}
-        <div className="hidden h-full md:block">
+        <div className="hidden h-full min-h-0 md:block">
           <ChatLeftPanel
             chats={conversations.map((c) => ({
               conversationId: c.conversationId,
@@ -83,7 +83,7 @@ export default function Chat({ conversations, initialConversationId, onSelectCon
         </div>
 
         {/* Right panel */}
-        <div className="min-w-0 h-full">
+        <div className="min-w-0 h-full min-h-0 overflow-hidden">
           {selected ? (
             <ChatRightPanel
               partnerId={selected.partnerId}

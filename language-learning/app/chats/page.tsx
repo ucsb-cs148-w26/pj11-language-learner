@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import Chat, { Conversation } from "@/components/chat/Chat";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -31,6 +32,10 @@ type DbProfile = {
 };
 
 export default function Chats() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const cFromUrl = searchParams.get("c");
+  
   const [loading, setLoading] = useState(true);
   const [myUserId, setMyUserId] = useState<string | null>(null);
 
@@ -205,12 +210,16 @@ export default function Chats() {
         };
       });
 
+      const preferred =
+      cFromUrl && ui.some((x) => x.conversationId === cFromUrl)
+        ? cFromUrl
+        : ui[0]?.conversationId ?? null;
+
       if (cancelled) return;
 
       setConversations(ui);
-      setSelectedConversationId(ui[0]?.conversationId ?? null);
+      setSelectedConversationId(preferred);
       setLoading(false);
-
     }
 
     loadList().catch((e) => {
@@ -222,6 +231,14 @@ export default function Chats() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!cFromUrl) return;
+
+    if (conversations.some((x) => x.conversationId === cFromUrl)) {
+      setSelectedConversationId(cFromUrl);
+    }
+  }, [cFromUrl, conversations]);
 
   // Fetch messages for a given conversation and patch into state
   async function loadMessagesForConversation(conversationId: string, userId: string) {
@@ -285,40 +302,40 @@ export default function Chats() {
 
   if (loading) {
     return (
-      <main className="h-screen overflow-hidden bg-zinc-50 flex items-center justify-center">
+      <div className="flex-1 min-h-0 flex items-center justify-center bg-zinc-50">
         <div className="text-zinc-600">Loading chats…</div>
-      </main>
+      </div>
     );
   }
 
   if (!myUserId) {
     return (
-      <main className="h-screen overflow-hidden bg-zinc-50 flex items-center justify-center">
+      <div className="flex-1 min-h-0 flex items-center justify-center bg-zinc-50">
         <div className="text-zinc-600">Please sign in to view chats.</div>
-      </main>
+      </div>
     );
   }
 
   if (conversations.length === 0) {
     return (
-      <main className="h-screen overflow-hidden bg-zinc-50 flex items-center justify-center">
+      <div className="flex-1 min-h-0 flex items-center justify-center bg-zinc-50">
         <div className="text-zinc-600">No conversations yet.</div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="h-screen overflow-hidden bg-zinc-50">
+    <div className="flex-1 min-h-0 overflow-hidden bg-zinc-50">
       <Chat
         conversations={conversations}
         initialConversationId={initialConversationId}
         onSelectConversationId={(id) => {
           setSelectedConversationId(id);
-          // fetch messages on click
+          router.replace(`/chats?c=${encodeURIComponent(id)}`);
           if (myUserId) loadMessagesForConversation(id, myUserId).catch(console.error);
         }}
         onSendMessage={sendMessageToDb}
       />
-    </main>
+    </div>
   );
 }

@@ -204,7 +204,16 @@ export default function DashboardPage() {
     const friendsForUI =
       friends.length > 0
         ? friends
-        : []; // TO DO: Placeholder for dummy friends. User real data later.
+        : [
+          // { id: "b73dc898-2c56-464d-a43f-6bc5b804f09c", name: "Natalie Forte", targetLanguage: "Spanish", level: "Advanced" as const },
+          // { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
+          // { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
+          // { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
+          // { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
+          // { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
+          // { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
+          // { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
+        ]; // TO DO: Placeholder for dummy friends. User real data later.
 
     return (
       <div className="space-y-6">
@@ -379,9 +388,9 @@ export default function DashboardPage() {
 
   return(
     <>
-      <main className="mx-auto w-full p-6 bg-white min-h-screen">
+      <div className="mx-auto w-full p-6">
         {content}
-      </main>
+      </div>
     </>
 
   );

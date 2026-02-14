@@ -1,6 +1,7 @@
 // Combines all message bubbles in a chat.
 // Made for ChatRightPanel.tsx.
 
+import { useEffect, useMemo, useRef } from "react";
 import MessageBubble from "./MessageBubble";
 
 export type ChatMessage = {
@@ -54,7 +55,12 @@ export default function Messages({
   partnerLastName,
   partnerAvatarUrl,
 }: MessagesProps) {
+  const endRef = useRef<HTMLDivElement | null>(null);
   const sorted = [...messages].sort((a, b) => a.sentAt.localeCompare(b.sentAt));
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [sorted.length]);
 
   let lastDay: string | null = null;
 
@@ -95,6 +101,7 @@ export default function Messages({
           </div>
         );
       })}
+      <div ref={endRef} />
     </div>
   );
 }

@@ -20,16 +20,16 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className="min-h-screen flex flex-col">
         <Header />
-        {children}
+        <main className="flex-1 min-h-0 flex bg-white">
+          {children}
+        </main>
       </body>
     </html>
   );

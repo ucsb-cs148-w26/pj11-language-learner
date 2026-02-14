@@ -34,14 +34,16 @@ export default function ChatLayout({
   onSendMessage,
 }: ChatLayoutProps) {
   return (
-    <div className="flex h-[calc(100dvh)] flex-col overflow-hidden bg-white min-w-0">
-      <ChatHeader
-        partnerId={partnerId}
-        partnerFirstName={partnerFirstName}
-        partnerLastName={partnerLastName}
-        partnerAvatarUrl={partnerAvatarUrl ?? "/default-avatar.jpg"}
-        language={language}
-      />
+    <div className="h-[calc(100dvh-72px)] flex flex-col overflow-hidden">
+      <div className="shrink-0">
+        <ChatHeader
+          partnerId={partnerId}
+          partnerFirstName={partnerFirstName}
+          partnerLastName={partnerLastName}
+          partnerAvatarUrl={partnerAvatarUrl ?? "/default-avatar.jpg"}
+          language={language}
+        />
+      </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
         <Messages
@@ -52,7 +54,7 @@ export default function ChatLayout({
         />
       </div>
 
-      <div className="border-t px-4 py-3">
+      <div className="shrink-0 border-t px-4 py-3">
         <MessageComposer onSend={(text) => onSendMessage(conversationId, text)} />
       </div>
     </div>

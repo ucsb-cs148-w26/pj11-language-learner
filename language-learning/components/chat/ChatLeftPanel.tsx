@@ -1,7 +1,7 @@
 // Sidebar showing list of chat conversations with partners.
 // Made for Chat.tsx
 
-"use client";
+import Link from "next/link";
 
 type ChatListItem = {
   conversationId: string;
@@ -20,6 +20,7 @@ type ChatLeftPanelProps = {
   chats: ChatListItem[];
   selectedConversationId: string;
   onSelectConversation?: (conversationId: string) => void;
+  getChatHref?: (conversationId: string) => string;
 };
 
 function formatRelative(iso: string) {
@@ -36,11 +37,12 @@ export default function ChatLeftPanel({
   chats,
   selectedConversationId,
   onSelectConversation,
+  getChatHref, 
 }: ChatLeftPanelProps) {
   const sorted = [...chats].sort((a, b) => b.lastMessageAt.localeCompare(a.lastMessageAt));
 
   return (
-    <aside className="flex h-[calc(100dvh)] min-h-0 flex-col overflow-hidden border-r bg-white">
+    <aside className="hidden h-full min-h-0 md:flex flex-col border-r bg-white">
       {/* Header */}
       <div className="border-b px-4 py-3">
         <div className="text-lg font-semibold text-zinc-900">Conversations</div>
