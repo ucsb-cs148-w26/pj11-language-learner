@@ -204,10 +204,7 @@ export default function DashboardPage() {
     const friendsForUI =
       friends.length > 0
         ? friends
-        : [
-            { id: "b73dc898-2c56-464d-a43f-6bc5b804f09c", name: "Natalie Forte", targetLanguage: "Spanish", level: "Advanced" as const },
-            { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
-          ];
+        : []; // TO DO: Placeholder for dummy friends. User real data later.
 
     return (
       <div className="space-y-6">
