@@ -204,8 +204,8 @@ export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
           partnerLastName: last,
           partnerAvatarUrl: avatar,
           language: targetLangByUser.get(partnerId) ?? "Unknown",
-          lastMessageText: c.last_message_text ?? "",
-          lastMessageAt: c.last_message_at ?? new Date(0).toISOString(),
+          lastMessageText: c.last_message_text ?? "No messages yet",
+          lastMessageAt: c.last_message_at,
           unreadCount: 0,
           messages: [],
         };

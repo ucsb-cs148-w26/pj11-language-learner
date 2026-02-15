@@ -12,7 +12,7 @@ type ChatListItem = {
   partnerAvatarUrl: string | null;
 
   lastMessageText: string;
-  lastMessageAt: string; // ISO string
+  lastMessageAt: string | null; // ISO string
   unreadCount: number;
 };
 
@@ -23,7 +23,8 @@ type ChatLeftPanelProps = {
   getChatHref?: (conversationId: string) => string;
 };
 
-function formatRelative(iso: string) {
+function formatRelative(iso: string | null) {
+  if (!iso) return "";
   const d = new Date(iso);
   const mins = Math.max(0, Math.round((Date.now() - d.getTime()) / 60_000));
   if (mins < 60) return `${mins}m`;
@@ -39,7 +40,11 @@ export default function ChatLeftPanel({
   onSelectConversation,
   getChatHref, 
 }: ChatLeftPanelProps) {
-  const sorted = [...chats].sort((a, b) => b.lastMessageAt.localeCompare(a.lastMessageAt));
+  const sorted = [...chats].sort((a, b) => {
+    const ta = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+    const tb = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+    return tb - ta;
+  });
 
   return (
     <aside className="hidden h-full min-h-0 md:flex flex-col border-r bg-white">
@@ -79,7 +84,7 @@ export default function ChatLeftPanel({
                       {c.partnerFirstName} {c.partnerLastName}
                     </div>
                     <div className="shrink-0 text-xs text-zinc-400">
-                      {formatRelative(c.lastMessageAt)}
+                      {c.lastMessageAt ? formatRelative(c.lastMessageAt) : "New"}
                     </div>
                   </div>
 

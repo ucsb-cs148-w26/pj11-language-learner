@@ -34,7 +34,7 @@ export type Conversation = {
   language: string;
 
   lastMessageText: string;
-  lastMessageAt: string;
+  lastMessageAt: string | null;
   unreadCount: number;
 
   messages: Message[];
