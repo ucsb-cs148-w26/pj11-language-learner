@@ -7,14 +7,17 @@ export type FriendListItem = {
   name: string;
   profileHref: string;
   chatHref: string;
+  avatarUrl?: string | null;
 };
 
 export default function FriendsList({
   friends = [],
   showHeader = true,
+  showSubHeader = true,
 }: {
   friends?: FriendListItem[];
   showHeader?: boolean;
+  showSubHeader?: boolean,
 }) {
   const sorted = [...friends].sort((a, b) =>
     a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
@@ -47,23 +50,33 @@ export default function FriendsList({
         </div>
       ) : (
         <div>
-          <div className="grid grid-cols-[1fr_auto_auto] items-center gap-3 bg-zinc-50 px-4 py-3 text-sm font-semibold text-zinc-900">
-            <div className="pl-6">Name</div>
-
-            <div className="text-right pr-[48px]">Chat</div>
-            <div className="text-right pr-[40px]">Remove</div>
-          </div>
+          {showSubHeader && (
+            <div className="grid grid-cols-[1fr_auto_auto] items-center gap-3 bg-zinc-50 px-4 py-3 text-sm font-semibold text-zinc-900">
+              <div className="pl-2">Name</div>
+              <div className="text-right pr-[48px]">Chat</div>
+              <div className="text-right pr-[40px]">Remove</div>
+            </div>
+          )}
 
           {sorted.map((f) => (
             <div
               key={f.id}
-              className="grid grid-cols-[1fr_auto_auto] items-center gap-3 border-t border-zinc-200 px-4 py-3 text-sm"
+              className="grid h-17 grid-cols-[1fr_auto_auto] items-center gap-3 border-t border-zinc-200 px-4 py-3 text-sm"
             >
               <Link
                 href={f.profileHref}
-                className="inline-block rounded-lg px-3 py-1 text-zinc-900 transition hover:-translate-y-[1px] hover:bg-zinc-100"
+                className="flex items-center gap-3 min-w-0 rounded-lg px-0 py-0 bg-transparent transition"
               >
-                {f.name}
+                <img
+                  src={f.avatarUrl ?? "/default-avatar.jpg"}
+                  alt={f.name}
+                  className="h-10 w-10 rounded-full object-cover shrink-0"
+                />
+                <div className="min-w-0">
+                  <div className="truncate text-base font-medium text-zinc-900">
+                    {f.name}
+                  </div>
+                </div>
               </Link>
 
               <Link href={f.chatHref} className="mr-7 justify-self-end font-medium text-zinc-900 underline underline-offset-4 decoration-zinc-400 hover:decoration-zinc-700">

@@ -3,10 +3,11 @@ import ChatsClient from "./ChatsClient";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export default function ChatsPage({
+export default async function ChatsPage({
   searchParams,
 }: {
-  searchParams: { c?: string };
+  searchParams: Promise<{ c?: string }>;
 }) {
-  return <ChatsClient cFromUrl={searchParams.c ?? null} />;
+  const params = await searchParams;
+  return <ChatsClient cFromUrl={params.c ?? null} />;
 }

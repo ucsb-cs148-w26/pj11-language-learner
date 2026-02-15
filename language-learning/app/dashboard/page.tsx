@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import FriendsList from "@/components/friends/list";
+import ChatLeftPanel from "@/components/chat/ChatLeftPanel";
 
 // Helper function to convert database level to display format
 function levelToDisplay(level: string | null | undefined): "Beginner" | "Intermediate" | "Advanced" | null {
@@ -129,12 +130,66 @@ async function fetchDashboard(): Promise<DashboardData> {
     nativeLanguage: null,
   };
 
-  // TODO: Fetch friends and chats when those tables are set up
-  // For now, return empty arrays
+  // Fetch Chats
+  const { data: myParts } = await supabase
+    .from("conversation_participants")
+    .select("conversation_id")
+    .eq("user_id", userId);
+
+  const convoIds = (myParts ?? []).map(r => r.conversation_id);
+
+  let chats: DashboardData["chats"] = [];
+
+  if (convoIds.length > 0) {
+    const { data: convos } = await supabase
+      .from("conversations")
+      .select("id,last_message_text,last_message_at")
+      .in("id", convoIds)
+      .order("last_message_at", { ascending: false })
+
+    const { data: parts } = await supabase
+      .from("conversation_participants")
+      .select("conversation_id,user_id")
+      .in("conversation_id", convoIds);
+
+    const partnerByConvo = new Map<string,string>();
+    for (const p of parts ?? []) {
+      if (p.user_id !== userId) {
+        partnerByConvo.set(p.conversation_id, p.user_id);
+      }
+    }
+
+    const partnerIds = [...new Set(partnerByConvo.values())];
+
+    const { data: profs } = await supabase
+      .from("profiles")
+      .select("user_id,first_name,last_name")
+      .in("user_id", partnerIds);
+
+    const profileById = new Map(profs?.map(p => [p.user_id, p]) ?? []);
+
+    chats = (convos ?? []).map(c => {
+      const pid = partnerByConvo.get(c.id)!;
+      const prof = profileById.get(pid);
+
+      return {
+        id: c.id,
+        partnerId: pid,
+        partnerName:
+          prof ? `${prof.first_name ?? ""} ${prof.last_name ?? ""}` : "User",
+        lastMessage: c.last_message_text,
+        lastMessageAt: c.last_message_at,
+        unreadCount: 0,
+      };
+    });
+  }
+
+  // TODO: Fetch friends
+  // For now, return an empty array
   return {
     user: userProfile,
     friends: [],
-    chats: [],
+    chats,
   };
 }
 
@@ -201,12 +256,15 @@ export default function DashboardPage() {
 
     const { user, friends, chats } = state.data;
 
+    const convoIdByPartner = new Map(chats.map((c) => [c.partnerId, c.id]));
+
     const friendsForUI =
       friends.length > 0
         ? friends
         : [
-          // { id: "b73dc898-2c56-464d-a43f-6bc5b804f09c", name: "Natalie Forte", targetLanguage: "Spanish", level: "Advanced" as const },
-          // { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
+          { id: "b73dc898-2c56-464d-a43f-6bc5b804f09c", name: "Natalie Forte", targetLanguage: "Spanish", level: "Advanced" as const },
+          { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
+          { id: "c907375f-ee54-446a-a22b-40dce70bf56c", name: "Test Test", targetLanguage: "Russian", level: "Advanced" as const },
           // { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
           // { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
           // { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
@@ -313,12 +371,16 @@ export default function DashboardPage() {
 
             <FriendsList
               showHeader={false}
-              friends={friendsForUI.map((f) => ({
-                id: f.id,
-                name: f.name,
-                profileHref: `/profile/${f.id}`,
-                chatHref: "/chats",
-              }))}
+              showSubHeader={false}
+              friends={friendsForUI.map((f) => {
+                const convoId = convoIdByPartner.get(f.id);
+                return {
+                  id: f.id,
+                  name: f.name,
+                  profileHref: `/profile/${f.id}`,
+                  chatHref: convoId ? `/chats?c=${encodeURIComponent(convoId)}` : "/chats",
+                };
+              })}
             />
 
           </section>
@@ -337,49 +399,29 @@ export default function DashboardPage() {
               )}
             </div>
 
-            <div className="rounded-2xl border border-zinc-200 bg-white">
-              {chats.length === 0 ? (
-                <div className="p-6 text-center">
-                  <p className="text-sm text-zinc-700">No chats yet.</p>
-                  <p className="mt-1 text-xs text-zinc-600">
-                    Start a conversation with a friend!
-                  </p>
-                </div>
-              ) : (
-                <div className="divide-y divide-zinc-100">
-                  {chats.map((chat: DashboardData["chats"][0]) => (
-                    <Link
-                      key={chat.id}
-                      href={`/chat/${chat.partnerId}`}
-                      className="block p-4 hover:bg-zinc-50 transition-colors"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium text-zinc-900">{chat.partnerName}</p>
-                            {chat.unreadCount > 0 && (
-                              <span className="rounded-full bg-zinc-900 text-white text-xs font-medium px-2 py-0.5">
-                                {chat.unreadCount}
-                              </span>
-                            )}
-                          </div>
-                            {chat.lastMessage && (
-                              <p className="mt-1 text-sm text-zinc-700 truncate">
-                                {chat.lastMessage}
-                              </p>
-                            )}
-                            {chat.lastMessageAt && (
-                              <p className="mt-1 text-xs text-zinc-600">
-                                {formatTimeAgo(chat.lastMessageAt)}
-                              </p>
-                            )}
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
+            {chats.length === 0 ? (
+              <div className="rounded-2xl border p-6 text-center text-sm text-zinc-600">
+                No chats yet.
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-zinc-300 bg-white overflow-hidden">
+                <ChatLeftPanel
+                  linkMode
+                  showHeader={false}
+                  containerClassName="border-0 bg-transparent"
+                  chats={chats.map(c => ({
+                    conversationId: c.id,
+                    partnerId: c.partnerId,
+                    partnerFirstName: c.partnerName.split(" ")[0],
+                    partnerLastName: c.partnerName.split(" ")[1] ?? "",
+                    partnerAvatarUrl: null,
+                    lastMessageText: c.lastMessage ?? "",
+                    lastMessageAt: c.lastMessageAt ?? new Date().toISOString(),
+                    unreadCount: c.unreadCount,
+                  }))}
+                />
+              </div>
+            )}
           </section>
         </div>
       </div>
