@@ -35,6 +35,7 @@ type DashboardData = {
     partnerName: string;
     lastMessage?: string | null;
     lastMessageAt?: string | null; // ISO
+    createdAt: string;
     unreadCount: number;
   }>;
 };
@@ -143,9 +144,8 @@ async function fetchDashboard(): Promise<DashboardData> {
   if (convoIds.length > 0) {
     const { data: convos } = await supabase
       .from("conversations")
-      .select("id,last_message_text,last_message_at")
+      .select("id,last_message_text,last_message_at,created_at")
       .in("id", convoIds)
-      .order("last_message_at", { ascending: false })
 
     const { data: parts } = await supabase
       .from("conversation_participants")
@@ -179,10 +179,17 @@ async function fetchDashboard(): Promise<DashboardData> {
           prof ? `${prof.first_name ?? ""} ${prof.last_name ?? ""}` : "User",
         lastMessage: c.last_message_text,
         lastMessageAt: c.last_message_at,
+        createdAt: c.created_at,
         unreadCount: 0,
       };
     });
   }
+
+  chats.sort((a, b) => {
+    const aTime = new Date(a.lastMessageAt ?? a.createdAt).getTime();
+    const bTime = new Date(b.lastMessageAt ?? b.createdAt).getTime();
+    return bTime - aTime;
+  });
 
   // TODO: Fetch friends
   // For now, return an empty array
@@ -411,6 +418,7 @@ export default function DashboardPage() {
                   containerClassName="border-0 bg-transparent"
                   chats={chats.map(c => ({
                     conversationId: c.id,
+                    createdAt: c.createdAt,
                     partnerId: c.partnerId,
                     partnerFirstName: c.partnerName.split(" ")[0],
                     partnerLastName: c.partnerName.split(" ")[1] ?? "",

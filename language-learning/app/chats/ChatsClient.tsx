@@ -9,6 +9,7 @@ type DbConversation = {
   id: string;
   last_message_at: string | null;
   last_message_text: string | null;
+  created_at: string;
 };
 
 type DbParticipant = {
@@ -135,7 +136,7 @@ export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
       // Fetch conversations
       const { data: convos, error: convosErr } = await supabase
         .from("conversations")
-        .select("id,last_message_at,last_message_text")
+        .select("id,last_message_at,last_message_text,created_at")
         .in("id", convoIds)
         .order("last_message_at", { ascending: false, nullsFirst: false });
 
@@ -202,6 +203,7 @@ export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
 
         return {
           conversationId: c.id,
+          createdAt: c.created_at,
           partnerId,
           partnerFirstName: first,
           partnerLastName: last,

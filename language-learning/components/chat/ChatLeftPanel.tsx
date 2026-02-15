@@ -5,6 +5,7 @@ import Link from "next/link";
 
 type ChatListItem = {
   conversationId: string;
+  createdAt: string;
 
   partnerId: string;
   partnerFirstName: string;
@@ -45,9 +46,9 @@ export default function ChatLeftPanel({
   containerClassName = "",
 }: ChatLeftPanelProps) {
   const sorted = [...chats].sort((a, b) => {
-    const ta = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : Number.POSITIVE_INFINITY;
-    const tb = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : Number.POSITIVE_INFINITY;
-    
+    const ta = new Date(a.lastMessageAt ?? a.createdAt).getTime(); 
+    const tb = new Date(b.lastMessageAt ?? b.createdAt).getTime();
+
     return tb - ta;
   });
 

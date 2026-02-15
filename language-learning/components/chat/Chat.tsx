@@ -25,6 +25,7 @@ type Message = {
 
 export type Conversation = {
   conversationId: string;
+  createdAt: string;
 
   partnerId: string;
   partnerFirstName: string;
@@ -65,6 +66,7 @@ export default function Chat({ conversations, selectedConversationId, onSelectCo
           <ChatLeftPanel
             chats={conversations.map((c) => ({
               conversationId: c.conversationId,
+              createdAt: c.createdAt,
               partnerId: c.partnerId,
               partnerFirstName: c.partnerFirstName,
               partnerLastName: c.partnerLastName,
