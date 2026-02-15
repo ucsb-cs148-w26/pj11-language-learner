@@ -44,53 +44,56 @@ export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
   const c = searchParams.get("c") ?? cFromUrl;
 
   useEffect(() => {
-    if (!selectedConversationId || !myUserId) return;
+    if (!myUserId || conversations.length === 0) return;
 
-    // Subscribe to INSERTs for this conversation
+    const convoIdSet = new Set(conversations.map(c => c.conversationId));
+    const filter = `conversation_id=in.(${[...convoIdSet].join(",")})`;
+
     const channel = supabase
-      .channel(`messages:${selectedConversationId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-          filter: `conversation_id=eq.${selectedConversationId}`,
-        },
-        (payload) => {
-          const m = payload.new as DbMessage;
+    .channel("messages:all-my-conversations")
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "messages",
+        filter,
+      },
+      (payload) => {
+        const m = payload.new as DbMessage;
 
-          // Map DB → UI message shape
-          const uiMsg = {
-            id: m.id,
-            sender: m.sender_id === myUserId ? "me" as const : "partner" as const,
-            text: m.body,
-            sentAt: m.created_at,
-          };
+        // ignore messages for conversations not currently loaded
+        if (!convoIdSet.has(m.conversation_id)) return;
 
-          setConversations((prev) =>
-            prev.map((c) => {
-              if (c.conversationId !== selectedConversationId) return c;
+        const uiMsg = {
+          id: m.id,
+          sender: m.sender_id === myUserId ? ("me" as const) : ("partner" as const),
+          text: m.body,
+          sentAt: m.created_at,
+        };
 
-              // Dedup: if we already have this id, do nothing
-              if (c.messages.some((x) => x.id === uiMsg.id)) return c;
+        setConversations((prev) =>
+          prev.map((c) => {
+            if (c.conversationId !== m.conversation_id) return c;
 
-              return {
-                ...c,
-                messages: [...c.messages, uiMsg],
-                lastMessageText: uiMsg.text,
-                lastMessageAt: uiMsg.sentAt,
-              };
-            })
-          );
-        }
-      )
-      .subscribe();
+            if (c.messages.some((x) => x.id === uiMsg.id)) return c;
+
+            return {
+              ...c,
+              messages: [...c.messages, uiMsg],
+              lastMessageText: uiMsg.text,
+              lastMessageAt: uiMsg.sentAt,
+            };
+          })
+        );
+      }
+    )
+    .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+       supabase.removeChannel(channel);
     };
-  }, [selectedConversationId, myUserId]);
+  }, [myUserId, conversations.map(c => c.conversationId).join("|")]);
 
   // Load conversation list (sidebar)
   useEffect(() => {

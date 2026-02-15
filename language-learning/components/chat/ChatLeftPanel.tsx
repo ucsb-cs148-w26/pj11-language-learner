@@ -45,8 +45,9 @@ export default function ChatLeftPanel({
   containerClassName = "",
 }: ChatLeftPanelProps) {
   const sorted = [...chats].sort((a, b) => {
-    const ta = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
-    const tb = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+    const ta = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : Number.POSITIVE_INFINITY;
+    const tb = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : Number.POSITIVE_INFINITY;
+    
     return tb - ta;
   });
 

@@ -262,9 +262,9 @@ export default function DashboardPage() {
       friends.length > 0
         ? friends
         : [
-          { id: "b73dc898-2c56-464d-a43f-6bc5b804f09c", name: "Natalie Forte", targetLanguage: "Spanish", level: "Advanced" as const },
-          { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
-          { id: "c907375f-ee54-446a-a22b-40dce70bf56c", name: "Test Test", targetLanguage: "Russian", level: "Advanced" as const },
+          // { id: "b73dc898-2c56-464d-a43f-6bc5b804f09c", name: "Natalie Forte", targetLanguage: "Spanish", level: "Advanced" as const },
+          // { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
+          // { id: "c907375f-ee54-446a-a22b-40dce70bf56c", name: "Test Test", targetLanguage: "Russian", level: "Advanced" as const },
           // { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
           // { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
           // { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
@@ -416,7 +416,7 @@ export default function DashboardPage() {
                     partnerLastName: c.partnerName.split(" ")[1] ?? "",
                     partnerAvatarUrl: null,
                     lastMessageText: c.lastMessage ?? "",
-                    lastMessageAt: c.lastMessageAt ?? new Date().toISOString(),
+                    lastMessageAt: c.lastMessageAt ?? null,
                     unreadCount: c.unreadCount,
                   }))}
                 />
