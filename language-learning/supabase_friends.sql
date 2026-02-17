@@ -173,3 +173,19 @@ select indexname
 from pg_indexes
 where tablename = 'friend_requests'
   and indexname = 'friend_requests_one_pending_per_pair';
+
+
+-- ============================================================================
+-- HOW TO APPLY
+-- ============================================================================
+-- 1. Open Supabase Dashboard
+-- 2. Navigate to Database → SQL Editor
+-- 3. Create a new query
+-- 4. Paste this entire file
+-- 5. Click RUN
+--
+-- Expected result:
+-- - friend_requests table created
+-- - friends table created
+-- - RLS enabled with policies
+-- ============================================================================
