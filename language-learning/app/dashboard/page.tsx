@@ -176,7 +176,7 @@ async function fetchDashboard(): Promise<DashboardData> {
         id: c.id,
         partnerId: pid,
         partnerName:
-          prof ? `${prof.first_name ?? ""} ${prof.last_name ?? ""}` : "User",
+          prof ? `${prof.first_name ?? ""} ${prof.last_name ?? ""}` : "Deleted User",
         lastMessage: c.last_message_text,
         lastMessageAt: c.last_message_at,
         createdAt: c.created_at,

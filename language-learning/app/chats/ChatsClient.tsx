@@ -197,8 +197,8 @@ export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
         const partnerId = partnerByConvo.get(c.id) ?? "unknown";
         const p = profilesById.get(partnerId);
 
-        const first = p?.first_name ?? "User";
-        const last = p?.last_name ?? (partnerId === "unknown" ? "" : partnerId.slice(0, 6));
+        const first = p?.first_name ?? "Deleted User";
+        const last = p?.last_name ?? "";
         const avatar = p?.profile_picture_url ?? null;
 
         return {
