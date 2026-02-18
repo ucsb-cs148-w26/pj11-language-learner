@@ -36,9 +36,3 @@ export type RelationshipStatus =
   | { kind: "incoming_request"; request: FriendRequestRow }
   | { kind: "outgoing_request"; request: FriendRequestRow }
   | { kind: "none" };
-
-// RPC signatures (if you add the SQL RPCs)
-export type AcceptFriendRequestRpcArgs = { request_id: string };
-export type DenyFriendRequestRpcArgs = { request_id: string };
-export type CancelFriendRequestRpcArgs = { request_id: string };
-export type UnfriendRpcArgs = { other_user_id: string };
