@@ -186,8 +186,7 @@ export default function UserProfilePage() {
   const p = state.data;
 
   return (
-    <div className="min-h-screen bg-white w-full">
-      <main className="mx-auto max-w-6xl p-6">
+      <div className="mx-auto max-w-6xl w-full p-6">
         <div className="space-y-6">
           <header className="flex items-center justify-between">
             <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">Profile</h1>
@@ -290,7 +289,6 @@ export default function UserProfilePage() {
             )}
           </section>
         </div>
-      </main>
     </div>
   );
 }

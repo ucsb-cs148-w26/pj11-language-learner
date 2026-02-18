@@ -11,7 +11,7 @@
 
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ChatLeftPanel from "./ChatLeftPanel";
 import ChatRightPanel from "./ChatRightPanel";
 import Link from 'next/link'
@@ -25,6 +25,7 @@ type Message = {
 
 export type Conversation = {
   conversationId: string;
+  createdAt: string;
 
   partnerId: string;
   partnerFirstName: string;
@@ -34,7 +35,7 @@ export type Conversation = {
   language: string;
 
   lastMessageText: string;
-  lastMessageAt: string;
+  lastMessageAt: string | null;
   unreadCount: number;
 
   messages: Message[];
@@ -42,18 +43,14 @@ export type Conversation = {
 
 type ChatProps = {
   conversations: Conversation[];
-  initialConversationId?: string;
+  selectedConversationId: string;
   onSelectConversationId?: (conversationId: string) => void;
   onSendMessage?: (conversationId: string, text: string) => Promise<void>;
 };
 
-export default function Chat({ conversations, initialConversationId, onSelectConversationId, onSendMessage }: ChatProps) {
-  const defaultId = initialConversationId ?? conversations[0]?.conversationId ?? "";
-  const [selectedConversationId, setSelectedConversationId] = useState(defaultId);
-
+export default function Chat({ conversations, selectedConversationId, onSelectConversationId, onSendMessage }: ChatProps) {
   function handleSelectConversation(id: string) {
-    setSelectedConversationId(id);
-    onSelectConversationId?.(id); 
+    onSelectConversationId?.(id);
   }
 
   const selected = useMemo(
@@ -62,13 +59,14 @@ export default function Chat({ conversations, initialConversationId, onSelectCon
   );
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-white">
-      <div className="grid h-full grid-cols-1 md:grid-cols-[320px_1fr]">
+    <div className="h-full w-full min-h-0 overflow-hidden bg-white">
+      <div className="grid h-full min-h-0 grid-cols-1 md:grid-cols-[320px_1fr]">
         {/* Left sidebar */}
-        <div className="hidden h-full md:block">
+        <div className="hidden h-full min-h-0 md:block">
           <ChatLeftPanel
             chats={conversations.map((c) => ({
               conversationId: c.conversationId,
+              createdAt: c.createdAt,
               partnerId: c.partnerId,
               partnerFirstName: c.partnerFirstName,
               partnerLastName: c.partnerLastName,
@@ -83,7 +81,7 @@ export default function Chat({ conversations, initialConversationId, onSelectCon
         </div>
 
         {/* Right panel */}
-        <div className="min-w-0 h-full">
+        <div className="min-w-0 h-full min-h-0 overflow-hidden">
           {selected ? (
             <ChatRightPanel
               partnerId={selected.partnerId}

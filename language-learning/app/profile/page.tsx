@@ -242,24 +242,20 @@ export default function ProfilePage() {
 
   if (state.status === "loading") {
     return (
-      <div className="min-h-screen bg-white w-full">
-        <main className="mx-auto max-w-6xl p-6">
+      <div className="mx-auto max-w-6xl p-6">
           <div className="h-10 w-1/2 animate-pulse rounded-xl bg-zinc-200" />
           <div className="mt-4 h-40 animate-pulse rounded-2xl bg-zinc-200" />
-        </main>
       </div>
     );
   }
 
   if (state.status === "error") {
     return (
-      <div className="min-h-screen bg-white w-full">
-        <main className="mx-auto max-w-6xl p-6">
+      <div className="mx-auto max-w-6xl p-6">
           <div className="rounded-2xl border border-red-200 bg-red-50 p-4">
             <p className="font-medium text-red-800">Couldn't load profile</p>
             <p className="mt-1 text-sm text-red-700">{state.message}</p>
           </div>
-        </main>
       </div>
     );
   }
@@ -268,8 +264,7 @@ export default function ProfilePage() {
 
   return (
     <>
-      <div className="min-h-screen bg-white w-full">
-        <main className="mx-auto max-w-6xl p-6">
+      <div className="mx-auto max-w-6xl w-full p-6">
         <div className="space-y-6">
           <header className="flex items-center justify-between">
             <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">Profile</h1>
@@ -398,7 +393,6 @@ export default function ProfilePage() {
             </div>
           </section>
         </div>
-        </main>
       </div>
 
       {/* Delete Account Confirmation Modal */}

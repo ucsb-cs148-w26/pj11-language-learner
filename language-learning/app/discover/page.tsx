@@ -53,8 +53,7 @@ export default function DiscoverPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-zinc-900 w-full">
-      <main className="mx-auto max-w-6xl p-6">
+      <div className="mx-auto max-w-6xl p-6 text-zinc-900 w-full">
         <header className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
             Discover Partners
@@ -201,7 +200,6 @@ export default function DiscoverPage() {
             )}
           </div>
         </div>
-      </main>
     </div>
   );
 }
