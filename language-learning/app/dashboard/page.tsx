@@ -47,22 +47,15 @@ type LoadState<T> =
   | { status: "success"; data: T };
 
 async function getUserId(): Promise<string> {
-  try {
-    // First check for existing session
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      return session.user.id;
-    }
-    
-    // If no session, try to get user (this will refresh if needed)
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (!authError && user) {
-      return user.id;
-    }
-  } catch (e) {
-    console.error("Error getting user ID:", e);
-    // Ignore auth errors in test mode
-  }
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError) throw sessionError;
+  if (session?.user) return session.user.id;
+
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError) throw userError;
+  if (user) return user.id;
+
+  throw new Error("Not authenticated");
 }
 
 async function fetchDashboard(): Promise<DashboardData> {
