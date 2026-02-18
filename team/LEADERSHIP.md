@@ -11,6 +11,7 @@
 | Wed 01/28 | Benny Zhang       | Led stand-up meeting                                               |
 | Mon 02/09 | Natalie Forte     | Led stand-up meeting                                               | 
 | Wed 02/11 | Julia Lin         | Led stand-up meeting                                               |
+| Mon 02/18 | Abhiram Agina     | Led stand-up meeting                                               |
 
 
 * Product Owner: Jovia Low
