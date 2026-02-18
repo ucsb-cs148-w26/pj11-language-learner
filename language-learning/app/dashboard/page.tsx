@@ -63,29 +63,12 @@ async function getUserId(): Promise<string> {
     console.error("Error getting user ID:", e);
     // Ignore auth errors in test mode
   }
-  // TEST MODE: Use a test user ID when not authenticated
-  return "test-user-id";
 }
 
 async function fetchDashboard(): Promise<DashboardData> {
   const userId = await getUserId();
-  
-  // If using test user ID, return empty data instead of querying
-  if (userId === "test-user-id") {
-    return {
-      user: {
-        targetLanguage: null,
-        profilePicture: null,
-        level: null,
-        nativeLanguage: null,
-      },
-      friends: [],
-      chats: [],
-    };
-  }
 
   // Fetch user profile
-  console.log("Fetching profile for userId:", userId);
   const { data: profileData, error: profileError } = await supabase
     .from('profiles')
     .select('native_language, profile_picture_url')
@@ -102,8 +85,6 @@ async function fetchDashboard(): Promise<DashboardData> {
       throw profileError;
     }
   }
-  
-  console.log("Profile data:", profileData);
 
   // Fetch target languages from separate table
   const { data: targetLanguagesData } = await supabase
@@ -338,20 +319,7 @@ export default function DashboardPage() {
 
     const convoIdByPartner = new Map(chats.map((c) => [c.partnerId, c.id]));
 
-    const friendsForUI =
-      friends.length > 0
-        ? friends
-        : [
-          // { id: "b73dc898-2c56-464d-a43f-6bc5b804f09c", name: "Natalie Forte", targetLanguage: "Spanish", level: "Advanced" as const },
-          // { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
-          // { id: "c907375f-ee54-446a-a22b-40dce70bf56c", name: "Test Test", targetLanguage: "Russian", level: "Advanced" as const },
-          // { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
-          // { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
-          // { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
-          // { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
-          // { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
-          // { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
-        ]; // TO DO: Placeholder for dummy friends. User real data later.
+    const friendsForUI = friends;
 
     return (
       <div className="space-y-6">
