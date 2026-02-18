@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Language Learner - Home",
+  title: "Language Learners",
   description: "Connect & Practice Conversation Language Skills",
 };
 
