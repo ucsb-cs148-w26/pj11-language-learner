@@ -2,6 +2,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { createFriendService } from "@/utils/friends/friendService";
 import FriendsList from "@/components/friends/list";
@@ -247,6 +248,8 @@ async function fetchDashboard(): Promise<DashboardData> {
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
+
   const [state, setState] = useState<LoadState<DashboardData>>({ status: "idle" });
   const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
 
@@ -437,6 +440,8 @@ export default function DashboardPage() {
                 try {
                   const svc = createFriendService(supabase);
                   await svc.unfriend({ otherUserId: friendId });
+                  const data = await fetchDashboard();
+                  setState({ status: "success", data });
                 } catch (e) {
                   // Revert if RPC fails
                   setState({ status: "success", data: prev });
