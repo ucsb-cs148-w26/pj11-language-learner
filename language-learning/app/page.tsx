@@ -4,8 +4,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { Nunito } from "next/font/google";
-
-// import Header from "../components/Header";
 import { supabase } from "@/lib/supabaseClient";
 import DashboardPage from "./dashboard/page";
 

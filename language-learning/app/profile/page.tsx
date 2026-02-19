@@ -32,9 +32,9 @@ type LoadState<T> =
 
 async function getUserId(): Promise<string> {
   try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (!authError && user) {
-      return user.id;
+    const { data, error: authError } = await supabase.auth.getSession();
+    if (data.session?.user) {
+      return data.session.user.id;
     }
   } catch (e) {
     // Ignore auth errors in test mode

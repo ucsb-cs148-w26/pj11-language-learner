@@ -241,10 +241,31 @@ function AuthCallbackContent() {
         } else {
           console.log("Profile already exists:", existingProfile);
         }
+        
+        // check need for onboarding setup redirect
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select(`
+              user_id, 
+              first_name, 
+              native_language, 
+              profile_target_languages!inner(language_id)
+              `)
+            .eq('user_id', user.id)
+            .maybeSingle();
+        
+        const hasTL = profile?.profile_target_languages && profile.profile_target_languages.length > 0;
+        const needsOnboarding = !hasTL || !profile?.first_name || !profile?.native_language;
 
-        // Successfully authenticated, redirect to dashboard
-        router.push("/dashboard");
+        if (needsOnboarding) {
+          console.log("Redirecting to onboarding...");
+          router.push("/profile/edit?new=true");
+        } else {
+          console.log("Redirecting to dashboard");
+          router.push("/dashboard");
+        }
         router.refresh();
+
       } catch (e) {
         const msg = e instanceof Error ? e.message : "An unexpected error occurred";
         setError(msg);
@@ -293,7 +314,7 @@ function AuthCallbackContent() {
   }
 
   return (
-    <main className="mx-auto max-w-lg p-6 bg-white min-h-screen flex items-center justify-center">
+    <main className="mx-auto w-full p-6 bg-white min-h-screen flex items-center justify-center">
       <div className="w-full text-center">
         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-zinc-900"></div>
         <p className="mt-4 text-sm text-zinc-600">Completing sign in...</p>

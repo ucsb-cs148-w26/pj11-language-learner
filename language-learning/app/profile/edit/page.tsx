@@ -438,8 +438,9 @@ export default function EditProfilePage() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-2xl border border-zinc-200 bg-white p-6">
-              <Field label="First name">
+              <Field label="First name" required>
                 <input
+                  required
                   className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:border-transparent"
                   value={form.firstName}
                   onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
@@ -473,8 +474,9 @@ export default function EditProfilePage() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-2xl border border-zinc-200 bg-white p-6">
-              <Field label="Native language">
+              <Field label="Native language" required>
                 <select
+                  required
                   className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:border-transparent"
                   value={form.nativeLanguage}
                   onChange={(e) => setForm((f) => ({ ...f, nativeLanguage: e.target.value }))}
@@ -492,8 +494,9 @@ export default function EditProfilePage() {
             </div>
 
             <div className="rounded-2xl border border-zinc-200 bg-white p-6">
-              <Field label="Target language">
+              <Field label="Target language" required>
                 <select
+                  required
                   className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:border-transparent"
                   value={form.targetLanguage}
                   onChange={(e) => setForm((f) => ({ ...f, targetLanguage: e.target.value }))}
@@ -554,15 +557,20 @@ function Field({
   label,
   hint,
   children,
+  required,
 }: {
   label: string;
   hint?: string;
   children: React.ReactNode;
+  required?: boolean;
 }) {
   return (
     <div className="space-y-2">
       <div className="flex items-end justify-between gap-3">
-        <label className="text-sm font-medium text-zinc-700">{label}</label>
+        <label className="text-sm font-medium text-zinc-700">
+          {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </label>
         {hint ? <span className="text-xs text-zinc-600">{hint}</span> : null}
       </div>
       {children}
