@@ -51,15 +51,13 @@ function HeaderContent() {
           : [];
 
   return (
-    <nav className="w-full h-18 bg-white border-b shadow-sm">
+    <nav className="w-full h-16 bg-white border-b shadow-sm">
       <div className="mx-auto w-full h-full px-8 pt-4 pb-1 flex items-end gap-8 text-base justify-between">
         {/* placeholder for logo */}
-        <div className="pb-1.5"> 
-          <Link href="/" className="flex group">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-slate-500 group-hover:text-sky-600 transition-colors">
-              <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
-            </svg>
-          </Link>
+        <div className="pb-1.4 flex item-center"> 
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-slate-500 group-hover:text-sky-600 transition-colors">
+            <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+          </svg>
         </div>
         {isNewUserOnboarding ? (
         <div className="flex w-full self-center gap-3 rounded-lg bg-sky-100 px-4 py-2 text-sm text-zinc-600 border border-zinc-200">

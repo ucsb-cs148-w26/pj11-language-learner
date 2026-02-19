@@ -245,11 +245,17 @@ function AuthCallbackContent() {
         // check need for onboarding setup redirect
         const { data: profile, error: profileError } = await supabase
             .from('profiles')
-            .select('user_id, first_name, target_language, native_language')
+            .select(`
+              user_id, 
+              first_name, 
+              native_language, 
+              profile_target_languages!inner(language_id)
+              `)
             .eq('user_id', user.id)
-            .single();
-
-        const needsOnboarding = !profile?.first_name || !profile?.target_language || !profile?.native_language;
+            .maybeSingle();
+        
+        const hasTL = profile?.profile_target_languages && profile.profile_target_languages.length > 0;
+        const needsOnboarding = !hasTL || !profile?.first_name || !profile?.native_language;
 
         if (needsOnboarding) {
           console.log("Redirecting to onboarding...");
