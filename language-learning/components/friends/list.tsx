@@ -14,10 +14,14 @@ export default function FriendsList({
   friends = [],
   showHeader = true,
   showSubHeader = true,
+  onRemove,
+  removingIds,
 }: {
   friends?: FriendListItem[];
   showHeader?: boolean;
-  showSubHeader?: boolean,
+  showSubHeader?: boolean;
+  onRemove?: (friendId: string) => Promise<void> | void;
+  removingIds?: Set<string>;
 }) {
   const sorted = [...friends].sort((a, b) =>
     a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
@@ -58,64 +62,77 @@ export default function FriendsList({
             </div>
           )}
 
-          {sorted.map((f) => (
-            <div
-              key={f.id}
-              className="grid h-17 grid-cols-[1fr_auto_auto] items-center gap-3 border-t border-zinc-200 px-4 py-3 text-sm"
-            >
-              <Link
-                href={f.profileHref}
-                className="flex items-center gap-3 min-w-0 rounded-lg px-0 py-0 bg-transparent transition"
+          {sorted.map((f) => {
+            const isRemoving = removingIds?.has(f.id) ?? false;
+
+            return (
+              <div
+                key={f.id}
+                className="grid h-17 grid-cols-[1fr_auto_auto] items-center gap-3 border-t border-zinc-200 px-4 py-3 text-sm"
               >
-                <img
-                  src={f.avatarUrl ?? "/default-avatar.jpg"}
-                  alt={f.name}
-                  className="h-10 w-10 rounded-full object-cover shrink-0"
-                />
-                <div className="min-w-0">
-                  <div className="truncate text-base font-medium text-zinc-900">
-                    {f.name}
+                <Link
+                  href={f.profileHref}
+                  className="flex items-center gap-3 min-w-0 rounded-lg px-0 py-0 bg-transparent transition"
+                >
+                  <img
+                    src={f.avatarUrl ?? "/default-avatar.jpg"}
+                    alt={f.name}
+                    className="h-10 w-10 rounded-full object-cover shrink-0"
+                  />
+                  <div className="min-w-0">
+                    <div className="truncate text-base font-medium text-zinc-900">
+                      {f.name}
+                    </div>
                   </div>
-                </div>
-              </Link>
+                </Link>
 
-              <Link href={f.chatHref} className="mr-7 justify-self-end font-medium text-zinc-900 underline underline-offset-4 decoration-zinc-400 hover:decoration-zinc-700">
-                Chat 💬
-              </Link>
+                <Link
+                  href={f.chatHref}
+                  className="mr-7 justify-self-end font-medium text-zinc-900 underline underline-offset-4 decoration-zinc-400 hover:decoration-zinc-700"
+                >
+                  Chat 💬
+                </Link>
 
-              <button className="removeBtn mr-4 justify-self-end" disabled>
-                Remove 🗑️
-              </button>
-            </div>
-          ))}
+                <button
+                  className="removeBtn mr-4 justify-self-end"
+                  disabled={!onRemove || isRemoving}
+                  onClick={async () => {
+                    if (!onRemove) return;
+                    await onRemove(f.id);
+                  }}
+                >
+                  {isRemoving ? "Removing…" : "Remove 🗑️"}
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
 
       <style jsx>{`
         .removeBtn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 2px 8px;
-            border-radius: 8px;
-            background: white;
-            color: rgba(0, 0, 0, 1);
-            font-weight: 500;
-            transition: background 160ms ease, transform 160ms ease, opacity 160ms ease;
-
-            border: 1px solid rgba(44, 44, 49, 0.45);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 2px 8px;
+          border-radius: 8px;
+          background: white;
+          color: rgba(0, 0, 0, 1);
+          font-weight: 500;
+          transition: background 160ms ease, transform 160ms ease,
+            opacity 160ms ease;
+          border: 1px solid rgba(44, 44, 49, 0.45);
         }
 
         .removeBtn:hover {
-            background: rgba(251, 229, 229, 1);
-            transform: translateY(-1px);
+          background: rgba(251, 229, 229, 1);
+          transform: translateY(-1px);
         }
 
         .removeBtn:disabled {
-            opacity: 0.55;
-            cursor: not-allowed;
+          opacity: 0.55;
+          cursor: not-allowed;
         }
-
       `}</style>
     </section>
   );

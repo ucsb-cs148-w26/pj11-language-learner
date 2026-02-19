@@ -2,7 +2,9 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { createFriendService } from "@/utils/friends/friendService";
 import FriendsList from "@/components/friends/list";
 import ChatLeftPanel from "@/components/chat/ChatLeftPanel";
 
@@ -46,45 +48,21 @@ type LoadState<T> =
   | { status: "success"; data: T };
 
 async function getUserId(): Promise<string> {
-  try {
-    // First check for existing session
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      return session.user.id;
-    }
-    
-    // If no session, try to get user (this will refresh if needed)
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (!authError && user) {
-      return user.id;
-    }
-  } catch (e) {
-    console.error("Error getting user ID:", e);
-    // Ignore auth errors in test mode
-  }
-  // TEST MODE: Use a test user ID when not authenticated
-  return "test-user-id";
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError) throw sessionError;
+  if (session?.user) return session.user.id;
+
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError) throw userError;
+  if (user) return user.id;
+
+  throw new Error("Not authenticated");
 }
 
 async function fetchDashboard(): Promise<DashboardData> {
   const userId = await getUserId();
-  
-  // If using test user ID, return empty data instead of querying
-  if (userId === "test-user-id") {
-    return {
-      user: {
-        targetLanguage: null,
-        profilePicture: null,
-        level: null,
-        nativeLanguage: null,
-      },
-      friends: [],
-      chats: [],
-    };
-  }
 
   // Fetch user profile
-  console.log("Fetching profile for userId:", userId);
   const { data: profileData, error: profileError } = await supabase
     .from('profiles')
     .select('native_language, profile_picture_url')
@@ -101,8 +79,6 @@ async function fetchDashboard(): Promise<DashboardData> {
       throw profileError;
     }
   }
-  
-  console.log("Profile data:", profileData);
 
   // Fetch target languages from separate table
   const { data: targetLanguagesData } = await supabase
@@ -191,17 +167,91 @@ async function fetchDashboard(): Promise<DashboardData> {
     return bTime - aTime;
   });
 
-  // TODO: Fetch friends
-  // For now, return an empty array
+  // Fetch friends
+    // ------------------------------------------------------------------
+  // Fetch Friends (real data)
+  // ------------------------------------------------------------------
+  const friendService = createFriendService(supabase);
+
+  // 1) Get friend edges from the friends table (sorted by created_at desc already)
+  const friendEdges = await friendService.getFriendsList({ userId, limit: 50 });
+
+  // If none, keep empty
+  let friends: DashboardData["friends"] = [];
+
+  if (friendEdges.length > 0) {
+    const friendIds = friendEdges.map(e => e.friend_user_id);
+
+    // 2) Fetch basic profile info for friends (name)
+    const { data: friendProfiles, error: friendProfilesError } = await supabase
+      .from("profiles")
+      .select("user_id, first_name, last_name")
+      .in("user_id", friendIds);
+
+    if (friendProfilesError) throw friendProfilesError;
+
+    // 3) Fetch friends' target language + level (take first TL per friend)
+    const { data: friendTLs, error: friendTLsError } = await supabase
+      .from("profile_target_languages")
+      .select("user_id, level, lang:languages!profile_target_languages_language_id_fkey(name)")
+      .in("user_id", friendIds);
+
+    if (friendTLsError) throw friendTLsError;
+
+    // Build maps for quick lookup
+    const profileById = new Map<string, { first_name: string | null; last_name: string | null }>();
+    for (const p of friendProfiles ?? []) {
+      profileById.set(p.user_id, { first_name: p.first_name, last_name: p.last_name });
+    }
+
+    // For TLs: pick first entry per user (you can improve this later)
+    const tlById = new Map<
+      string,
+      { targetLanguage: string | null; level: "Beginner" | "Intermediate" | "Advanced" }
+    >();
+
+    for (const row of friendTLs ?? []) {
+      if (tlById.has(row.user_id)) continue;
+
+      const langObj = Array.isArray((row as any)?.lang) ? (row as any).lang[0] : (row as any)?.lang;
+      const targetLanguage = langObj?.name ?? null;
+
+      tlById.set(row.user_id, {
+        targetLanguage,
+        level: (levelToDisplay(row.level) ?? "Beginner"),
+      });
+    }
+
+    // 4) Combine in the same order as friendEdges (which is sorted by friendship created_at)
+    friends = friendEdges.map((edge) => {
+      const prof = profileById.get(edge.friend_user_id);
+      const tl = tlById.get(edge.friend_user_id);
+
+      const name = prof
+        ? `${prof.first_name ?? ""} ${prof.last_name ?? ""}`.trim() || "Unnamed User"
+        : "Deleted User";
+
+      return {
+        id: edge.friend_user_id,
+        name,
+        targetLanguage: tl?.targetLanguage ?? "Unknown",
+        level: tl?.level ?? "Beginner",
+      };
+    });
+  }
+
   return {
     user: userProfile,
-    friends: [],
+    friends,
     chats,
   };
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
+
   const [state, setState] = useState<LoadState<DashboardData>>({ status: "idle" });
+  const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     let cancelled = false;
@@ -265,20 +315,7 @@ export default function DashboardPage() {
 
     const convoIdByPartner = new Map(chats.map((c) => [c.partnerId, c.id]));
 
-    const friendsForUI =
-      friends.length > 0
-        ? friends
-        : [
-          // { id: "b73dc898-2c56-464d-a43f-6bc5b804f09c", name: "Natalie Forte", targetLanguage: "Spanish", level: "Advanced" as const },
-          // { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
-          // { id: "c907375f-ee54-446a-a22b-40dce70bf56c", name: "Test Test", targetLanguage: "Russian", level: "Advanced" as const },
-          // { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
-          // { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
-          // { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
-          // { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
-          // { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
-          // { id: "15da3404-ee03-4203-b186-f9561e12d304", name: "Abhiram A", targetLanguage: "Japanese", level: "Beginner" as const },
-        ]; // TO DO: Placeholder for dummy friends. User real data later.
+    const friendsForUI = friends;
 
     return (
       <div className="space-y-6">
@@ -379,6 +416,7 @@ export default function DashboardPage() {
             <FriendsList
               showHeader={false}
               showSubHeader={false}
+              removingIds={removingIds}
               friends={friendsForUI.map((f) => {
                 const convoId = convoIdByPartner.get(f.id);
                 return {
@@ -388,6 +426,34 @@ export default function DashboardPage() {
                   chatHref: convoId ? `/chats?c=${encodeURIComponent(convoId)}` : "/chats",
                 };
               })}
+              onRemove={async (friendId) => {
+                if (state.status !== "success") return;
+
+                // Optimistic UI update
+                const prev = state.data;
+                setRemovingIds((s) => new Set(s).add(friendId));
+                setState({
+                  status: "success",
+                  data: { ...prev, friends: prev.friends.filter((x) => x.id !== friendId) },
+                });
+
+                try {
+                  const svc = createFriendService(supabase);
+                  await svc.unfriend({ otherUserId: friendId });
+                  const data = await fetchDashboard();
+                  setState({ status: "success", data });
+                } catch (e) {
+                  // Revert if RPC fails
+                  setState({ status: "success", data: prev });
+                  alert(e instanceof Error ? e.message : "Failed to remove friend");
+                } finally {
+                  setRemovingIds((s) => {
+                    const next = new Set(s);
+                    next.delete(friendId);
+                    return next;
+                  });
+                }
+              }}
             />
 
           </section>
