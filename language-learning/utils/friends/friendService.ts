@@ -138,20 +138,11 @@ export function createFriendService(supabase: SupabaseClient) {
 
     /**
      * Accept an incoming pending request.
-     *
-     * Uses your RPC:
-     *   accept_friend_request(request_id uuid)
-     *
-     * This RPC should:
-     * - verify auth.uid() is recipient
-     * - verify request is pending
-     * - insert friends row (canonical)
-     * - update request status to accepted
      */
     async acceptFriendRequest(params: { requestId: string }) {
       const res = await supabase.rpc("accept_friend_request", { request_id: params.requestId });
-      assertOk<any>(res as any, "acceptFriendRequest");
-      return true;
+      const conversationId = assertOk<string>(res as any, "acceptFriendRequest");
+      return conversationId;
     },
 
     /**
