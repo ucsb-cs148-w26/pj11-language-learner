@@ -2,11 +2,11 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabaseClient";
 
-export default function Header() {
+function HeaderContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -52,7 +52,7 @@ export default function Header() {
 
   return (
     <nav className="w-full h-18 bg-white border-b shadow-sm">
-      <div className="mx-auto w-full h-full px-8 pt-4 pb-1 flex items-end gap-8 text-base justify-center">
+      <div className="mx-auto w-full h-full px-8 pt-4 pb-1 flex items-end gap-8 text-base justify-between">
         {/* placeholder for logo */}
         <div className="pb-1.5"> 
           <Link href="/" className="flex group">
@@ -101,5 +101,13 @@ export default function Header() {
         )}
       </div>
     </nav>
+  );
+}
+
+export default function Header() {
+  return (
+    <Suspense fallback={null}>
+      <HeaderContent />
+    </Suspense>
   );
 }
