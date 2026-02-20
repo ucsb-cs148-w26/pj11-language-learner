@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from '@/lib/supabaseServer'
+import { createFriendService } from "@/utils/friends/friendService";
 
 import { 
   DiscoverRow, 
@@ -58,19 +59,28 @@ export async function GET(req: NextRequest) {
   const userTargetNameSet = new Set(userTargetRows?.map(r => (r.lang as any).name));
   const userTargetIdSet = new Set(userTargets.keys());
 
-  const myConvIds = existingConversations?.map(c => c.conversation_id) || [];
-  let partnerIds: string[] = [];
+  const friends = createFriendService(supabase);
+  const edges = await friends.getFriendsList({ userId: user!.id });
+  const { incoming, outgoing } = await friends.getFriendRequestsList({ userId: user!.id, status: "pending" });
+  
+  // build exlusion list from current user and user's friends 
+  const excludeList = Array.from(new Set([
+    user.id, 
+    ...edges.map(e => e.friend_user_id)
+  ])).filter(Boolean);
 
-  if (myConvIds.length > 0) {
-    const { data: partners } = await supabase
-      .from("conversation_participants")
-      .select("user_id")
-      .in("conversation_id", myConvIds)
-      .neq("user_id", user.id);
-    
-    partnerIds = partners?.map(p => p.user_id) || [];
-  }
-  const excludeList = [user.id, ...partnerIds];
+  // get status helper searching a user's incoming and outgoing requests
+  const getStatus = (targetId: string) => {
+    const incomingReq = incoming.find(r => r.requester_id === targetId);
+    const outgoingReq = outgoing.find(r => r.recipient_id === targetId);
+    if (incomingReq) {
+      return { status: "pending_received" as const, requestId: incomingReq.id };
+    }
+    if (outgoingReq) {
+      return { status: "pending_sent" as const, requestId: outgoingReq.id };
+    }
+    return { status: "none" as const, requestId: null };
+  };
 
   let query = supabase
     .from("profile_target_languages")
@@ -81,7 +91,7 @@ export async function GET(req: NextRequest) {
       profiles!inner(first_name, native_language, updated_at),
       lang:languages!inner(name)
     `)
-    .not('user_id', 'in', `(${excludeList.join(',')})`);
+    .not('user_id', 'in', `(${excludeList.map(id => `"${id}"`).join(',')})`);
 
   if (levelFilter && levelFilter !== "All") {
     query = query.ilike('level', levelFilter);
@@ -109,6 +119,7 @@ export async function GET(req: NextRequest) {
       level: (row.level ?? "beginner").toLowerCase(),
     };
 
+    let request_data = getStatus(row.user_id);
     if (!existing) {
       grouped.set(row.user_id, {
         id: row.user_id,
@@ -116,6 +127,10 @@ export async function GET(req: NextRequest) {
         native_language: profile?.native_language ?? null,
         updated_at: profile?.updated_at ?? null,
         targets: [nextTarget],
+        friendship: {
+          status: request_data.status,
+          request_id: request_data.requestId,
+        }
       });
       continue;
     }
@@ -169,6 +184,7 @@ export async function GET(req: NextRequest) {
         tier,
         levelDelta,
         updated_at: candidate.updated_at,
+        friendship: candidate.friendship,
       };
     });
 

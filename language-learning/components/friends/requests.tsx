@@ -220,7 +220,7 @@ export default function FriendRequests({
         <div className="flex items-center justify-between px-4 py-3">
           <h2 className="pl-3 text-xl font-semibold text-zinc-900">Requests</h2>
           <Link
-            href="/friends"
+            href="/dashboard"
             className="mr-2 rounded-xl border border-zinc-400 bg-white px-4 py-2 text-sm font-medium text-zinc-900 opacity-80"
           >
             Friends
