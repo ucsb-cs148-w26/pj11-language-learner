@@ -1,10 +1,12 @@
 'use client'
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import DiscoverPagination from "./DiscoverPagination";
 import { useDiscoverData } from "./useDiscoverData";
+import { createFriendService } from "@/utils/friends/friendService";
+import { FriendActionButton } from "./FriendActionButton";
 
 const levels = ['All', 'Beginner', 'Intermediate', 'Advanced'];
 
@@ -25,32 +27,8 @@ export default function DiscoverPage() {
     resetFilters,
     goPrevPage,
     goNextPage,
+    handleFriendAction,
   } = useDiscoverData();
-
-  const router = useRouter();
-  const [connectingId, setConnectingId] = useState<string | null>(null);
-
-  async function handleConnect(partnerUserId: string) {
-    try {
-      setConnectingId(partnerUserId);
-
-      const { data, error } = await supabase.rpc("start_conversation_no_dupe", {
-        partner_id: partnerUserId,
-      });
-
-      if (error) throw error;
-
-      const conversationId = data as string;
-
-      // Navigate to chats and auto-select that conversation
-      router.push(`/chats?c=${encodeURIComponent(conversationId)}`);
-    } catch (e) {
-      console.error(e);
-      alert("Could not start conversation. Check console for details.");
-    } finally {
-      setConnectingId(null);
-    }
-  }
 
   return (
       <div className="mx-auto p-6 text-zinc-900 w-full">
@@ -88,17 +66,10 @@ export default function DiscoverPage() {
                     <span className="mx-1">•</span>
                     {partner.level}
                   </p>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleConnect(partner.id);
-                    }}
-                    disabled={connectingId === partner.id}
-                    className="w-full py-2 bg-zinc-900 text-white text-sm font-medium rounded-xl hover:opacity-90 transition"
-                  >
-                    {connectingId === partner.id ? "Connecting..." : "Connect"}
-                  </button>
+                  <FriendActionButton 
+                    partner={partner} 
+                    onAction={handleFriendAction} 
+                  />
                 </Link>
               ))
             )}
@@ -181,7 +152,9 @@ export default function DiscoverPage() {
                     >
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-full bg-zinc-50 border border-zinc-200 flex items-center justify-center text-zinc-400 group-hover:bg-zinc-100 transition">
-                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                          </svg>
                         </div>
                         <div>
                           <p className="font-semibold text-zinc-900">{partner.first_name}</p>
@@ -190,8 +163,16 @@ export default function DiscoverPage() {
                           </p>
                         </div>
                       </div>
-                      <div className="px-4 py-2 text-sm font-medium border border-zinc-200 rounded-xl bg-zinc-50 transition">
-                        View Profile
+
+                      {/* Container for the two buttons */}
+                      <div className="flex items-center gap-3">
+                        <FriendActionButton 
+                          partner={partner} 
+                          onAction={handleFriendAction} 
+                        />
+                        <div className="px-4 py-2 text-sm font-medium border border-zinc-200 rounded-xl bg-zinc-50 hover:bg-zinc-100 transition">
+                          View Profile
+                        </div>
                       </div>
                     </Link>
                   ))}

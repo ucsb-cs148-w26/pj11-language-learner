@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabaseClient";
 import type { DiscoverListResponse, DiscoverPartner } from "./types";
 
 const PAGE_SIZE = 10;
+type FriendshipStatus = "none" | "pending_sent" | "pending_received" | "accepted";
 
 export function useDiscoverData() {
   const [recommended, setRecommended] = useState<DiscoverPartner[]>([]);
@@ -20,6 +21,64 @@ export function useDiscoverData() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [showingCount, setShowingCount] = useState(0);
+  
+  const updateLocalStatus = (userId: string, newStatus: FriendshipStatus) => {
+    const updater = (prev: DiscoverPartner[]) =>
+      prev.map((p) =>
+        p.id === userId
+          ? {
+              ...p,
+              friendship: {
+                ...p.friendship,
+                status: newStatus,
+                // If we just cancelled, clear the requestId
+                requestId: newStatus === "none" ? null : p.friendship.request_id,
+              },
+            }
+          : p
+      );
+
+    setFiltered(updater);
+    setRecommended(updater);
+  };
+
+  const handleFriendAction = async (partner: DiscoverPartner) => {
+    const { id: targetUserId, friendship } = partner;
+    const { status, request_id } = friendship;
+    let action: "send" | "accept" | "cancel" | "deny";
+    let nextStatus: FriendshipStatus;
+
+    if (status === "none") {
+      action = "send";
+      nextStatus = "pending_sent";
+    } else if (status === "pending_sent") {
+      action = "cancel";
+      nextStatus = "none";
+    } else if (status === "pending_received") {
+      action = "accept";
+      nextStatus = "accepted";
+    } else {
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/friends/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          targetUserId, 
+          action, 
+          request_id
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to update friendship");
+      updateLocalStatus(targetUserId, nextStatus);
+      
+    } catch (error) {
+      console.error("Friend Action Error:", error);
+    }
+  };
 
   useEffect(() => {
   async function fetchRecs() {
@@ -101,6 +160,7 @@ export function useDiscoverData() {
     resetFilters: () => { setSearch(""); setLevelFilter("All"); setPage(1); },
     goPrevPage: () => setPage((p) => Math.max(1, p - 1)),
     goNextPage: () => setPage((p) => Math.min(totalPages, p + 1)),
+    handleFriendAction,
   };
 }
 

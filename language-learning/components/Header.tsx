@@ -20,6 +20,7 @@ function HeaderContent() {
     { href: "/chats", label: "Chats" },
     { href: "/discover", label: "Discover" },
     { href: "/dashboard", label: "Dashboard" },
+    { href: "/requests", label: "Requests" },
   ];
 
   useEffect(() => {
@@ -61,6 +62,7 @@ function HeaderContent() {
             width={50} 
             height={50}
             className="rounded-full"
+            priority
           />
         </div>
         {isNewUserOnboarding ? (
