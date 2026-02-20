@@ -22,7 +22,7 @@ export function useDiscoverData() {
   const [totalPages, setTotalPages] = useState(1);
   const [showingCount, setShowingCount] = useState(0);
   
-  const updateLocalStatus = (userId: string, newStatus: FriendshipStatus) => {
+  const updateLocalStatus = (userId: string, newStatus: FriendshipStatus, newId?: string | null) => {
     const updater = (prev: DiscoverPartner[]) =>
       prev.map((p) =>
         p.id === userId
@@ -32,7 +32,7 @@ export function useDiscoverData() {
                 ...p.friendship,
                 status: newStatus,
                 // If we just cancelled, clear the requestId
-                requestId: newStatus === "none" ? null : p.friendship.request_id,
+                request_id: newStatus === "none" ? null : (newId || p.friendship.request_id),
               },
             }
           : p
@@ -61,6 +61,9 @@ export function useDiscoverData() {
       return;
     }
 
+    // optimistic ui update
+    updateLocalStatus(targetUserId, nextStatus);
+    
     try {
       const res = await fetch("/api/friends/action", {
         method: "POST",
@@ -73,10 +76,15 @@ export function useDiscoverData() {
       });
 
       if (!res.ok) throw new Error("Failed to update friendship");
-      updateLocalStatus(targetUserId, nextStatus);
+
+      const data = await res.json();
+      if (action === "send" && data.request_id) {
+        updateLocalStatus(targetUserId, nextStatus, data.request_id);
+      }
       
     } catch (error) {
       console.error("Friend Action Error:", error);
+      updateLocalStatus(targetUserId, status, request_id);
     }
   };
 

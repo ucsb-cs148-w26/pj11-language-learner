@@ -1,11 +1,7 @@
 'use client'
-import { useState, useMemo } from 'react';
-import { supabase } from "@/lib/supabaseClient";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import DiscoverPagination from "./DiscoverPagination";
 import { useDiscoverData } from "./useDiscoverData";
-import { createFriendService } from "@/utils/friends/friendService";
 import { FriendActionButton } from "./FriendActionButton";
 
 const levels = ['All', 'Beginner', 'Intermediate', 'Advanced'];
