@@ -1,14 +1,12 @@
-// app/(app)/dashboard/page.tsx
 "use client";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { createFriendService } from "@/utils/friends/friendService";
 import FriendsList from "@/components/friends/list";
 import ChatLeftPanel from "@/components/chat/ChatLeftPanel";
 
-// Helper function to convert database level to display format
 function levelToDisplay(level: string | null | undefined): "Beginner" | "Intermediate" | "Advanced" | null {
   if (!level) return null;
   const lower = level.toLowerCase();
@@ -29,14 +27,14 @@ type DashboardData = {
     name: string;
     targetLanguage: string;
     level: "Beginner" | "Intermediate" | "Advanced";
-    lastActive?: string | null; // ISO
+    lastActive?: string | null;
   }>;
   chats: Array<{
     id: string;
     partnerId: string;
     partnerName: string;
     lastMessage?: string | null;
-    lastMessageAt?: string | null; // ISO
+    lastMessageAt?: string | null;
     createdAt: string;
     unreadCount: number;
   }>;
@@ -47,89 +45,121 @@ type LoadState<T> =
   | { status: "error"; message: string }
   | { status: "success"; data: T };
 
-async function getUserId(): Promise<string> {
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-  if (sessionError) throw sessionError;
-  if (session?.user) return session.user.id;
+type ProfileRow = {
+  user_id: string;
+  first_name: string | null;
+  last_name: string | null;
+  profile_picture_url?: string | null;
+  native_language?: string | null;
+};
 
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
+type ProfileTLRow = {
+  user_id: string;
+  level: string | null;
+  lang: { name: string | null } | Array<{ name: string | null }> | null;
+};
+
+type ConversationRow = {
+  id: string;
+  last_message_text: string | null;
+  last_message_at: string | null;
+  created_at: string;
+};
+
+type ConversationParticipantRow = {
+  conversation_id: string;
+  user_id: string;
+};
+
+async function getUserId(): Promise<string> {
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError) throw sessionError;
+  if (sessionData.session?.user) return sessionData.session.user.id;
+
+  const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError) throw userError;
-  if (user) return user.id;
+  if (userData.user) return userData.user.id;
 
   throw new Error("Not authenticated");
+}
+
+function getLangName(
+  lang: ProfileTLRow["lang"]
+): string | null {
+  if (!lang) return null;
+  if (Array.isArray(lang)) return lang[0]?.name ?? null;
+  return lang.name ?? null;
 }
 
 async function fetchDashboard(): Promise<DashboardData> {
   const userId = await getUserId();
 
-  // Fetch user profile
   const { data: profileData, error: profileError } = await supabase
-    .from('profiles')
-    .select('native_language, profile_picture_url')
-    .eq('user_id', userId)
-    .maybeSingle(); // Use maybeSingle to avoid errors when no row exists
+    .from("profiles")
+    .select("native_language, profile_picture_url")
+    .eq("user_id", userId)
+    .maybeSingle();
 
-  if (profileError) {
-    console.error("Error fetching profile:", profileError);
-    console.error("Error code:", profileError.code);
-    console.error("Error message:", profileError.message);
-    console.error("Error details:", profileError.details);
-    // Don't throw on PGRST116 (no rows) - that's expected for new users
-    if (profileError.code !== 'PGRST116') {
-      throw profileError;
-    }
+  if (profileError && profileError.code !== "PGRST116") {
+    throw profileError;
   }
 
-  // Fetch target languages from separate table
-  const { data: targetLanguagesData } = await supabase
+  const { data: targetLanguagesData, error: tlErr } = await supabase
     .from("profile_target_languages")
-    .select("level, lang:languages!profile_target_languages_language_id_fkey(name)")
+    .select("user_id, level, lang:languages!profile_target_languages_language_id_fkey(name)")
     .eq("user_id", userId)
     .limit(1);
 
-  // Get first target language (or null if none)
-  const firstTL =
-    targetLanguagesData && targetLanguagesData.length > 0 ? targetLanguagesData[0] : null;
+  if (tlErr) throw tlErr;
 
-  const langObj = Array.isArray((firstTL as any)?.lang) ? (firstTL as any).lang[0] : (firstTL as any)?.lang;
-  const targetLanguage = langObj?.name ?? null;
-  // const targetLanguage = firstTL?.lang?.name ?? null; 
+  const firstTL = targetLanguagesData && targetLanguagesData.length > 0
+    ? (targetLanguagesData[0] as ProfileTLRow)
+    : null;
 
-  const userProfile = profileData ? {
-    targetLanguage: targetLanguage,
-    profilePicture: profileData.profile_picture_url,
-    level: levelToDisplay(firstTL?.level),
-    nativeLanguage: profileData.native_language,
-  } : {
-    targetLanguage: null,
-    profilePicture: null,
-    level: null,
-    nativeLanguage: null,
-  };
+  const targetLanguage = firstTL ? getLangName(firstTL.lang) : null;
 
-  // Fetch Chats
-  const { data: myParts } = await supabase
+  const userProfile = profileData
+    ? {
+        targetLanguage,
+        profilePicture: (profileData as { profile_picture_url: string | null }).profile_picture_url,
+        level: levelToDisplay(firstTL?.level ?? null),
+        nativeLanguage: (profileData as { native_language: string | null }).native_language,
+      }
+    : {
+        targetLanguage: null,
+        profilePicture: null,
+        level: null,
+        nativeLanguage: null,
+      };
+
+  const { data: myParts, error: myPartsErr } = await supabase
     .from("conversation_participants")
     .select("conversation_id")
     .eq("user_id", userId);
 
-  const convoIds = (myParts ?? []).map(r => r.conversation_id);
+  if (myPartsErr) throw myPartsErr;
+
+  const convoIds = (myParts ?? []).map((r: { conversation_id: string }) => r.conversation_id);
 
   let chats: DashboardData["chats"] = [];
 
   if (convoIds.length > 0) {
-    const { data: convos } = await supabase
+    const { data: convos, error: convosErr } = await supabase
       .from("conversations")
       .select("id,last_message_text,last_message_at,created_at")
-      .in("id", convoIds)
+      .in("id", convoIds);
 
-    const { data: parts } = await supabase
+    if (convosErr) throw convosErr;
+
+    const { data: parts, error: partsErr } = await supabase
       .from("conversation_participants")
       .select("conversation_id,user_id")
       .in("conversation_id", convoIds);
 
-    const partnerByConvo = new Map<string,string>();
-    for (const p of parts ?? []) {
+    if (partsErr) throw partsErr;
+
+    const partnerByConvo = new Map<string, string>();
+    for (const p of (parts as ConversationParticipantRow[] | null) ?? []) {
       if (p.user_id !== userId) {
         partnerByConvo.set(p.conversation_id, p.user_id);
       }
@@ -137,28 +167,36 @@ async function fetchDashboard(): Promise<DashboardData> {
 
     const partnerIds = [...new Set(partnerByConvo.values())];
 
-    const { data: profs } = await supabase
+    const { data: profs, error: profsErr } = await supabase
       .from("profiles")
       .select("user_id,first_name,last_name")
       .in("user_id", partnerIds);
 
-    const profileById = new Map(profs?.map(p => [p.user_id, p]) ?? []);
+    if (profsErr) throw profsErr;
 
-    chats = (convos ?? []).map(c => {
-      const pid = partnerByConvo.get(c.id)!;
-      const prof = profileById.get(pid);
+    const profileById = new Map<string, ProfileRow>();
+    for (const p of (profs as ProfileRow[] | null) ?? []) {
+      profileById.set(p.user_id, p);
+    }
+
+    chats = ((convos as ConversationRow[] | null) ?? []).map((c) => {
+      const pid = partnerByConvo.get(c.id);
+      const prof = pid ? profileById.get(pid) : undefined;
+
+      const partnerName = prof
+        ? `${prof.first_name ?? ""} ${prof.last_name ?? ""}`.trim() || "Unnamed User"
+        : "Deleted User";
 
       return {
         id: c.id,
-        partnerId: pid,
-        partnerName:
-          prof ? `${prof.first_name ?? ""} ${prof.last_name ?? ""}` : "Deleted User",
+        partnerId: pid ?? "",
+        partnerName,
         lastMessage: c.last_message_text,
         lastMessageAt: c.last_message_at,
         createdAt: c.created_at,
         unreadCount: 0,
       };
-    });
+    }).filter(c => c.partnerId !== "");
   }
 
   chats.sort((a, b) => {
@@ -167,22 +205,14 @@ async function fetchDashboard(): Promise<DashboardData> {
     return bTime - aTime;
   });
 
-  // Fetch friends
-    // ------------------------------------------------------------------
-  // Fetch Friends (real data)
-  // ------------------------------------------------------------------
   const friendService = createFriendService(supabase);
-
-  // 1) Get friend edges from the friends table (sorted by created_at desc already)
   const friendEdges = await friendService.getFriendsList({ userId, limit: 50 });
 
-  // If none, keep empty
   let friends: DashboardData["friends"] = [];
 
   if (friendEdges.length > 0) {
-    const friendIds = friendEdges.map(e => e.friend_user_id);
+    const friendIds = friendEdges.map((e) => e.friend_user_id);
 
-    // 2) Fetch basic profile info for friends (name)
     const { data: friendProfiles, error: friendProfilesError } = await supabase
       .from("profiles")
       .select("user_id, first_name, last_name")
@@ -190,7 +220,6 @@ async function fetchDashboard(): Promise<DashboardData> {
 
     if (friendProfilesError) throw friendProfilesError;
 
-    // 3) Fetch friends' target language + level (take first TL per friend)
     const { data: friendTLs, error: friendTLsError } = await supabase
       .from("profile_target_languages")
       .select("user_id, level, lang:languages!profile_target_languages_language_id_fkey(name)")
@@ -198,31 +227,25 @@ async function fetchDashboard(): Promise<DashboardData> {
 
     if (friendTLsError) throw friendTLsError;
 
-    // Build maps for quick lookup
     const profileById = new Map<string, { first_name: string | null; last_name: string | null }>();
-    for (const p of friendProfiles ?? []) {
+    for (const p of (friendProfiles as ProfileRow[] | null) ?? []) {
       profileById.set(p.user_id, { first_name: p.first_name, last_name: p.last_name });
     }
 
-    // For TLs: pick first entry per user (you can improve this later)
     const tlById = new Map<
       string,
       { targetLanguage: string | null; level: "Beginner" | "Intermediate" | "Advanced" }
     >();
 
-    for (const row of friendTLs ?? []) {
+    for (const row of (friendTLs as ProfileTLRow[] | null) ?? []) {
       if (tlById.has(row.user_id)) continue;
-
-      const langObj = Array.isArray((row as any)?.lang) ? (row as any).lang[0] : (row as any)?.lang;
-      const targetLanguage = langObj?.name ?? null;
-
+      const tlName = getLangName(row.lang);
       tlById.set(row.user_id, {
-        targetLanguage,
-        level: (levelToDisplay(row.level) ?? "Beginner"),
+        targetLanguage: tlName,
+        level: levelToDisplay(row.level) ?? "Beginner",
       });
     }
 
-    // 4) Combine in the same order as friendEdges (which is sorted by friendship created_at)
     friends = friendEdges.map((edge) => {
       const prof = profileById.get(edge.friend_user_id);
       const tl = tlById.get(edge.friend_user_id);
@@ -240,16 +263,10 @@ async function fetchDashboard(): Promise<DashboardData> {
     });
   }
 
-  return {
-    user: userProfile,
-    friends,
-    chats,
-  };
+  return { user: userProfile, friends, chats };
 }
 
 export default function DashboardPage() {
-  const router = useRouter();
-
   const [state, setState] = useState<LoadState<DashboardData>>({ status: "idle" });
   const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
 
@@ -259,9 +276,7 @@ export default function DashboardPage() {
       setState({ status: "loading" });
       try {
         const data = await fetchDashboard();
-        if (!cancelled) {
-          setState({ status: "success", data });
-        }
+        if (!cancelled) setState({ status: "success", data });
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Unknown error";
         if (!cancelled) setState({ status: "error", message: msg });
@@ -271,22 +286,6 @@ export default function DashboardPage() {
       cancelled = true;
     };
   }, []);
-
-  const formatTimeAgo = (dateString?: string | null) => {
-    if (!dateString) return "Never";
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString();
-  };
 
   const content = useMemo(() => {
     if (state.status === "loading" || state.status === "idle") {
@@ -307,27 +306,21 @@ export default function DashboardPage() {
       );
     }
 
-    if (state.status !== "success") {
-      return null;
-    }
+    if (state.status !== "success") return null;
 
     const { user, friends, chats } = state.data;
 
     const convoIdByPartner = new Map(chats.map((c) => [c.partnerId, c.id]));
 
-    const friendsForUI = friends;
-
     return (
       <div className="space-y-6">
-
         <header>
           <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">Dashboard</h1>
         </header>
 
-        {/* Profile Card */}
         <Link
           href="/profile"
-          className="block rounded-2xl border border-zinc-200 bg-white p-6 hover:bg-zinc-50 transition-colors"
+          className="block rounded-2xl border border-zinc-200 bg-white p-6 transition-colors hover:bg-zinc-50"
         >
           <div className="flex items-start gap-4">
             <div className="relative">
@@ -335,16 +328,11 @@ export default function DashboardPage() {
                 <img
                   src={user.profilePicture}
                   alt="Profile"
-                  className="w-20 h-20 rounded-full object-cover border-2 border-zinc-200"
+                  className="h-20 w-20 rounded-full border-2 border-zinc-200 object-cover"
                 />
               ) : (
-                <div className="w-20 h-20 rounded-full bg-zinc-100 border-2 border-zinc-200 flex items-center justify-center">
-                  <svg
-                    className="w-10 h-10 text-zinc-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
+                <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-zinc-200 bg-zinc-100">
+                  <svg className="h-10 w-10 text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -355,12 +343,10 @@ export default function DashboardPage() {
                 </div>
               )}
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="min-w-0 flex-1">
               <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-xl font-semibold text-zinc-900">
-                    Profile
-                  </h2>
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-xl font-semibold text-zinc-900">Profile</h2>
                   <div className="mt-2 space-y-1">
                     {user.targetLanguage && (
                       <p className="text-sm text-zinc-700">
@@ -374,24 +360,14 @@ export default function DashboardPage() {
                       </p>
                     )}
                     {!user.targetLanguage && (
-                      <p className="text-sm text-zinc-600 italic">Set your target language to get started</p>
+                      <p className="text-sm italic text-zinc-600">Set your target language to get started</p>
                     )}
                   </div>
                 </div>
-                <div className="shrink-0 text-sm text-zinc-600 flex items-center gap-1">
+                <div className="flex shrink-0 items-center gap-1 text-sm text-zinc-600">
                   <span>View Profile</span>
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5l7 7-7 7"
-                    />
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </div>
               </div>
@@ -399,25 +375,25 @@ export default function DashboardPage() {
           </div>
         </Link>
 
-        {/* Main content grid */}
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* Friends section */}
           <section className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold text-zinc-900">Friends</h2>
-              <Link
-                href="/discover"
-                className="text-sm font-medium text-zinc-700 hover:text-zinc-900"
-              >
-                Find more
-              </Link>
+              <div className="flex items-center gap-3">
+                <Link href="/requests" className="text-sm font-medium text-zinc-700 hover:text-zinc-900">
+                  Requests
+                </Link>
+                <Link href="/discover" className="text-sm font-medium text-zinc-700 hover:text-zinc-900">
+                  Find more
+                </Link>
+              </div>
             </div>
 
             <FriendsList
               showHeader={false}
               showSubHeader={false}
               removingIds={removingIds}
-              friends={friendsForUI.map((f) => {
+              friends={friends.map((f) => {
                 const convoId = convoIdByPartner.get(f.id);
                 return {
                   id: f.id,
@@ -429,8 +405,8 @@ export default function DashboardPage() {
               onRemove={async (friendId) => {
                 if (state.status !== "success") return;
 
-                // Optimistic UI update
                 const prev = state.data;
+
                 setRemovingIds((s) => new Set(s).add(friendId));
                 setState({
                   status: "success",
@@ -443,7 +419,6 @@ export default function DashboardPage() {
                   const data = await fetchDashboard();
                   setState({ status: "success", data });
                 } catch (e) {
-                  // Revert if RPC fails
                   setState({ status: "success", data: prev });
                   alert(e instanceof Error ? e.message : "Failed to remove friend");
                 } finally {
@@ -455,34 +430,27 @@ export default function DashboardPage() {
                 }
               }}
             />
-
           </section>
 
-          {/* Chats section */}
           <section className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold text-zinc-900">Recent Chats</h2>
               {chats.length > 0 && (
-                <Link
-                  href="/chats"
-                  className="text-sm font-medium text-zinc-700 hover:text-zinc-900"
-                >
+                <Link href="/chats" className="text-sm font-medium text-zinc-700 hover:text-zinc-900">
                   View all
                 </Link>
               )}
             </div>
 
             {chats.length === 0 ? (
-              <div className="rounded-2xl border p-6 text-center text-sm text-zinc-600">
-                No chats yet.
-              </div>
+              <div className="rounded-2xl border p-6 text-center text-sm text-zinc-600">No chats yet.</div>
             ) : (
-              <div className="rounded-2xl border border-zinc-300 bg-white overflow-hidden">
+              <div className="overflow-hidden rounded-2xl border border-zinc-300 bg-white">
                 <ChatLeftPanel
                   linkMode
                   showHeader={false}
                   containerClassName="border-0 bg-transparent"
-                  chats={chats.map(c => ({
+                  chats={chats.map((c) => ({
                     conversationId: c.id,
                     createdAt: c.createdAt,
                     partnerId: c.partnerId,
@@ -500,16 +468,9 @@ export default function DashboardPage() {
         </div>
       </div>
     );
-  }, [state]);
+  }, [state, removingIds]);
 
-  return(
-    <>
-      <div className="mx-auto w-full p-6">
-        {content}
-      </div>
-    </>
-
-  );
+  return <div className="mx-auto w-full p-6">{content}</div>;
 }
 
 function SkeletonDashboard() {
