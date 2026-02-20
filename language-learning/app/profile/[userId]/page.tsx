@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { createFriendService } from "@/utils/friends/friendService";
+import type { RelationshipStatus } from "@/utils/friends/friendTypes";
 
 // Helper function to convert database level to display format
 function levelToDisplay(level: string | null | undefined): "Beginner" | "Intermediate" | "Advanced" | null {
@@ -95,6 +97,13 @@ export default function UserProfilePage() {
   const [state, setState] = useState<LoadState<Profile>>({ status: "loading" });
   const [messaging, setMessaging] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [viewerId, setViewerId] = useState<string | null>(null);
+  const [relStatus, setRelStatus] = useState<RelationshipStatus | null>(null);
+  const [statusLoading, setStatusLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<
+    "send" | "accept" | "deny" | "cancel" | "unfriend" | null
+  >(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!userId) return;
@@ -130,7 +139,117 @@ export default function UserProfilePage() {
     };
   }, [userId]);
 
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+
+    (async () => {
+      setStatusLoading(true);
+      try {
+        const vid = await getUserId();
+        if (cancelled) return;
+        setViewerId(vid);
+
+        if (!vid) {
+          setRelStatus(null);
+          return;
+        }
+        if (vid === userId) {
+          setRelStatus({ kind: "self" });
+          return;
+        }
+
+        const friends = createFriendService(supabase);
+        const status = await friends.getRelationshipStatus({
+          viewerId: vid,
+          otherUserId: userId,
+        });
+        if (!cancelled) setRelStatus(status);
+      } catch (e) {
+        if (!cancelled) {
+          console.error("Relationship status error:", e);
+          setRelStatus(null);
+        }
+      } finally {
+        if (!cancelled) setStatusLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  const refreshStatus = async () => {
+    if (!viewerId || viewerId === userId) {
+      setRelStatus(viewerId === userId ? { kind: "self" } : null);
+      return;
+    }
+    const friends = createFriendService(supabase);
+    const status = await friends.getRelationshipStatus({
+      viewerId,
+      otherUserId: userId,
+    });
+    setRelStatus(status);
+  };
+
+  const withAction = async (
+    label: "send" | "accept" | "deny" | "cancel" | "unfriend",
+    fn: () => Promise<void>
+  ) => {
+    setActionLoading(label);
+    setActionError(null);
+    try {
+      await fn();
+      await refreshStatus();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Action failed";
+      setActionError(msg);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  async function handleSendRequest() {
+    if (!viewerId) {
+      setActionError("Please sign in to send friend requests.");
+      return;
+    }
+    const friends = createFriendService(supabase);
+    await withAction("send", () =>
+      friends.sendFriendRequest({ requesterId: viewerId, recipientId: userId })
+    );
+  }
+
+  async function handleAccept(requestId?: string) {
+    if (!viewerId || !requestId) return;
+    const friends = createFriendService(supabase);
+    await withAction("accept", async () => {
+      const conversationId = await friends.acceptFriendRequest({ requestId });
+      router.push(`/chats?c=${encodeURIComponent(conversationId)}`);
+    });
+  }
+
+  async function handleDeny(requestId?: string) {
+    if (!viewerId || !requestId) return;
+    const friends = createFriendService(supabase);
+    await withAction("deny", () => friends.denyFriendRequest({ requestId }));
+  }
+
+  async function handleCancel(requestId?: string) {
+    if (!viewerId || !requestId) return;
+    const friends = createFriendService(supabase);
+    await withAction("cancel", () => friends.cancelFriendRequest({ requestId }));
+  }
+
+  async function handleUnfriend() {
+    if (!viewerId) return;
+    const friends = createFriendService(supabase);
+    await withAction("unfriend", () => friends.unfriend({ otherUserId: userId }));
+  }
+
   async function handleMessage() {
+    if (relStatus?.kind !== "friends") return;
     try {
       setMessaging(true);
       setError(null);
@@ -185,23 +304,121 @@ export default function UserProfilePage() {
 
   const p = state.data;
 
+  const renderFriendButton = () => {
+    if (statusLoading) {
+      return (
+        <button
+          className="rounded-xl border border-zinc-200 px-4 py-2 text-sm text-zinc-600 bg-white"
+          disabled
+        >
+          Loading...
+        </button>
+      );
+    }
+
+    if (!viewerId) {
+      return (
+        <Link
+          href="/auth/signin"
+          className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-50"
+        >
+          Sign in to connect
+        </Link>
+      );
+    }
+
+    if (relStatus?.kind === "self") return null;
+    if (!relStatus) return null;
+
+    const commonClasses =
+      "rounded-xl px-4 py-2 text-sm font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed";
+
+    switch (relStatus.kind) {
+      case "none":
+        return (
+          <button
+            onClick={handleSendRequest}
+            disabled={actionLoading === "send"}
+            className={`${commonClasses} bg-zinc-900 text-white hover:opacity-90`}
+          >
+            {actionLoading === "send" ? "Sending..." : "Send friend request"}
+          </button>
+        );
+      case "incoming_request": {
+        const reqId = relStatus.request.id;
+        return (
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleAccept(reqId)}
+              disabled={actionLoading === "accept"}
+              className={`${commonClasses} bg-zinc-900 text-white hover:opacity-90`}
+            >
+              {actionLoading === "accept" ? "Accepting..." : "Accept"}
+            </button>
+            <button
+              onClick={() => handleDeny(reqId)}
+              disabled={actionLoading === "deny"}
+              className={`${commonClasses} border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50`}
+            >
+              {actionLoading === "deny" ? "Denying..." : "Deny"}
+            </button>
+          </div>
+        );
+      }
+      case "outgoing_request": {
+        const reqId = relStatus.request.id;
+        return (
+          <button
+            onClick={() => handleCancel(reqId)}
+            disabled={actionLoading === "cancel"}
+            className={`${commonClasses} border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50`}
+          >
+            {actionLoading === "cancel" ? "Canceling..." : "Cancel request"}
+          </button>
+        );
+      }
+      case "friends":
+        return (
+          <button
+            onClick={handleUnfriend}
+            disabled={actionLoading === "unfriend"}
+            className={`${commonClasses} border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50`}
+          >
+            {actionLoading === "unfriend" ? "Unfriending..." : "Unfriend"}
+          </button>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
       <div className="mx-auto max-w-6xl w-full p-6">
         <div className="space-y-6">
           <header className="flex items-center justify-between">
             <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">Profile</h1>
-            <button
-              onClick={handleMessage}
-              disabled={messaging}
-              className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-            >
-              {messaging ? "Starting conversation..." : "Message"}
-            </button>
+            <div className="flex items-center gap-3">
+              {renderFriendButton()}
+              {relStatus?.kind === "friends" && (
+                <button
+                  onClick={handleMessage}
+                  disabled={messaging}
+                  className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                >
+                  {messaging ? "Starting..." : "Message"}
+                </button>
+              )}
+            </div>
           </header>
 
           {error && (
             <div className="rounded-2xl border border-red-200 bg-red-50 p-4">
               <p className="text-sm text-red-800">{error}</p>
+            </div>
+          )}
+          {actionError && (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+              <p className="text-sm text-amber-900">{actionError}</p>
             </div>
           )}
 
