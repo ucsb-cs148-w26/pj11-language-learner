@@ -195,7 +195,7 @@ export default function UserProfilePage() {
 
   const withAction = async (
     label: "send" | "accept" | "deny" | "cancel" | "unfriend",
-    fn: () => Promise<void>
+    fn: () => Promise<unknown>
   ) => {
     setActionLoading(label);
     setActionError(null);
