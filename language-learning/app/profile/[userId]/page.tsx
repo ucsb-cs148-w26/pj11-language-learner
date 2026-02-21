@@ -9,7 +9,9 @@ import { createFriendService } from "@/utils/friends/friendService";
 import type { RelationshipStatus } from "@/utils/friends/friendTypes";
 
 // Helper function to convert database level to display format
-function levelToDisplay(level: string | null | undefined): "Beginner" | "Intermediate" | "Advanced" | null {
+function levelToDisplay(
+  level: string | null | undefined
+): "Beginner" | "Intermediate" | "Advanced" | null {
   if (!level) return null;
   const lower = level.toLowerCase();
   if (lower === "intermediate") return "Intermediate";
@@ -17,12 +19,16 @@ function levelToDisplay(level: string | null | undefined): "Beginner" | "Interme
   return "Beginner";
 }
 
+type TargetLanguage = {
+  name: string;
+  level: "Beginner" | "Intermediate" | "Advanced" | null;
+};
+
 type Profile = {
   firstName?: string | null;
   lastName?: string | null;
   bio?: string | null;
-  targetLanguage?: string | null;
-  level?: "Beginner" | "Intermediate" | "Advanced" | null;
+  targetLanguages: TargetLanguage[]; // ✅ multiple
   profilePicture?: string | null;
   nativeLanguage?: string | null;
 };
@@ -34,12 +40,13 @@ type LoadState<T> =
 
 async function getUserId(): Promise<string | null> {
   try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (!authError && user) {
-      return user.id;
-    }
-  } catch (e) {
-    // Ignore auth errors
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (!authError && user) return user.id;
+  } catch {
+    // ignore auth errors
   }
   return null;
 }
@@ -47,43 +54,53 @@ async function getUserId(): Promise<string | null> {
 async function fetchUserProfile(userId: string): Promise<Profile> {
   // Fetch profile data
   const { data: profileData, error: profileError } = await supabase
-    .from('profiles')
-    .select('first_name, last_name, bio, native_language, profile_picture_url')
-    .eq('user_id', userId)
+    .from("profiles")
+    .select("first_name, last_name, bio, native_language, profile_picture_url")
+    .eq("user_id", userId)
     .single();
 
   if (profileError) {
-    // If no profile exists, throw error
-    if (profileError.code === 'PGRST116') {
-      throw new Error("Profile not found");
-    }
-    const errorMessage = profileError.message || `Supabase error: ${profileError.code || 'Unknown'}`;
+    if (profileError.code === "PGRST116") throw new Error("Profile not found");
+    const errorMessage =
+      profileError.message || `Supabase error: ${profileError.code || "Unknown"}`;
     const enhancedError = new Error(errorMessage);
     (enhancedError as any).code = profileError.code;
     (enhancedError as any).details = profileError.details;
     throw enhancedError;
   }
 
-  // Fetch target languages from separate table
+  // Fetch ALL target languages
   const { data: targetLanguagesData, error: targetLanguagesError } = await supabase
-    .from('profile_target_languages')
-    .select('level, languages(name)')
-    .eq('user_id', userId)
-    .limit(1);
+    .from("profile_target_languages")
+    .select("level, languages!profile_target_languages_language_id_fkey(name)")
+    .eq("user_id", userId);
 
-  // Get first target language (or null if none)
-  const firstTL =
-    targetLanguagesData && targetLanguagesData.length > 0 ? targetLanguagesData[0] : null;
+  if (targetLanguagesError) {
+    const errorMessage =
+      targetLanguagesError.message ||
+      `Supabase error: ${targetLanguagesError.code || "Unknown"}`;
+    const enhancedError = new Error(errorMessage);
+    (enhancedError as any).code = targetLanguagesError.code;
+    (enhancedError as any).details = targetLanguagesError.details;
+    throw enhancedError;
+  }
 
-  const targetLanguage = (firstTL as any)?.languages?.name ?? null;
-  const level = levelToDisplay(firstTL?.level ?? null);
+  const targetLanguages: TargetLanguage[] = (targetLanguagesData ?? [])
+    .map((row: any) => {
+      const name = row?.languages?.name ?? null;
+      if (!name) return null;
+      return {
+        name,
+        level: levelToDisplay(row.level),
+      };
+    })
+    .filter(Boolean) as TargetLanguage[];
 
   return {
     firstName: profileData.first_name,
     lastName: profileData.last_name,
     bio: profileData.bio,
-    targetLanguage: targetLanguage,
-    level: level,
+    targetLanguages,
     profilePicture: profileData.profile_picture_url,
     nativeLanguage: profileData.native_language,
   };
@@ -93,7 +110,7 @@ export default function UserProfilePage() {
   const router = useRouter();
   const params = useParams();
   const userId = params.userId as string;
-  
+
   const [state, setState] = useState<LoadState<Profile>>({ status: "loading" });
   const [messaging, setMessaging] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -107,26 +124,24 @@ export default function UserProfilePage() {
 
   useEffect(() => {
     if (!userId) return;
-    
+
     let cancelled = false;
     (async () => {
       try {
         const data = await fetchUserProfile(userId);
-        if (!cancelled) {
-          setState({ status: "success", data });
-        }
+        if (!cancelled) setState({ status: "success", data });
       } catch (e) {
         let msg = "Unknown error";
         if (e instanceof Error) {
-          if (e.name === 'AbortError' || e.message.includes('aborted')) {
+          if (e.name === "AbortError" || e.message.includes("aborted")) {
             msg = "Request was cancelled. Please refresh the page.";
           } else {
             msg = e.message;
           }
-        } else if (e && typeof e === 'object' && 'message' in e) {
-          msg = String(e.message);
-        } else if (e && typeof e === 'object' && 'code' in e) {
-          msg = `Error code: ${e.code}`;
+        } else if (e && typeof e === "object" && "message" in e) {
+          msg = String((e as any).message);
+        } else if (e && typeof e === "object" && "code" in e) {
+          msg = `Error code: ${(e as any).code}`;
         } else {
           msg = `Error: ${JSON.stringify(e)}`;
         }
@@ -134,6 +149,7 @@ export default function UserProfilePage() {
         if (!cancelled) setState({ status: "error", message: msg });
       }
     })();
+
     return () => {
       cancelled = true;
     };
@@ -261,12 +277,13 @@ export default function UserProfilePage() {
       if (error) throw error;
 
       const conversationId = data as string;
-
-      // Navigate to chats and auto-select that conversation
       router.push(`/chats?c=${encodeURIComponent(conversationId)}`);
     } catch (e) {
       console.error(e);
-      const msg = e instanceof Error ? e.message : "Could not start conversation. Check console for details.";
+      const msg =
+        e instanceof Error
+          ? e.message
+          : "Could not start conversation. Check console for details.";
       setError(msg);
       setMessaging(false);
     }
@@ -422,90 +439,97 @@ export default function UserProfilePage() {
             </div>
           )}
 
-          {/* Profile Card */}
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6">
-            <div className="flex items-start gap-4">
-              <div className="relative">
-                {p.profilePicture ? (
-                  <img
-                    src={p.profilePicture}
-                    alt="Profile"
-                    className="w-20 h-20 rounded-full object-cover border-2 border-zinc-200"
-                  />
-                ) : (
-                  <div className="w-20 h-20 rounded-full bg-zinc-100 border-2 border-zinc-200 flex items-center justify-center">
-                    <svg
-                      className="w-10 h-10 text-zinc-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                      />
-                    </svg>
-                  </div>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h2 className="text-xl font-semibold text-zinc-900">
-                  {[p.firstName, p.lastName].filter(Boolean).join(" ") || "User"}
-                </h2>
-                <div className="mt-2 space-y-1">
-                  {p.targetLanguage && (
-                    <p className="text-sm text-zinc-700">
-                      <span className="font-medium">Learning:</span> {p.targetLanguage}
-                      {p.level && ` • ${p.level}`}
-                    </p>
-                  )}
-                  {p.nativeLanguage && (
-                    <p className="text-sm text-zinc-700">
-                      <span className="font-medium">Native:</span> {p.nativeLanguage}
-                    </p>
-                  )}
+        {/* Profile Card */}
+        <div className="rounded-2xl border border-zinc-200 bg-white p-6">
+          <div className="flex items-start gap-4">
+            <div className="relative">
+              {p.profilePicture ? (
+                <img
+                  src={p.profilePicture}
+                  alt="Profile"
+                  className="w-20 h-20 rounded-full object-cover border-2 border-zinc-200"
+                />
+              ) : (
+                <div className="w-20 h-20 rounded-full bg-zinc-100 border-2 border-zinc-200 flex items-center justify-center">
+                  <svg
+                    className="w-10 h-10 text-zinc-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
+                  </svg>
                 </div>
+              )}
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <h2 className="text-xl font-semibold text-zinc-900">
+                {[p.firstName, p.lastName].filter(Boolean).join(" ") || "User"}
+              </h2>
+
+              <div className="mt-2 space-y-1">
+                {p.targetLanguages.length > 0 && (
+                  <p className="text-sm text-zinc-700">
+                    <span className="font-medium">Learning:</span>{" "}
+                    {p.targetLanguages
+                      .map((t) => `${t.name}${t.level ? ` • ${t.level}` : ""}`)
+                      .join(", ")}
+                  </p>
+                )}
+
+                {p.nativeLanguage && (
+                  <p className="text-sm text-zinc-700">
+                    <span className="font-medium">Native:</span> {p.nativeLanguage}
+                  </p>
+                )}
               </div>
             </div>
           </div>
-
-          {/* Profile Information */}
-          <section className="space-y-4">
-            {/* Bio */}
-            {p.bio && (
-              <div className="rounded-2xl border border-zinc-200 bg-white p-6">
-                <h3 className="text-sm font-medium text-zinc-700 mb-2">Bio</h3>
-                <p className="text-sm text-zinc-900 whitespace-pre-wrap">{p.bio}</p>
-              </div>
-            )}
-
-            {/* Native Language */}
-            {p.nativeLanguage && (
-              <div className="rounded-2xl border border-zinc-200 bg-white p-6">
-                <h3 className="text-sm font-medium text-zinc-700 mb-2">Native Language</h3>
-                <p className="text-sm text-zinc-900">{p.nativeLanguage}</p>
-              </div>
-            )}
-
-            {/* Target Language */}
-            {p.targetLanguage && (
-              <div className="rounded-2xl border border-zinc-200 bg-white p-6">
-                <h3 className="text-sm font-medium text-zinc-700 mb-2">Target Language</h3>
-                <p className="text-sm text-zinc-900">{p.targetLanguage}</p>
-              </div>
-            )}
-
-            {/* Level */}
-            {p.level && (
-              <div className="rounded-2xl border border-zinc-200 bg-white p-6">
-                <h3 className="text-sm font-medium text-zinc-700 mb-2">Proficiency Level</h3>
-                <p className="text-sm text-zinc-900">{p.level}</p>
-              </div>
-            )}
-          </section>
         </div>
+
+        {/* Profile Information */}
+        <section className="space-y-4">
+          {/* Bio */}
+          {p.bio && (
+            <div className="rounded-2xl border border-zinc-200 bg-white p-6">
+              <h3 className="text-sm font-medium text-zinc-700 mb-2">Bio</h3>
+              <p className="text-sm text-zinc-900 whitespace-pre-wrap">{p.bio}</p>
+            </div>
+          )}
+
+          {/* Native Language */}
+          {p.nativeLanguage && (
+            <div className="rounded-2xl border border-zinc-200 bg-white p-6">
+              <h3 className="text-sm font-medium text-zinc-700 mb-2">Native Language</h3>
+              <p className="text-sm text-zinc-900">{p.nativeLanguage}</p>
+            </div>
+          )}
+
+          {/* Target Languages */}
+          {p.targetLanguages.length > 0 && (
+            <div className="rounded-2xl border border-zinc-200 bg-white p-6">
+              <h3 className="text-sm font-medium text-zinc-700 mb-2">Target Languages</h3>
+              <div className="flex flex-wrap gap-2">
+                {p.targetLanguages.map((t) => (
+                  <span
+                    key={`${t.name}-${t.level ?? "null"}`}
+                    className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-sm text-zinc-900"
+                  >
+                    {t.name}
+                    {t.level ? ` · ${t.level}` : ""}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

@@ -15,11 +15,15 @@ function levelToDisplay(level: string | null | undefined): "Beginner" | "Interme
   return "Beginner";
 }
 
+type TargetLanguages = {
+  name: string;
+  level: "Beginner" | "Intermediate" | "Advanced" | null;
+};
+
 type DashboardData = {
   user: {
-    targetLanguage?: string | null;
+    targetLanguages: TargetLanguages[];
     profilePicture?: string | null;
-    level?: "Beginner" | "Intermediate" | "Advanced" | null;
     nativeLanguage?: string | null;
   };
   friends: Array<{
@@ -106,31 +110,24 @@ async function fetchDashboard(): Promise<DashboardData> {
 
   const { data: targetLanguagesData, error: tlErr } = await supabase
     .from("profile_target_languages")
-    .select("user_id, level, lang:languages!profile_target_languages_language_id_fkey(name)")
+    .select("level, lang:languages!profile_target_languages_language_id_fkey(name)")
     .eq("user_id", userId)
-    .limit(1);
 
   if (tlErr) throw tlErr;
 
-  const firstTL = targetLanguagesData && targetLanguagesData.length > 0
-    ? (targetLanguagesData[0] as ProfileTLRow)
-    : null;
+  const targetLanguages: TargetLanguages[] = (targetLanguagesData ?? [])
+    .map((row: any) => {
+      const name = row?.lang?.name ?? null;
+      if (!name) return null;
+      return { name, level: levelToDisplay(row.level) };
+    })
+    .filter(Boolean) as TargetLanguages[];
 
-  const targetLanguage = firstTL ? getLangName(firstTL.lang) : null;
-
-  const userProfile = profileData
-    ? {
-        targetLanguage,
-        profilePicture: (profileData as { profile_picture_url: string | null }).profile_picture_url,
-        level: levelToDisplay(firstTL?.level ?? null),
-        nativeLanguage: (profileData as { native_language: string | null }).native_language,
-      }
-    : {
-        targetLanguage: null,
-        profilePicture: null,
-        level: null,
-        nativeLanguage: null,
-      };
+  const userProfile = {
+    targetLanguages,
+    profilePicture: profileData?.profile_picture_url ?? null,
+    nativeLanguage: profileData?.native_language ?? null,
+  };
 
   const { data: myParts, error: myPartsErr } = await supabase
     .from("conversation_participants")
@@ -348,19 +345,20 @@ export default function DashboardPage() {
                 <div className="min-w-0 flex-1">
                   <h2 className="text-xl font-semibold text-zinc-900">Profile</h2>
                   <div className="mt-2 space-y-1">
-                    {user.targetLanguage && (
+                    {user.targetLanguages.length > 0 ? (
                       <p className="text-sm text-zinc-700">
-                        <span className="font-medium">Learning:</span> {user.targetLanguage}
-                        {user.level && ` • ${user.level}`}
+                        <span className="font-medium">Learning:</span> {" "}
+                        {user.targetLanguages
+                          .map((t) => `${t.name}${t.level ? ` • ${t.level}` : ""}`)
+                          .join(", ")}
                       </p>
+                    ) : (
+                      <p className="text-sm italic text-zinc-600">Set your target language to get started</p>
                     )}
                     {user.nativeLanguage && (
                       <p className="text-sm text-zinc-700">
                         <span className="font-medium">Native:</span> {user.nativeLanguage}
                       </p>
-                    )}
-                    {!user.targetLanguage && (
-                      <p className="text-sm italic text-zinc-600">Set your target language to get started</p>
                     )}
                   </div>
                 </div>

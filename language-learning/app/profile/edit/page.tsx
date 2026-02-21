@@ -11,7 +11,7 @@ type LevelDB = "beginner" | "intermediate" | "advanced";
 type LevelDisplay = "Beginner" | "Intermediate" | "Advanced";
 
 // Helper functions to convert between database and display formats
-function levelToDisplay(level: LevelDB | null | undefined): LevelDisplay {
+function levelToDisplay(level: LevelDB | string | null | undefined): LevelDisplay {
   if (!level) return "Beginner";
   const lower = level.toLowerCase();
   if (lower === "intermediate") return "Intermediate";
@@ -26,36 +26,38 @@ function levelToDB(level: LevelDisplay): LevelDB {
   return "beginner";
 }
 
+type LanguageOption = {
+  id: number;
+  name: string;
+};
+
+type TargetLanguageFormItem = {
+  name: string;
+  level: LevelDisplay;
+};
+
 type ProfileForm = {
   firstName: string;
   lastName: string;
   bio: string;
-  targetLanguage: string;
   nativeLanguage: string;
-  level: LevelDisplay; // Form uses display format
-};
-
-type ProfileAPI = {
-  firstName?: string | null;
-  lastName?: string | null;
-  bio?: string | null;
-  targetLanguage: string;
-  nativeLanguage?: string | null;
-  level: LevelDB; // API uses database format
+  targetLanguages: TargetLanguageFormItem[];
 };
 
 type ProfileDisplay = {
   firstName?: string | null;
   lastName?: string | null;
   bio?: string | null;
-  targetLanguage: string;
   nativeLanguage?: string | null;
-  level: LevelDisplay; // Display format
+  targetLanguages: TargetLanguageFormItem[];
 };
 
-type LanguageOption = {
-  id: number;
-  name: string;
+type ProfileAPI = {
+  firstName?: string | null;
+  lastName?: string | null;
+  bio?: string | null;
+  nativeLanguage?: string | null;
+  targetLanguages: { name: string; level: LevelDB }[];
 };
 
 async function getUserId(): Promise<string> {
@@ -101,9 +103,8 @@ async function fetchMyProfile(): Promise<ProfileDisplay> {
         firstName: "",
         lastName: "",
         bio: "",
-        targetLanguage: "",
         nativeLanguage: "",
-        level: "Beginner", // Display format
+        targetLanguages: [],
       };
     }
     console.error("Profile fetch error:", profileError);
@@ -113,26 +114,26 @@ async function fetchMyProfile(): Promise<ProfileDisplay> {
   // Fetch target languages from separate table
   const { data: targetLanguagesData, error: targetLanguagesError } = await supabase
     .from("profile_target_languages")
-    .select("level, languages(name)")
-    .eq("user_id", userId)
-    .limit(1);
+    .select("level, languages!profile_target_languages_language_id_fkey(name)")
+    .eq("user_id", userId);
 
   console.log("Target languages fetch result:", { targetLanguagesData, targetLanguagesError });
   if (targetLanguagesError) console.error("Target languages fetch error:", targetLanguagesError);
 
-  const firstTL =
-    targetLanguagesData && targetLanguagesData.length > 0 ? targetLanguagesData[0] : null;
-
-  const targetLanguage = (firstTL as any)?.languages?.name ?? "";
-  const levelDB = (firstTL?.level as LevelDB | null) ?? null;
+  const targetLanguages: TargetLanguageFormItem[] = (targetLanguagesData ?? [])
+    .map((row: any) => {
+      const name = row?.languages?.name ?? "";
+      if (!name) return null;
+      return { name, level: levelToDisplay(row.level) };
+    })
+    .filter(Boolean) as TargetLanguageFormItem[];
 
   const result: ProfileDisplay = {
     firstName: profileData.first_name || "",
     lastName: profileData.last_name || "",
     bio: profileData.bio || "",
-    targetLanguage: targetLanguage,
     nativeLanguage: profileData.native_language || "",
-    level: levelToDisplay(levelDB),
+    targetLanguages,
   };
 
   console.log("Returning profile data:", result);
@@ -152,20 +153,16 @@ async function saveMyProfile(payload: ProfileAPI): Promise<void> {
   let email: string | null = existingProfile?.email || null;
   if (!email) {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       email = user?.email || null;
-    } catch (e) {
-      // If we can't get email from auth, use a placeholder for test-user-id
-      if (userId === "test-user-id") {
-        email = "test@example.com";
-      }
+    } catch {
+      // ignore
     }
   }
 
-  // Update profile in profiles table
-  console.log("Saving profile with level:", payload.level);
-  console.log("Full payload:", payload);
-  
+  // Upsert profile
   const { error: profileError } = await supabase
     .from("profiles")
     .upsert(
@@ -183,44 +180,60 @@ async function saveMyProfile(payload: ProfileAPI): Promise<void> {
 
   if (profileError) throw profileError;
 
-  const langName = payload.targetLanguage.trim();
-  if (langName) {
-    const { data: langRow, error: langSelectError } = await supabase
-      .from("languages")
-      .select("id")
-      .eq("name", langName)
-      .maybeSingle();
+  // Replace ALL target languages
+  const cleaned = (payload.targetLanguages ?? [])
+    .map((t) => ({ name: t.name.trim(), level: t.level }))
+    .filter((t) => !!t.name);
 
-    if (langSelectError) throw langSelectError;
-    if (!langRow?.id) {
-      throw new Error(`Selected language "${langName}" not found in languages table.`);
-    }
+  const { error: delErr } = await supabase
+    .from("profile_target_languages")
+    .delete()
+    .eq("user_id", userId);
 
-    const languageId = langRow.id;
+  if (delErr) throw delErr;
 
-    const { error: delErr } = await supabase
-      .from("profile_target_languages")
-      .delete()
-      .eq("user_id", userId);
+  if (cleaned.length === 0) return;
 
-    if (delErr) throw delErr;
+  // Dedupe by language name
+  const seen = new Set<string>();
+  const deduped = cleaned.filter((t) => {
+    const k = t.name.toLowerCase();
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
 
-    const { error: insErr } = await supabase
-      .from("profile_target_languages")
-      .insert({
-        user_id: userId,
-        language_id: languageId,
-        level: payload.level,
-      });
+  // Fetch language ids in one query
+  const names = deduped.map((t) => t.name);
+  const { data: langRows, error: langSelectError } = await supabase
+    .from("languages")
+    .select("id, name")
+    .in("name", names);
 
-    if (insErr) throw insErr;
+  if (langSelectError) throw langSelectError;
+
+  const idByName = new Map<string, number>();
+  (langRows ?? []).forEach((r: any) => idByName.set(String(r.name), Number(r.id)));
+
+  const missing = names.filter((n) => !idByName.has(n));
+  if (missing.length > 0) {
+    throw new Error(`Selected language(s) not found in languages table: ${missing.join(", ")}`);
   }
-}
 
+  const inserts = deduped.map((t) => ({
+    user_id: userId,
+    language_id: idByName.get(t.name)!,
+    level: t.level,
+  }));
+
+  const { error: insErr } = await supabase.from("profile_target_languages").insert(inserts);
+  if (insErr) throw insErr;
+}
 
 export default function EditProfilePage() {
   const router = useRouter();
-    const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
 
   function onClickAvatar() {
@@ -242,13 +255,11 @@ export default function EditProfilePage() {
 
     setError(null);
 
-    // avoid memory leak if user re-selects
     if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
 
     const url = URL.createObjectURL(file);
     setAvatarPreviewUrl(url);
 
-    // allow selecting same file again
     e.target.value = "";
   }
 
@@ -257,7 +268,6 @@ export default function EditProfilePage() {
       if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
     };
   }, [avatarPreviewUrl]);
-
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -269,9 +279,8 @@ export default function EditProfilePage() {
     firstName: "",
     lastName: "",
     bio: "",
-    targetLanguage: "",
     nativeLanguage: "",
-    level: "Beginner", // Display format
+    targetLanguages: [{ name: "", level: "Beginner" }],
   });
 
   useEffect(() => {
@@ -283,26 +292,24 @@ export default function EditProfilePage() {
 
       try {
         const [p, langs] = await Promise.all([fetchMyProfile(), fetchLanguages()]);
-
         if (cancelled) return;
 
         setLanguages(langs);
 
-        const hasTarget = p.targetLanguage && langs.some((x) => x.name === p.targetLanguage);
+        const validSet = new Set(langs.map((x) => x.name));
+        const filteredTargets = (p.targetLanguages ?? []).filter((t) => validSet.has(t.name));
 
         setForm({
           firstName: p.firstName ?? "",
           lastName: p.lastName ?? "",
           bio: p.bio ?? "",
-          targetLanguage: hasTarget ? p.targetLanguage : "",
           nativeLanguage: p.nativeLanguage ?? "",
-          level: p.level ?? "Beginner", // Already in display format from fetchMyProfile
+          targetLanguages:
+            filteredTargets.length > 0 ? filteredTargets : [{ name: "", level: "Beginner" }],
         });
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Unknown error";
-        if (!cancelled) {
-          setError(`Failed to load profile: ${msg}`);
-        }
+        if (!cancelled) setError(`Failed to load profile: ${msg}`);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -313,27 +320,75 @@ export default function EditProfilePage() {
     };
   }, []);
 
+  function updateTargetLanguage(idx: number, patch: Partial<TargetLanguageFormItem>) {
+    setForm((f) => {
+      const next = [...f.targetLanguages];
+      next[idx] = { ...next[idx], ...patch };
+      return { ...f, targetLanguages: next };
+    });
+  }
+
+  function addTargetLanguageRow() {
+    setForm((f) => ({
+      ...f,
+      targetLanguages: [...f.targetLanguages, { name: "", level: "Beginner" }],
+    }));
+  }
+
+  function removeTargetLanguageRow(idx: number) {
+    setForm((f) => {
+      const next = f.targetLanguages.filter((_, i) => i !== idx);
+      return { ...f, targetLanguages: next.length ? next : [{ name: "", level: "Beginner" }] };
+    });
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     setError(null);
 
+    const cleaned = form.targetLanguages
+      .map((t) => ({ name: t.name.trim(), level: t.level }))
+      .filter((t) => t.name.length > 0);
+
+    if (!form.firstName.trim()) {
+      setSaving(false);
+      setError("First name is required.");
+      return;
+    }
+    if (!form.nativeLanguage.trim()) {
+      setSaving(false);
+      setError("Native language is required.");
+      return;
+    }
+    if (cleaned.length === 0) {
+      setSaving(false);
+      setError("At least one target language is required.");
+      return;
+    }
+
+    // Prevent duplicates on client
+    const seen = new Set<string>();
+    for (const t of cleaned) {
+      const k = t.name.toLowerCase();
+      if (seen.has(k)) {
+        setSaving(false);
+        setError(`Duplicate target language: ${t.name}`);
+        return;
+      }
+      seen.add(k);
+    }
+
     const payload: ProfileAPI = {
       firstName: form.firstName.trim(),
       lastName: form.lastName.trim(),
       bio: form.bio.trim(),
-      targetLanguage: form.targetLanguage.trim(),
       nativeLanguage: form.nativeLanguage.trim(),
-      level: levelToDB(form.level) // Convert display format to database format
+      targetLanguages: cleaned.map((t) => ({
+        name: t.name,
+        level: levelToDB(t.level),
+      })),
     };
-
-    // super light client validation
-    if (!payload.targetLanguage) {
-      setSaving(false);
-      setError("Target language is required.");
-      return;
-    }
 
     try {
       await saveMyProfile(payload);
@@ -372,6 +427,10 @@ export default function EditProfilePage() {
       </div>
     );
   }
+
+  const chosenNamesLower = form.targetLanguages
+    .map((t) => t.name.trim().toLowerCase())
+    .filter(Boolean);
 
   return (
     <div className="min-h-screen bg-white w-full">
@@ -492,39 +551,83 @@ export default function EditProfilePage() {
                 </select>
               </Field>
             </div>
+          </div>
 
-            <div className="rounded-2xl border border-zinc-200 bg-white p-6">
-              <Field label="Target language" required>
-                <select
-                  required
-                  className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:border-transparent"
-                  value={form.targetLanguage}
-                  onChange={(e) => setForm((f) => ({ ...f, targetLanguage: e.target.value }))}
-                >
-                  <option value="" disabled>
-                    Select a language...
-                  </option>
-                  {languages.map((l) => (
-                    <option key={l.id} value={l.name}>
-                      {l.name}
-                    </option>
-                  ))}
-                </select>
-              </Field>
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-zinc-900">Target languages</p>
+                <p className="text-xs text-zinc-600">Add one or more languages you are learning.</p>
+              </div>
+              <button
+                type="button"
+                onClick={addTargetLanguageRow}
+                className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-50"
+                disabled={saving}
+              >
+                + Add
+              </button>
             </div>
 
-            <div className="rounded-2xl border border-zinc-200 bg-white p-6">
-              <Field label="Level">
-                <select
-                  className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:border-transparent"
-                  value={form.level}
-                  onChange={(e) => setForm((f) => ({ ...f, level: e.target.value as LevelDisplay }))}
-                >
-                  <option value="Beginner">Beginner</option>
-                  <option value="Intermediate">Intermediate</option>
-                  <option value="Advanced">Advanced</option>
-                </select>
-              </Field>
+            <div className="space-y-3">
+              {form.targetLanguages.map((t, idx) => {
+                const currentLower = t.name.trim().toLowerCase();
+                return (
+                  <div
+                    key={`${idx}-${t.name}-${t.level}`}
+                    className="rounded-2xl border border-zinc-200 bg-white p-4"
+                  >
+                    <div className="grid gap-3 md:grid-cols-[1fr_220px_44px] items-end">
+                      <Field label="Language" required>
+                        <select
+                          required
+                          className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:border-transparent"
+                          value={t.name}
+                          onChange={(e) => updateTargetLanguage(idx, { name: e.target.value })}
+                        >
+                          <option value="" disabled>
+                            Select a language...
+                          </option>
+                          {languages.map((l) => {
+                            const lower = l.name.toLowerCase();
+                            const alreadyChosenElsewhere =
+                              lower !== currentLower && chosenNamesLower.includes(lower);
+                            return (
+                              <option key={l.id} value={l.name} disabled={alreadyChosenElsewhere}>
+                                {l.name}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </Field>
+
+                      <Field label="Level">
+                        <select
+                          className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:border-transparent"
+                          value={t.level}
+                          onChange={(e) =>
+                            updateTargetLanguage(idx, { level: e.target.value as LevelDisplay })
+                          }
+                        >
+                          <option value="Beginner">Beginner</option>
+                          <option value="Intermediate">Intermediate</option>
+                          <option value="Advanced">Advanced</option>
+                        </select>
+                      </Field>
+
+                      <button
+                        type="button"
+                        onClick={() => removeTargetLanguageRow(idx)}
+                        className="h-10 w-10 rounded-xl border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
+                        aria-label="Remove target language"
+                        disabled={saving}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -577,4 +680,3 @@ function Field({
     </div>
   );
 }
-

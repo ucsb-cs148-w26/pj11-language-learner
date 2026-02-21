@@ -7,7 +7,9 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
 // Helper function to convert database level to display format
-function levelToDisplay(level: string | null | undefined): "Beginner" | "Intermediate" | "Advanced" | null {
+function levelToDisplay(
+  level: string | null | undefined
+): "Beginner" | "Intermediate" | "Advanced" | null {
   if (!level) return null;
   const lower = level.toLowerCase();
   if (lower === "intermediate") return "Intermediate";
@@ -15,12 +17,16 @@ function levelToDisplay(level: string | null | undefined): "Beginner" | "Interme
   return "Beginner";
 }
 
+type TargetLanguage = {
+  name: string;
+  level: "Beginner" | "Intermediate" | "Advanced" | null;
+};
+
 type Profile = {
   firstName?: string | null;
   lastName?: string | null;
   bio?: string | null;
-  targetLanguage?: string | null;
-  level?: "Beginner" | "Intermediate" | "Advanced" | null;
+  targetLanguages: TargetLanguage[]; // ✅ multiple
   profilePicture?: string | null;
   nativeLanguage?: string | null;
 };
@@ -33,14 +39,14 @@ type LoadState<T> =
 async function getUserId(): Promise<string> {
   try {
     const { data, error: authError } = await supabase.auth.getSession();
-    if (data.session?.user) {
+    if (!authError && data.session?.user) {
       return data.session.user.id;
     }
-  } catch (e) {
+  } catch {
     // Ignore auth errors in test mode
   }
-  // TEST MODE: Use a test user ID when not authenticated
-  return "test-user-id";
+  // TEST MODE: Use a valid UUID when not authenticated
+  return "00000000-0000-0000-0000-000000000000";
 }
 
 async function fetchMyProfile(): Promise<Profile> {
@@ -49,58 +55,68 @@ async function fetchMyProfile(): Promise<Profile> {
 
     // Fetch profile data
     const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('first_name, last_name, bio, native_language, profile_picture_url')
-      .eq('user_id', userId)
+      .from("profiles")
+      .select("first_name, last_name, bio, native_language, profile_picture_url")
+      .eq("user_id", userId)
       .single();
 
     if (profileError) {
       // If no profile exists, return empty profile
-      if (profileError.code === 'PGRST116') {
+      if (profileError.code === "PGRST116") {
         return {
           firstName: null,
           lastName: null,
           bio: null,
-          targetLanguage: null,
-          level: null,
+          targetLanguages: [],
           profilePicture: null,
           nativeLanguage: null,
         };
       }
-      // Create a more descriptive error message
-      const errorMessage = profileError.message || `Supabase error: ${profileError.code || 'Unknown'}`;
+      const errorMessage =
+        profileError.message || `Supabase error: ${profileError.code || "Unknown"}`;
       const enhancedError = new Error(errorMessage);
       (enhancedError as any).code = profileError.code;
       (enhancedError as any).details = profileError.details;
       throw enhancedError;
     }
 
-    // Fetch target languages from separate table
+    // Fetch ALL target languages
     const { data: targetLanguagesData, error: targetLanguagesError } = await supabase
       .from("profile_target_languages")
-      .select("level, languages(name)")
-      .eq("user_id", userId)
-      .limit(1);
+      .select("level, languages!profile_target_languages_language_id_fkey(name)")
+      .eq("user_id", userId);
 
-    // Get first target language (or null if none)
-    const firstTL =
-      targetLanguagesData && targetLanguagesData.length > 0 ? targetLanguagesData[0] : null;
+    if (targetLanguagesError) {
+      const errorMessage =
+        targetLanguagesError.message ||
+        `Supabase error: ${targetLanguagesError.code || "Unknown"}`;
+      const enhancedError = new Error(errorMessage);
+      (enhancedError as any).code = targetLanguagesError.code;
+      (enhancedError as any).details = targetLanguagesError.details;
+      throw enhancedError;
+    }
 
-    const targetLanguage = (firstTL as any)?.languages?.name ?? null;
-    const level = firstTL?.level ?? null;
+    const targetLanguages: TargetLanguage[] = (targetLanguagesData ?? [])
+      .map((row: any) => {
+        const name = row?.languages?.name ?? null;
+        if (!name) return null;
+        return {
+          name,
+          level: levelToDisplay(row.level),
+        };
+      })
+      .filter(Boolean) as TargetLanguage[];
 
     return {
       firstName: profileData.first_name,
       lastName: profileData.last_name,
       bio: profileData.bio,
-      targetLanguage: targetLanguage,
-      level: levelToDisplay(level),
+      targetLanguages,
       profilePicture: profileData.profile_picture_url,
       nativeLanguage: profileData.native_language,
     };
   } catch (e) {
-    // Handle network/abort errors
-    if (e instanceof Error && (e.name === 'AbortError' || e.message.includes('aborted'))) {
+    if (e instanceof Error && (e.name === "AbortError" || e.message.includes("aborted"))) {
       throw new Error("Network request was cancelled. Please check your connection and try again.");
     }
     throw e;
@@ -120,22 +136,19 @@ export default function ProfilePage() {
     (async () => {
       try {
         const data = await fetchMyProfile();
-        if (!cancelled) {
-          setState({ status: "success", data });
-        }
+        if (!cancelled) setState({ status: "success", data });
       } catch (e) {
         let msg = "Unknown error";
         if (e instanceof Error) {
-          // Check for abort signal errors
-          if (e.name === 'AbortError' || e.message.includes('aborted')) {
+          if (e.name === "AbortError" || e.message.includes("aborted")) {
             msg = "Request was cancelled. Please refresh the page.";
           } else {
             msg = e.message;
           }
-        } else if (e && typeof e === 'object' && 'message' in e) {
-          msg = String(e.message);
-        } else if (e && typeof e === 'object' && 'code' in e) {
-          msg = `Error code: ${e.code}`;
+        } else if (e && typeof e === "object" && "message" in e) {
+          msg = String((e as any).message);
+        } else if (e && typeof e === "object" && "code" in e) {
+          msg = `Error code: ${(e as any).code}`;
         } else {
           msg = `Error: ${JSON.stringify(e)}`;
         }
@@ -151,7 +164,7 @@ export default function ProfilePage() {
   async function handleSignOut() {
     setSignOutLoading(true);
     setError(null);
-    
+
     try {
       const { error: signOutError } = await supabase.auth.signOut();
       if (signOutError) {
@@ -159,7 +172,6 @@ export default function ProfilePage() {
         setSignOutLoading(false);
         return;
       }
-      // Redirect to homepage after successful sign out
       router.push("/");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "An unexpected error occurred";
@@ -171,12 +183,14 @@ export default function ProfilePage() {
   async function handleDeleteAccount() {
     setDeleteLoading(true);
     setError(null);
-    
+
     try {
       console.log("Starting account deletion process...");
-      
-      // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
       if (userError || !user) {
         setError("Could not get user information");
         setDeleteLoading(false);
@@ -184,37 +198,32 @@ export default function ProfilePage() {
       }
 
       const userId = user.id;
-      console.log("Deleting account for user ID:", userId);
 
-      // Delete the auth user and all related data using a database function
-      // The function handles all deletions with SECURITY DEFINER privileges to bypass RLS
-      // This function must be created in Supabase (see delete_user_account.sql)
-      console.log("Calling delete_user_account function...");
-      console.log("This will delete: messages, conversation_participants, profile_target_languages, profiles, and auth.users");
-      const { data: rpcData, error: deleteAuthError } = await supabase.rpc('delete_user_account', {
-        user_uuid: userId
-      });
+      const { data: rpcData, error: deleteAuthError } = await supabase.rpc(
+        "delete_user_account",
+        { user_uuid: userId }
+      );
 
       if (deleteAuthError) {
-        console.error("Error deleting auth user:", deleteAuthError);
-        console.error("Error code:", deleteAuthError.code);
-        console.error("Error message:", deleteAuthError.message);
-        console.error("Error details:", deleteAuthError.details);
-        console.error("Error hint:", deleteAuthError.hint);
-        
-        // Check if it's because the function doesn't exist
-        if (deleteAuthError.message?.includes('function') || 
-            deleteAuthError.code === '42883' ||
-            deleteAuthError.message?.includes('does not exist')) {
-          setError("Delete account function not set up. Please run delete_user_account.sql in Supabase SQL Editor, or contact support.");
-        } else if (deleteAuthError.message?.includes('Not authenticated')) {
+        if (
+          deleteAuthError.message?.includes("function") ||
+          deleteAuthError.code === "42883" ||
+          deleteAuthError.message?.includes("does not exist")
+        ) {
+          setError(
+            "Delete account function not set up. Please run delete_user_account.sql in Supabase SQL Editor, or contact support."
+          );
+        } else if (deleteAuthError.message?.includes("Not authenticated")) {
           setError("Authentication error. Please try signing out and back in.");
-        } else if (deleteAuthError.message?.includes('only delete your own')) {
+        } else if (deleteAuthError.message?.includes("only delete your own")) {
           setError("Security error: You can only delete your own account.");
         } else {
-          setError(`Account data deleted, but auth user deletion failed: ${deleteAuthError.message || 'Unknown error'}. Please contact support.`);
+          setError(
+            `Account data deleted, but auth user deletion failed: ${
+              deleteAuthError.message || "Unknown error"
+            }. Please contact support.`
+          );
         }
-        // Sign out the user anyway
         await supabase.auth.signOut();
         setDeleteLoading(false);
         router.push("/auth/signin");
@@ -224,15 +233,8 @@ export default function ProfilePage() {
       console.log("✅ Account and all related data deleted successfully!");
       console.log("RPC response:", rpcData);
 
-      // Sign out the user (in case RPC didn't handle it)
-      console.log("Signing out...");
       await supabase.auth.signOut();
-      
-      console.log("✅ Account deletion complete! Redirecting to homepage...");
-      
-      // Redirect to homepage
       router.push("/");
-      
     } catch (e) {
       const msg = e instanceof Error ? e.message : "An unexpected error occurred";
       setError(msg);
@@ -243,8 +245,8 @@ export default function ProfilePage() {
   if (state.status === "loading") {
     return (
       <div className="mx-auto max-w-6xl p-6">
-          <div className="h-10 w-1/2 animate-pulse rounded-xl bg-zinc-200" />
-          <div className="mt-4 h-40 animate-pulse rounded-2xl bg-zinc-200" />
+        <div className="h-10 w-1/2 animate-pulse rounded-xl bg-zinc-200" />
+        <div className="mt-4 h-40 animate-pulse rounded-2xl bg-zinc-200" />
       </div>
     );
   }
@@ -252,10 +254,10 @@ export default function ProfilePage() {
   if (state.status === "error") {
     return (
       <div className="mx-auto max-w-6xl p-6">
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-4">
-            <p className="font-medium text-red-800">Couldn't load profile</p>
-            <p className="mt-1 text-sm text-red-700">{state.message}</p>
-          </div>
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4">
+          <p className="font-medium text-red-800">Couldn't load profile</p>
+          <p className="mt-1 text-sm text-red-700">{state.message}</p>
+        </div>
       </div>
     );
   }
@@ -304,15 +306,19 @@ export default function ProfilePage() {
                   </div>
                 )}
               </div>
+
               <div className="flex-1 min-w-0">
                 <h2 className="text-xl font-semibold text-zinc-900">
                   {[p.firstName, p.lastName].filter(Boolean).join(" ") || "User"}
                 </h2>
+
                 <div className="mt-2 space-y-1">
-                  {p.targetLanguage && (
+                  {p.targetLanguages.length > 0 && (
                     <p className="text-sm text-zinc-700">
-                      <span className="font-medium">Learning:</span> {p.targetLanguage}
-                      {p.level && ` • ${p.level}`}
+                      <span className="font-medium">Learning:</span>{" "}
+                      {p.targetLanguages
+                        .map((t) => `${t.name}${t.level ? ` • ${t.level}` : ""}`)
+                        .join(", ")}
                     </p>
                   )}
                   {p.nativeLanguage && (
@@ -343,19 +349,21 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {/* Target Language */}
-            {p.targetLanguage && (
+            {/* Target Languages */}
+            {p.targetLanguages.length > 0 && (
               <div className="rounded-2xl border border-zinc-200 bg-white p-6">
-                <h3 className="text-sm font-medium text-zinc-700 mb-2">Target Language</h3>
-                <p className="text-sm text-zinc-900">{p.targetLanguage}</p>
-              </div>
-            )}
-
-            {/* Level */}
-            {p.level && (
-              <div className="rounded-2xl border border-zinc-200 bg-white p-6">
-                <h3 className="text-sm font-medium text-zinc-700 mb-2">Proficiency Level</h3>
-                <p className="text-sm text-zinc-900">{p.level}</p>
+                <h3 className="text-sm font-medium text-zinc-700 mb-2">Target Languages</h3>
+                <div className="flex flex-wrap gap-2">
+                  {p.targetLanguages.map((t) => (
+                    <span
+                      key={`${t.name}-${t.level ?? "null"}`}
+                      className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-sm text-zinc-900"
+                    >
+                      {t.name}
+                      {t.level ? ` · ${t.level}` : ""}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
           </section>
@@ -364,7 +372,7 @@ export default function ProfilePage() {
           <section className="space-y-4">
             <div className="rounded-2xl border border-zinc-200 bg-white p-6">
               <h3 className="text-sm font-medium text-zinc-700 mb-4">Account Actions</h3>
-              
+
               {error && (
                 <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4">
                   <p className="text-sm text-red-800">{error}</p>
@@ -380,7 +388,7 @@ export default function ProfilePage() {
                 >
                   {signOutLoading ? "Signing out..." : "Sign Out"}
                 </button>
-                
+
                 <button
                   type="button"
                   onClick={() => setShowDeleteConfirm(true)}
@@ -401,7 +409,8 @@ export default function ProfilePage() {
           <div className="bg-white rounded-2xl border border-zinc-200 p-6 max-w-md w-full">
             <h3 className="text-lg font-semibold text-zinc-900 mb-2">Delete Account</h3>
             <p className="text-sm text-zinc-700 mb-6">
-              Are you sure you want to delete your account? This action cannot be undone. All your profile data, conversations, and connections will be permanently deleted.
+              Are you sure you want to delete your account? This action cannot be undone. All your
+              profile data, conversations, and connections will be permanently deleted.
             </p>
             <div className="flex gap-3">
               <button
