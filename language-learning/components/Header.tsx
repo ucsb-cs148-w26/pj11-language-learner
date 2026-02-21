@@ -112,33 +112,35 @@ function HeaderContent() {
           })}
         </div> 
         )}
-        <Link href="/profile" className="flex-shrink-0 transition hover:opacity-80">
-         <div className="justify-end">
-            {userProfile ? (
-              <img
-                src={userProfile.profilePicture}
-                alt="Profile"
-                className="w-[40px] h-[40px] rounded-full object-cover border-2 border-zinc-200"
-              />
-            ) : (
-              <div className="w-[40px] h-[40px] rounded-full bg-zinc-100 border-2 border-zinc-200 flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-zinc-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
-              </div>
-            )}
-          </div>
+        {!loading && session && (
+          <Link href="/profile" className="flex-shrink-0 transition hover:opacity-80">
+            <div className="justify-end">
+              {userProfile ? (
+                <img
+                  src={userProfile.profilePicture}
+                  alt="Profile"
+                  className="w-[40px] h-[40px] rounded-full object-cover border-2 border-zinc-200"
+                />
+              ) : (
+                <div className="w-[40px] h-[40px] rounded-full bg-zinc-100 border-2 border-zinc-200 flex items-center justify-center">
+                  <svg
+                    className="w-6 h-6 text-zinc-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
+                  </svg>
+                </div>
+              )}
+            </div>
           </Link>
+        )}
       </div>
     </nav>
   );
