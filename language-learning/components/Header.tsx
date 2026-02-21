@@ -16,28 +16,37 @@ function HeaderContent() {
   const isNewUserOnboarding = searchParams.get("new") === "true";
 
   const links = [
-    { href: "/profile", label: "Profile" },
+    { href: "/dashboard", label: "Dashboard" },
     { href: "/chats", label: "Chats" },
     { href: "/discover", label: "Discover" },
-    { href: "/dashboard", label: "Dashboard" },
     { href: "/requests", label: "Requests" },
   ];
 
+  const [userProfile, setUserProfile] = useState<{ profilePicture: string } | null>(null);
   useEffect(() => {
-    // 1) Initial session check
+    const getProfile = async (userId: string) => {
+      const { data } = await supabase
+        .from('profiles') // Replace with your actual table name
+        .select('profilePicture')
+        .eq('id', userId)
+        .single();
+      
+      if (data) setUserProfile(data);
+    };
+
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session ?? null);
+      if (data.session?.user) getProfile(data.session.user.id);
       setLoading(false);
     });
 
-    // 2) Listen for auth changes (login/logout)
     const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
+      if (newSession?.user) getProfile(newSession.user.id);
+      else setUserProfile(null);
     });
 
-    return () => {
-      sub.subscription.unsubscribe();
-    };
+    return () => sub.subscription.unsubscribe();
   }, []);
 
   const navItems = 
@@ -53,9 +62,9 @@ function HeaderContent() {
 
   return (
     <nav className="w-full bg-white border-b shadow-sm">
-      <div className="mx-auto w-full h-full px-8 pt-3.5 pb-1 flex items-center text-lg justify-between">
+      <div className="mx-auto w-full h-full px-8 pt-3 pb-1.5 flex items-center text-lg justify-between">
         {/* placeholder for logo */}
-        <div className="flex pb-1 item-center"> 
+        <div className="flex item-center"> 
           <Image 
             src="/logo.png" 
             alt="App Logo"
@@ -83,26 +92,53 @@ function HeaderContent() {
                 href={href}
                 className={`relative group transition ${
                   active
-                    ? "font-semibold text-sky-700"
-                    : "text-gray-700 hover:text-sky-600"
+                    ? "font-semibold text-blue-600"
+                    : "text-gray-700 hover:text-blue-500"
                 }`}
               >
                 {label}
 
                 {/* Active underline */}
                 {active && (
-                  <span className="absolute left-1/2 -bottom-3.5 h-[2px] w-[60%] -translate-x-1/2 bg-sky-700 rounded-full"></span>
+                  <span className="absolute left-1/2 -bottom-3.5 h-[2px] w-[60%] -translate-x-1/2 bg-blue-600 rounded-full"></span>
                 )}
 
                 {/* Hover underline */}
                 {!active && (
-                  <span className="absolute left-0 -bottom-3.5 h-[2px] w-0 bg-sky-500 transition-all duration-300 group-hover:w-full"></span>
+                  <span className="absolute left-0 -bottom-3.5 h-[2px] w-0 bg-blue-500 transition-all duration-300 group-hover:w-full"></span>
                 )}
               </Link>
             );
           })}
         </div> 
         )}
+        <Link href="/profile" className="flex-shrink-0 transition hover:opacity-80">
+         <div className="justify-end">
+            {userProfile ? (
+              <img
+                src={userProfile.profilePicture}
+                alt="Profile"
+                className="w-[40px] h-[40px] rounded-full object-cover border-2 border-zinc-200"
+              />
+            ) : (
+              <div className="w-[40px] h-[40px] rounded-full bg-zinc-100 border-2 border-zinc-200 flex items-center justify-center">
+                <svg
+                  className="w-6 h-6 text-zinc-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
+                </svg>
+              </div>
+            )}
+          </div>
+          </Link>
       </div>
     </nav>
   );
