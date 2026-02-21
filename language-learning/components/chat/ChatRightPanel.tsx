@@ -17,7 +17,7 @@ type ChatLayoutProps = {
   partnerFirstName: string;
   partnerLastName: string;
   partnerAvatarUrl: string | null;
-  language: string;
+  targetLanguages: string[];
   messages: Message[];
   conversationId: string;
   onSendMessage: (conversationId: string, text: string) => Promise<void>;
@@ -28,7 +28,7 @@ export default function ChatLayout({
   partnerFirstName,
   partnerLastName,
   partnerAvatarUrl,
-  language,
+  targetLanguages,
   messages,
   conversationId,
   onSendMessage,
@@ -41,7 +41,7 @@ export default function ChatLayout({
           partnerFirstName={partnerFirstName}
           partnerLastName={partnerLastName}
           partnerAvatarUrl={partnerAvatarUrl ?? "/default-avatar.jpg"}
-          language={language}
+          targetLanguages={targetLanguages}
         />
       </div>
 

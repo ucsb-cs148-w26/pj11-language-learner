@@ -32,7 +32,7 @@ export type Conversation = {
   partnerLastName: string;
   partnerAvatarUrl: string | null;
 
-  language: string;
+  targetLanguages: string[];
 
   lastMessageText: string;
   lastMessageAt: string | null;
@@ -88,7 +88,7 @@ export default function Chat({ conversations, selectedConversationId, onSelectCo
               partnerFirstName={selected.partnerFirstName}
               partnerLastName={selected.partnerLastName}
               partnerAvatarUrl={selected.partnerAvatarUrl}
-              language={selected.language}
+              targetLanguages={selected.targetLanguages}
               messages={selected.messages}
               conversationId={selected.conversationId}
               onSendMessage={async (conversationId, text) => {

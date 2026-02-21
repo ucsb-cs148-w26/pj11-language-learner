@@ -175,8 +175,9 @@ export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
         }
       }
 
-      // Fetch partner target languages (choose first language per partner)
-      const targetLangByUser = new Map<string, string>();
+      // Fetch partner target languages 
+      const targetLangNamesByUser = new Map<string, string[]>();
+
       if (partnerIds.length > 0) {
         const { data: tlRows, error: tlErr } = await supabase
           .from("profile_target_languages")
@@ -186,8 +187,12 @@ export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
         if (tlErr) throw tlErr;
 
         for (const r of (tlRows as any[]) ?? []) {
-          if (!targetLangByUser.has(r.user_id)) {
-            targetLangByUser.set(r.user_id, r.lang?.name ?? "Unknown");
+          const name = r?.lang?.name ?? null;
+          if (!name) continue;
+
+          const existing = targetLangNamesByUser.get(r.user_id) ?? [];
+          if (!existing.includes(name)) {
+            targetLangNamesByUser.set(r.user_id, [...existing, name]);
           }
         }
       }
@@ -208,7 +213,7 @@ export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
           partnerFirstName: first,
           partnerLastName: last,
           partnerAvatarUrl: avatar,
-          language: targetLangByUser.get(partnerId) ?? "Unknown",
+          targetLanguages: targetLangNamesByUser.get(partnerId) ?? [],
           lastMessageText: c.last_message_text ?? "No messages yet",
           lastMessageAt: c.last_message_at,
           unreadCount: 0,

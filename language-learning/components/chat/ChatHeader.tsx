@@ -8,7 +8,7 @@ type ChatHeaderProps = {
   partnerFirstName: string;
   partnerLastName: string;
   partnerAvatarUrl: string | null;
-  language?: string;
+  targetLanguages?: string[];
 };
 
 export default function ChatHeader({
@@ -16,7 +16,7 @@ export default function ChatHeader({
   partnerFirstName,
   partnerLastName,
   partnerAvatarUrl,
-  language,
+  targetLanguages,
 }: ChatHeaderProps) {
   return (
     <div className="border-b px-5 py-4">
@@ -32,9 +32,16 @@ export default function ChatHeader({
             {partnerFirstName} {partnerLastName}
           </Link>
 
-          {language && (
+          {targetLanguages && targetLanguages.length > 0 ? (
             <div className="text-sm text-zinc-500">
-              Learning: <span className="font-medium text-zinc-700">{language}</span>
+              Learning:{" "}
+              <span className="font-medium text-zinc-700">
+                {targetLanguages.join(", ")}
+              </span>
+            </div>
+          ) : (
+            <div className="text-sm text-zinc-500">
+              Learning: <span className="font-medium text-zinc-700">Unknown</span>
             </div>
           )}
         </div>
