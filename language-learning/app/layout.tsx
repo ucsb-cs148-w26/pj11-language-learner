@@ -27,7 +27,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-1 min-h-0 flex bg-white">
+        <main className="flex-1 min-h-0 flex bg-background">
           {children}
         </main>
       </body>

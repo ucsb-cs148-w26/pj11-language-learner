@@ -1,13 +1,73 @@
 @import "tailwindcss";
 
 :root {
+  /* Base page colors */
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Blue */
+  --blue: #0c44c6;
+  --blue-dark: #102d7d;
+  --blue-soft: #dbeafe;
+
+  /* Red */
+  --dark-red: #dc2626;
+  --dark-red-hover: #b91c1c;
+  --light-red: #fef2f2;
+
+  /* Gray */
+  --gray-border: #d4d4d8;
+  --gray-border-soft: #e4e4e7;
+  --gray-text: #18181b;
+  --gray-muted: #52525b;
+  --gray-muted-2: #71717a;
+  --gray-soft: #fafafa;
+  --gray-soft-2: #f4f4f5;
+
+  /* Surfaces */
+  --white: #ffffff;
+  --off-white: #fafafa;
+
+  /* Green */
+  --green: #16a34a;
+  --green-dark: #15803d;
+  --light-green: #f0fdf4;
 }
 
 @theme inline {
+  /* Existing base tokens */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
+  /* Blue */
+  --color-blue: var(--blue);
+  --color-blue-dark: var(--blue-dark);
+  --color-blue-soft: var(--blue-soft);
+
+  /* Red */
+  --color-dark-red: var(--dark-red);
+  --color-dark-red-hover: var(--dark-red-hover);
+  --color-light-red: var(--light-red);
+
+  /* Gray */
+  --color-gray-border: var(--gray-border);
+  --color-gray-border-soft: var(--gray-border-soft);
+  --color-gray-text: var(--gray-text);
+  --color-gray-muted: var(--gray-muted);
+  --color-gray-muted-2: var(--gray-muted-2);
+  --color-gray-soft: var(--gray-soft);
+  --color-gray-soft-2: var(--gray-soft-2);
+
+  /* White */
+  --color-white: var(--white);
+  --color-off-white: var(--off-white);
+
+  /* Green */
+  --color-green: var(--green);
+  --color-green-dark: var(--green-dark);
+  --color-light-green: var(--light-green);
+
+  /* Fonts */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -16,6 +76,34 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+
+    /* Blue (dark mode) */
+    --blue: #3b82f5;
+    --blue-dark: #60a5fa;
+    --blue-soft: #1e3a8a33;
+
+    /* Red (dark mode) */
+    --dark-red: #ef4444;
+    --dark-red-hover: #f87171;
+    --light-red: #3f1d1d;
+
+    /* Gray (dark mode) */
+    --gray-border: #3f3f46;
+    --gray-border-soft: #52525b;
+    --gray-text: #ededed;
+    --gray-muted: #d4d4d8;
+    --gray-muted-2: #a1a1aa;
+    --gray-soft: #18181b;
+    --gray-soft-2: #27272a;
+
+    /* Surfaces */
+    --white: #18181b;
+    --off-white: #27272a;
+
+    /* Green */
+    --green: #22c55e;
+    --green-dark: #4ade80;
+    --light-green: #052e16;
   }
 }
 

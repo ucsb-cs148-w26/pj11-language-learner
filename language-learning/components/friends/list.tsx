@@ -28,13 +28,13 @@ export default function FriendsList({
   );
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-zinc-300 bg-white">
+    <section className="overflow-hidden rounded-2xl border border-gray-border bg-white">
       {showHeader && (
         <div className="flex items-center justify-between px-4 py-3">
-          <h2 className="pl-3 text-xl font-semibold text-zinc-900">Friends</h2>
+          <h2 className="pl-3 text-xl font-semibold text-gray-text">Friends</h2>
 
           <button
-            className="mr-2 rounded-xl border border-zinc-400 bg-white px-4 py-2 text-sm font-medium text-zinc-900 opacity-80"
+            className="mr-2 rounded-xl border border-gray-border bg-white px-4 py-2 text-sm font-medium text-gray-text opacity-80"
             disabled
           >
             Requests
@@ -44,10 +44,10 @@ export default function FriendsList({
 
       {sorted.length === 0 ? (
         <div className="p-6 text-center">
-          <p className="text-sm text-zinc-700">No friends yet.</p>
+          <p className="text-sm text-gray-muted">No friends yet.</p>
           <Link
             href="/discover"
-            className="mt-3 inline-block rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+            className="mt-3 inline-block rounded-xl bg-gray-text px-4 py-2 text-sm font-medium text-white hover:opacity-90"
           >
             Find partners
           </Link>
@@ -55,7 +55,7 @@ export default function FriendsList({
       ) : (
         <div>
           {showSubHeader && (
-            <div className="grid grid-cols-[1fr_auto_auto] items-center gap-3 bg-zinc-50 px-4 py-3 text-sm font-semibold text-zinc-900">
+            <div className="grid grid-cols-[1fr_auto_auto] items-center gap-3 bg-off-white px-4 py-3 text-sm font-semibold text-gray-text">
               <div className="pl-2">Name</div>
               <div className="text-right pr-[48px]">Chat</div>
               <div className="text-right pr-[40px]">Remove</div>
@@ -68,7 +68,7 @@ export default function FriendsList({
             return (
               <div
                 key={f.id}
-                className="grid h-17 grid-cols-[1fr_auto_auto] items-center gap-3 border-t border-zinc-200 px-4 py-3 text-sm"
+                className="grid h-17 grid-cols-[1fr_auto_auto] items-center gap-3 border-t border-gray-border-soft px-4 py-3 text-sm"
               >
                 <Link
                   href={f.profileHref}
@@ -80,7 +80,7 @@ export default function FriendsList({
                     className="h-10 w-10 rounded-full object-cover shrink-0"
                   />
                   <div className="min-w-0">
-                    <div className="truncate text-base font-medium text-zinc-900">
+                    <div className="truncate text-base font-medium text-gray-text">
                       {f.name}
                     </div>
                   </div>
@@ -88,7 +88,7 @@ export default function FriendsList({
 
                 <Link
                   href={f.chatHref}
-                  className="mr-7 justify-self-end font-medium text-zinc-900 underline underline-offset-4 decoration-zinc-400 hover:decoration-zinc-700"
+                  className="mr-7 justify-self-end font-medium text-gray-text underline underline-offset-4 decoration-gray-border hover:decoration-gray-muted"
                 >
                   Chat 💬
                 </Link>

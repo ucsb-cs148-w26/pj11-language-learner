@@ -35,7 +35,7 @@ describe('MessageBubble', () => {
   it('does not display time when not provided', () => {
     const { container } = render(<MessageBubble {...defaultProps} />)
     // Time should not be rendered
-    const timeElements = container.querySelectorAll('.text-xs.text-zinc-400')
+    const timeElements = container.querySelectorAll('.text-xs.text-gray-muted-2')
     expect(timeElements.length).toBe(0)
   })
 
@@ -54,7 +54,7 @@ describe('MessageBubble', () => {
     const { container } = render(
       <MessageBubble {...defaultProps} isMe={true} />
     )
-    const bubble = container.querySelector('.bg-blue-950')
+    const bubble = container.querySelector('.bg-blue-dark')
     expect(bubble).toBeInTheDocument()
     expect(bubble).toHaveClass('text-white')
   })
@@ -63,9 +63,9 @@ describe('MessageBubble', () => {
     const { container } = render(
       <MessageBubble {...defaultProps} isMe={false} />
     )
-    const bubble = container.querySelector('.bg-zinc-100')
+    const bubble = container.querySelector('.bg-gray-soft-2')
     expect(bubble).toBeInTheDocument()
-    expect(bubble).toHaveClass('text-zinc-900')
+    expect(bubble).toHaveClass('text-gray-text')
   })
 
   it('handles multiline text correctly', () => {

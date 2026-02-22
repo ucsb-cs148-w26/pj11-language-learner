@@ -68,15 +68,15 @@ function HeaderContent() {
           <Image 
             src="/logo.png" 
             alt="App Logo"
-            width={50} 
+            width={50}
             height={50}
             className="rounded-full"
             priority
           />
         </div>
         {isNewUserOnboarding ? (
-        <div className="flex w-full mx-6 self-center gap-3 rounded-lg bg-sky-100 px-3.5 py-2 text-sm text-zinc-600 border border-zinc-200">
-          <svg className="h-4 w-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="flex w-full mx-6 self-center gap-3 rounded-lg bg-blue-soft px-3.5 py-2 text-sm text-gray-muted border border-gray-border-soft">
+          <svg className="h-4 w-4 text-gray-muted-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <span className="font-medium">Please complete your profile information to begin!</span>
@@ -92,20 +92,20 @@ function HeaderContent() {
                 href={href}
                 className={`relative group transition ${
                   active
-                    ? "font-semibold text-blue-600"
-                    : "text-gray-700 hover:text-blue-500"
+                    ? "font-semibold text-blue"
+                    : "text-gray-muted hover:text-blue"
                 }`}
               >
                 {label}
 
                 {/* Active underline */}
                 {active && (
-                  <span className="absolute left-1/2 -bottom-3.5 h-[2px] w-[60%] -translate-x-1/2 bg-blue-600 rounded-full"></span>
+                  <span className="absolute left-1/2 -bottom-3.5 h-[2px] w-[60%] -translate-x-1/2 bg-blue rounded-full"></span>
                 )}
 
                 {/* Hover underline */}
                 {!active && (
-                  <span className="absolute left-0 -bottom-3.5 h-[2px] w-0 bg-blue-500 transition-all duration-300 group-hover:w-full"></span>
+                  <span className="absolute left-0 -bottom-3.5 h-[2px] w-0 bg-blue transition-all duration-300 group-hover:w-full"></span>
                 )}
               </Link>
             );
@@ -119,12 +119,12 @@ function HeaderContent() {
                 <img
                   src={userProfile.profilePicture}
                   alt="Profile"
-                  className="w-[40px] h-[40px] rounded-full object-cover border-2 border-zinc-200"
+                  className="w-[40px] h-[40px] rounded-full object-cover border-2 border-gray-border-soft"
                 />
               ) : (
-                <div className="w-[40px] h-[40px] rounded-full bg-zinc-100 border-2 border-zinc-200 flex items-center justify-center">
+                <div className="w-[40px] h-[40px] rounded-full bg-gray-soft-2 border-2 border-gray-border-soft flex items-center justify-center">
                   <svg
-                    className="w-6 h-6 text-zinc-600"
+                    className="w-6 h-6 text-gray-muted"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"

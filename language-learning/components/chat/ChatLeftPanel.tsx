@@ -62,7 +62,7 @@ export default function ChatLeftPanel({
       {/* Header */}
       {showHeader && (
       <div className="border-b px-4 py-3">
-        <div className="text-lg font-semibold text-zinc-900">Conversations</div>
+        <div className="text-lg font-semibold text-gray-text">Conversations</div>
       </div>
       )}
 
@@ -74,7 +74,7 @@ export default function ChatLeftPanel({
 
           const className = [
             "w-full block h-17 border-b px-4 py-3 text-left transition",
-            isSelected ? "bg-zinc-100" : "hover:bg-zinc-50",
+            isSelected ? "bg-gray-soft-2" : "hover:bg-off-white",
           ].join(" ");
 
           const content = (
@@ -87,21 +87,21 @@ export default function ChatLeftPanel({
 
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-3">
-                  <div className="truncate text-base font-medium text-zinc-900">
+                  <div className="truncate text-base font-medium text-gray-text">
                     {c.partnerFirstName} {c.partnerLastName}
                   </div>
-                  <div className="shrink-0 text-xs text-zinc-400">
+                  <div className="shrink-0 text-xs text-gray-muted-2">
                     {c.lastMessageAt ? formatRelative(c.lastMessageAt) : "New"}
                   </div>
                 </div>
 
                 <div className="mt-0.5 flex items-center justify-between gap-3">
-                  <div className="truncate text-sm text-zinc-500">
+                  <div className="truncate text-sm text-gray-muted-2">
                     {c.lastMessageText || "No messages yet"}
                   </div>
 
                   {c.unreadCount > 0 ? (
-                    <div className="shrink-0 rounded-full bg-blue-950 px-2 py-0.5 text-xs font-medium text-white">
+                    <div className="shrink-0 rounded-full bg-blue-dark px-2 py-0.5 text-xs font-medium text-white">
                       {c.unreadCount}
                     </div>
                   ) : null}

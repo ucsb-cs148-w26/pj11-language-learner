@@ -40,11 +40,11 @@ function minutesBetween(a: Date, b: Date) {
 function DateDivider({ label }: { label: string }) {
   return (
     <div className="my-4 flex items-center gap-3">
-      <div className="h-px flex-1 bg-zinc-200" />
-      <div className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600">
+      <div className="h-px flex-1 bg-gray-border-soft" />
+      <div className="rounded-full bg-gray-soft-2 px-3 py-1 text-xs font-medium text-gray-muted">
         {label}
       </div>
-      <div className="h-px flex-1 bg-zinc-200" />
+      <div className="h-px flex-1 bg-gray-border-soft" />
     </div>
   );
 }
