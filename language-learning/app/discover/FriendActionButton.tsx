@@ -1,4 +1,5 @@
 // components/FriendActionButton.tsx
+// hover color: #055690
 import { DiscoverPartner, FriendshipStatus } from "@/app/discover/types";
 
 interface Props {
@@ -13,7 +14,7 @@ export function FriendActionButton({ partner, onAction }: Props) {
   const config: Record<FriendshipStatus, { label: string; className: string }> = {
     none: { 
       label: "Connect", 
-      className: "bg-blue-600 hover:bg-blue-700 text-white" 
+      className: "bg-[var(--brand)] hover:bg-[#055690] text-white" 
     },
     pending_sent: { 
       label: "Cancel Request", 

@@ -6,6 +6,9 @@ import { useEffect, useState, Suspense } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabaseClient";
 
+// logo color: #0f78c1
+// highlight color: #539bcd
+
 function HeaderContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -62,27 +65,27 @@ function HeaderContent() {
 
   return (
     <nav className="w-full bg-white border-b shadow-sm">
-      <div className="mx-auto w-full h-full px-8 pt-3 pb-1.5 flex items-center text-lg justify-between">
+      <div className="mx-auto w-full h-full px-4 pt-3 pb-1.5 flex items-center text-lg justify-between">
         {/* placeholder for logo */}
-        <div className="flex item-center"> 
+        <div className="flex shrink-0"> 
           <Image 
-            src="/logo.png" 
+            src="/lingo.png" 
             alt="App Logo"
-            width={50} 
-            height={50}
-            className="rounded-full"
+            height={60}
+            width={120}
+            className="h-auto w-[120px]"
             priority
           />
         </div>
         {isNewUserOnboarding ? (
-        <div className="flex w-full mx-6 self-center gap-3 rounded-lg bg-sky-100 px-3.5 py-2 text-sm text-zinc-600 border border-zinc-200">
+        <div className="flex w-full mx-6 self-center gap-3 rounded-lg bg-sky-100 px-4 py-2 text-sm text-zinc-600 border border-zinc-200">
           <svg className="h-4 w-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <span className="font-medium">Please complete your profile information to begin!</span>
         </div>
       ) : (
-        <div className="flex w-full mx-6 gap-6 text-lg justify-start">
+        <div className="flex w-full pt-1 mx-6 gap-6 text-lg justify-start">
           {navItems.map(({ href, label }: { href: string; label: string }) => {
             const active = pathname === href || (pathname === "/" && href === "/dashboard");
 
@@ -92,27 +95,27 @@ function HeaderContent() {
                 href={href}
                 className={`relative group transition ${
                   active
-                    ? "font-semibold text-blue-600"
-                    : "text-gray-700 hover:text-blue-500"
+                    ? "font-semibold text-[var(--brand)]"
+                    : "text-gray-700 hover:text-[#539bcd]"
                 }`}
               >
                 {label}
 
                 {/* Active underline */}
                 {active && (
-                  <span className="absolute left-1/2 -bottom-3.5 h-[2px] w-[60%] -translate-x-1/2 bg-blue-600 rounded-full"></span>
+                  <span className="absolute left-1/2 -bottom-3.5 h-[2px] w-[60%] -translate-x-1/2 bg-[var(--brand)] rounded-full"></span>
                 )}
 
                 {/* Hover underline */}
                 {!active && (
-                  <span className="absolute left-0 -bottom-3.5 h-[2px] w-0 bg-blue-500 transition-all duration-300 group-hover:w-full"></span>
+                  <span className="absolute left-0 -bottom-3.5 h-[2px] w-0 bg-[#539bcd] transition-all duration-300 group-hover:w-full"></span>
                 )}
               </Link>
             );
           })}
         </div> 
         )}
-        {!loading && session && (
+        {!isNewUserOnboarding && session && (
           <Link href="/profile" className="flex-shrink-0 transition hover:opacity-80">
             <div className="justify-end">
               {userProfile ? (
