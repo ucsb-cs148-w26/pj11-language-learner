@@ -447,7 +447,8 @@ export default function DashboardPage() {
                 <ChatLeftPanel
                   linkMode
                   showHeader={false}
-                  containerClassName="border-0 bg-transparent"
+                  outerBorder={false}
+                  containerClassName="border-0 border-gray-border bg-transparent"
                   chats={chats.map((c) => ({
                     conversationId: c.id,
                     createdAt: c.createdAt,

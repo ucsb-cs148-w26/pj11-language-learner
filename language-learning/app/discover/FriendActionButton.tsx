@@ -17,7 +17,7 @@ export function FriendActionButton({ partner, onAction }: Props) {
     },
     pending_sent: { 
       label: "Cancel Request", 
-      className: "bg-gray-soft-2 hover:bg-light-red hover:text-dark-red text-gray-muted" 
+      className: "bg-gray-soft-2 border border-gray-border-soft hover:bg-light-red hover:text-dark-red text-gray-muted" 
     },
     pending_received: { 
       label: "Accept Request", 

@@ -19,7 +19,7 @@ export default function ChatHeader({
   targetLanguages,
 }: ChatHeaderProps) {
   return (
-    <div className="border-b px-5 py-4">
+    <div className="border-b border-gray-border-soft px-5 py-4">
       <div className="flex items-center gap-3">
         <img
           src={partnerAvatarUrl ?? "/default-avatar.jpg"}

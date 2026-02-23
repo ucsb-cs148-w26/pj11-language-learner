@@ -24,6 +24,7 @@ type ChatLeftPanelProps = {
   linkMode?: boolean;
   showHeader?: boolean;
   containerClassName?: string;
+  outerBorder?: boolean;
 };
 
 function formatRelative(iso: string | null) {
@@ -44,6 +45,7 @@ export default function ChatLeftPanel({
   linkMode,
   showHeader = true,
   containerClassName = "",
+  outerBorder = true,
 }: ChatLeftPanelProps) {
   const sorted = [...chats].sort((a, b) => {
     const ta = new Date(a.lastMessageAt ?? a.createdAt).getTime(); 
@@ -55,13 +57,14 @@ export default function ChatLeftPanel({
   return (
     <aside 
       className={[
-        "h-full min-h-0 border bg-white overflow-hidden",
+        "h-full min-h-0 bg-white overflow-hidden",
+        outerBorder? "border-x border-b border-gray-border-soft" : "border-0",
         containerClassName,
       ].join(" ")}
     >
       {/* Header */}
       {showHeader && (
-      <div className="border-b px-4 py-3">
+      <div className="border-b border-gray-border-soft px-4 py-3">
         <div className="text-lg font-semibold text-gray-text">Conversations</div>
       </div>
       )}
@@ -73,7 +76,7 @@ export default function ChatLeftPanel({
           const avatarSrc = c.partnerAvatarUrl ?? "/default-avatar.jpg";
 
           const className = [
-            "w-full block h-17 border-b px-4 py-3 text-left transition",
+            "w-full block h-17 border-b border-gray-border-soft last:border-0 px-4 py-3 text-left transition",
             isSelected ? "bg-gray-soft-2" : "hover:bg-off-white",
           ].join(" ");
 

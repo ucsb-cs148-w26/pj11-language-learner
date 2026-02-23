@@ -68,7 +68,7 @@ export default function FriendsList({
             return (
               <div
                 key={f.id}
-                className="grid h-17 grid-cols-[1fr_auto_auto] items-center gap-3 border-t border-gray-border-soft px-4 py-3 text-sm"
+                className="grid h-17 grid-cols-[1fr_auto_auto] items-center gap-3 border-t border-gray-border-soft first:border-0 px-4 py-3 text-sm"
               >
                 <Link
                   href={f.profileHref}
