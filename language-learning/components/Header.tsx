@@ -49,7 +49,7 @@ function HeaderContent() {
       setSession(currentSession);
 
       if (currentSession?.user) {
-        await getProfile(currentSession.user.id);
+        getProfile(currentSession.user.id);
       } else {
         setUserProfile(null);
       }
@@ -62,7 +62,7 @@ function HeaderContent() {
         setSession(newSession);
 
         if (newSession?.user) {
-          await getProfile(newSession.user.id);
+          getProfile(newSession.user.id);
         } else {
           setUserProfile(null);
         }
