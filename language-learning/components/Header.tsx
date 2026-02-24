@@ -77,7 +77,7 @@ function HeaderContent() {
             priority
           />
         </div>
-        {isNewUserOnboarding ? (
+        {isNewUserOnboarding && !loading ? (
         <div className="flex w-full mx-6 self-center gap-3 rounded-lg bg-sky-100 px-4 py-2 text-sm text-zinc-600 border border-zinc-200">
           <svg className="h-4 w-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -115,7 +115,7 @@ function HeaderContent() {
           })}
         </div> 
         )}
-        {!isNewUserOnboarding && session && (
+        {!isNewUserOnboarding && !loading && session && (
           <Link href="/profile" className="flex-shrink-0 transition hover:opacity-80">
             <div className="justify-end">
               {userProfile ? (
