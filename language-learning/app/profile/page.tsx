@@ -4,18 +4,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
-
-// Helper function to convert database level to display format
-function levelToDisplay(
-  level: string | null | undefined
-): "Beginner" | "Intermediate" | "Advanced" | null {
-  if (!level) return null;
-  const lower = level.toLowerCase();
-  if (lower === "intermediate") return "Intermediate";
-  if (lower === "advanced") return "Advanced";
-  return "Beginner";
-}
 
 type TargetLanguage = {
   name: string;
@@ -36,85 +24,14 @@ type LoadState<T> =
   | { status: "error"; message: string }
   | { status: "success"; data: T };
 
-async function getUserId(): Promise<string> {
-  try {
-    const { data, error: authError } = await supabase.auth.getSession();
-    if (!authError && data.session?.user) {
-      return data.session.user.id;
-    }
-  } catch {
-    // Ignore auth errors in test mode
-  }
-  // TEST MODE: Use a valid UUID when not authenticated
-  return "00000000-0000-0000-0000-000000000000";
-}
-
 async function fetchMyProfile(): Promise<Profile> {
   try {
-    const userId = await getUserId();
-
-    // Fetch profile data
-    const { data: profileData, error: profileError } = await supabase
-      .from("profiles")
-      .select("first_name, last_name, bio, native_language, profile_picture_url")
-      .eq("user_id", userId)
-      .single();
-
-    if (profileError) {
-      // If no profile exists, return empty profile
-      if (profileError.code === "PGRST116") {
-        return {
-          firstName: null,
-          lastName: null,
-          bio: null,
-          targetLanguages: [],
-          profilePicture: null,
-          nativeLanguage: null,
-        };
-      }
-      const errorMessage =
-        profileError.message || `Supabase error: ${profileError.code || "Unknown"}`;
-      const enhancedError = new Error(errorMessage);
-      (enhancedError as any).code = profileError.code;
-      (enhancedError as any).details = profileError.details;
-      throw enhancedError;
+    const res = await fetch("/api/profile/me");
+    const body = await res.json();
+    if (!res.ok) {
+      throw new Error(body?.error || "Failed to load profile");
     }
-
-    // Fetch ALL target languages
-    const { data: targetLanguagesData, error: targetLanguagesError } = await supabase
-      .from("profile_target_languages")
-      .select("level, languages!profile_target_languages_language_id_fkey(name)")
-      .eq("user_id", userId);
-
-    if (targetLanguagesError) {
-      const errorMessage =
-        targetLanguagesError.message ||
-        `Supabase error: ${targetLanguagesError.code || "Unknown"}`;
-      const enhancedError = new Error(errorMessage);
-      (enhancedError as any).code = targetLanguagesError.code;
-      (enhancedError as any).details = targetLanguagesError.details;
-      throw enhancedError;
-    }
-
-    const targetLanguages: TargetLanguage[] = (targetLanguagesData ?? [])
-      .map((row: any) => {
-        const name = row?.languages?.name ?? null;
-        if (!name) return null;
-        return {
-          name,
-          level: levelToDisplay(row.level),
-        };
-      })
-      .filter(Boolean) as TargetLanguage[];
-
-    return {
-      firstName: profileData.first_name,
-      lastName: profileData.last_name,
-      bio: profileData.bio,
-      targetLanguages,
-      profilePicture: profileData.profile_picture_url,
-      nativeLanguage: profileData.native_language,
-    };
+    return body.profile as Profile;
   } catch (e) {
     if (e instanceof Error && (e.name === "AbortError" || e.message.includes("aborted"))) {
       throw new Error("Network request was cancelled. Please check your connection and try again.");
@@ -166,9 +83,10 @@ export default function ProfilePage() {
     setError(null);
 
     try {
-      const { error: signOutError } = await supabase.auth.signOut();
-      if (signOutError) {
-        setError(signOutError.message);
+      const res = await fetch("/api/auth/signout", { method: "POST" });
+      const body = await res.json();
+      if (!res.ok) {
+        setError(body?.error || "Sign out failed");
         setSignOutLoading(false);
         return;
       }
@@ -185,55 +103,30 @@ export default function ProfilePage() {
     setError(null);
 
     try {
-      console.log("Starting account deletion process...");
+      const res = await fetch("/api/profile/delete", { method: "POST" });
+      const body = await res.json();
 
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-      if (userError || !user) {
-        setError("Could not get user information");
-        setDeleteLoading(false);
-        return;
-      }
-
-      const userId = user.id;
-
-      const { data: rpcData, error: deleteAuthError } = await supabase.rpc(
-        "delete_user_account",
-        { user_uuid: userId }
-      );
-
-      if (deleteAuthError) {
-        if (
-          deleteAuthError.message?.includes("function") ||
-          deleteAuthError.code === "42883" ||
-          deleteAuthError.message?.includes("does not exist")
-        ) {
+      if (!res.ok) {
+        const errMsg = String(body?.error || "Account deletion failed");
+        const errCode = String(body?.code || "");
+        if (errMsg.includes("function") || errCode === "42883" || errMsg.includes("does not exist")) {
           setError(
             "Delete account function not set up. Please run delete_user_account.sql in Supabase SQL Editor, or contact support."
           );
-        } else if (deleteAuthError.message?.includes("Not authenticated")) {
+        } else if (errMsg.includes("Not authenticated")) {
           setError("Authentication error. Please try signing out and back in.");
-        } else if (deleteAuthError.message?.includes("only delete your own")) {
+        } else if (errMsg.includes("only delete your own")) {
           setError("Security error: You can only delete your own account.");
         } else {
           setError(
-            `Account data deleted, but auth user deletion failed: ${
-              deleteAuthError.message || "Unknown error"
-            }. Please contact support.`
+            `Account data deleted, but auth user deletion failed: ${errMsg}. Please contact support.`
           );
         }
-        await supabase.auth.signOut();
         setDeleteLoading(false);
         router.push("/auth/signin");
         return;
       }
 
-      console.log("✅ Account and all related data deleted successfully!");
-      console.log("RPC response:", rpcData);
-
-      await supabase.auth.signOut();
       router.push("/");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "An unexpected error occurred";
