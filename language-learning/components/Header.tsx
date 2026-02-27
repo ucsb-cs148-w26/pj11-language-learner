@@ -9,7 +9,7 @@ import { supabase } from "@/lib/supabaseClient";
 import ThemeToggle from "./ThemeToggle";
 
 type UserProfile = {
-  profilePicture: string;
+  profile_picture_url: string;
 };
 
 function HeaderContent() {
@@ -30,15 +30,23 @@ function HeaderContent() {
   ];
 
   useEffect(() => {
-    const getProfile = async (userId: string) => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("profilePicture")
-        .eq("id", userId)
-        .single();
+const getProfile = async (userId: string) => {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("profile_picture_url")
+    .eq("user_id", userId) // ← 这里也很重要
+    .single();
 
-      if (!error && data) {
-        setUserProfile(data);
+  if (error) {
+      console.error("Header profile load error:", error);
+        setUserProfile(null);
+        return;
+      }
+
+      if (data) {
+        setUserProfile({
+          profile_picture_url: data.profile_picture_url ?? null,
+        });
       } else {
         setUserProfile(null);
       }
@@ -156,7 +164,7 @@ function HeaderContent() {
             <Link href="/profile" className="transition hover:opacity-80">
               {userProfile ? (
                 <img
-                  src={userProfile.profilePicture}
+                  src={userProfile.profile_picture_url}
                   alt="Profile"
                   className="w-[40px] h-[40px] rounded-full object-cover border-2 border-gray-border-soft"
                 />
