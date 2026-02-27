@@ -19,7 +19,7 @@ export default function ChatHeader({
   targetLanguages,
 }: ChatHeaderProps) {
   return (
-    <div className="border-b px-5 py-4">
+    <div className="border-b border-gray-border-soft px-5 py-4">
       <div className="flex items-center gap-3">
         <img
           src={partnerAvatarUrl ?? "/default-avatar.jpg"}
@@ -28,20 +28,20 @@ export default function ChatHeader({
         />
 
         <div>
-          <Link href={`/profile/${partnerId}`} className="text-base font-semibold text-zinc-900 hover:underline">
+          <Link href={`/profile/${partnerId}`} className="text-base font-semibold text-gray-text hover:underline">
             {partnerFirstName} {partnerLastName}
           </Link>
 
           {targetLanguages && targetLanguages.length > 0 ? (
-            <div className="text-sm text-zinc-500">
+            <div className="text-sm text-gray-muted-2">
               Learning:{" "}
-              <span className="font-medium text-zinc-700">
+              <span className="font-medium text-gray-muted">
                 {targetLanguages.join(", ")}
               </span>
             </div>
           ) : (
-            <div className="text-sm text-zinc-500">
-              Learning: <span className="font-medium text-zinc-700">Unknown</span>
+            <div className="text-sm text-gray-muted-2">
+              Learning: <span className="font-medium text-gray-muted">Unknown</span>
             </div>
           )}
         </div>

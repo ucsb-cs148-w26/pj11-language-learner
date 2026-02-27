@@ -290,11 +290,11 @@ export default function DashboardPage() {
     }
     if (state.status === "error") {
       return (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-4">
-          <p className="font-medium text-red-800">Couldn’t load dashboard</p>
-          <p className="mt-1 text-sm text-red-700">{state.message}</p>
+        <div className="rounded-2xl border border-dark-red/20 bg-light-red p-4">
+          <p className="font-medium text-dark-red">Couldn’t load dashboard</p>
+          <p className="mt-1 text-sm text-dark-red">{state.message}</p>
           <button
-            className="mt-3 rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+            className="mt-3 rounded-xl bg-dark-red px-4 py-2 text-sm font-medium text-white hover:opacity-90"
             onClick={() => location.reload()}
           >
             Reload
@@ -312,12 +312,12 @@ export default function DashboardPage() {
     return (
       <div className="space-y-6">
         <header>
-          <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">Dashboard</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-gray-text">Dashboard</h1>
         </header>
 
         <Link
           href="/profile"
-          className="block rounded-2xl border border-zinc-200 bg-white p-6 transition-colors hover:bg-zinc-50"
+          className="block rounded-2xl border border-gray-border-soft bg-white p-6 transition-colors hover:bg-off-white"
         >
           <div className="flex items-start gap-4">
             <div className="relative">
@@ -325,11 +325,11 @@ export default function DashboardPage() {
                 <img
                   src={user.profilePicture}
                   alt="Profile"
-                  className="h-20 w-20 rounded-full border-2 border-zinc-200 object-cover"
+                  className="h-20 w-20 rounded-full border-2 border-gray-border-soft object-cover"
                 />
               ) : (
-                <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-zinc-200 bg-zinc-100">
-                  <svg className="h-10 w-10 text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-gray-border-soft bg-gray-soft-2">
+                  <svg className="h-10 w-10 text-gray-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -343,26 +343,26 @@ export default function DashboardPage() {
             <div className="min-w-0 flex-1">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0 flex-1">
-                  <h2 className="text-xl font-semibold text-zinc-900">Profile</h2>
+                  <h2 className="text-xl font-semibold text-gray-text">Profile</h2>
                   <div className="mt-2 space-y-1">
                     {user.targetLanguages.length > 0 ? (
-                      <p className="text-sm text-zinc-700">
+                      <p className="text-sm text-gray-muted">
                         <span className="font-medium">Learning:</span> {" "}
                         {user.targetLanguages
                           .map((t) => `${t.name}${t.level ? ` • ${t.level}` : ""}`)
                           .join(", ")}
                       </p>
                     ) : (
-                      <p className="text-sm italic text-zinc-600">Set your target language to get started</p>
+                      <p className="text-sm italic text-gray-muted">Set your target language to get started</p>
                     )}
                     {user.nativeLanguage && (
-                      <p className="text-sm text-zinc-700">
+                      <p className="text-sm text-gray-muted">
                         <span className="font-medium">Native:</span> {user.nativeLanguage}
                       </p>
                     )}
                   </div>
                 </div>
-                <div className="flex shrink-0 items-center gap-1 text-sm text-zinc-600">
+                <div className="flex shrink-0 items-center gap-1 text-sm text-gray-muted">
                   <span>View Profile</span>
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -376,12 +376,12 @@ export default function DashboardPage() {
         <div className="grid gap-6 lg:grid-cols-2">
           <section className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-zinc-900">Friends</h2>
+              <h2 className="text-xl font-semibold text-gray-text">Friends</h2>
               <div className="flex items-center gap-3">
-                <Link href="/requests" className="text-sm font-medium text-zinc-700 hover:text-zinc-900">
+                <Link href="/requests" className="text-sm font-medium text-gray-muted hover:text-gray-text">
                   Requests
                 </Link>
-                <Link href="/discover" className="text-sm font-medium text-zinc-700 hover:text-zinc-900">
+                <Link href="/discover" className="text-sm font-medium text-gray-muted hover:text-gray-text">
                   Find more
                 </Link>
               </div>
@@ -432,22 +432,23 @@ export default function DashboardPage() {
 
           <section className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-zinc-900">Recent Chats</h2>
+              <h2 className="text-xl font-semibold text-gray-text">Recent Chats</h2>
               {chats.length > 0 && (
-                <Link href="/chats" className="text-sm font-medium text-zinc-700 hover:text-zinc-900">
+                <Link href="/chats" className="text-sm font-medium text-gray-muted hover:text-gray-text">
                   View all
                 </Link>
               )}
             </div>
 
             {chats.length === 0 ? (
-              <div className="rounded-2xl border p-6 text-center text-sm text-zinc-600">No chats yet.</div>
+              <div className="rounded-2xl border border-gray-border p-6 text-center text-sm text-gray-muted bg-white">No chats yet.</div>
             ) : (
-              <div className="overflow-hidden rounded-2xl border border-zinc-300 bg-white">
+              <div className="overflow-hidden rounded-2xl border border-gray-border bg-white">
                 <ChatLeftPanel
                   linkMode
                   showHeader={false}
-                  containerClassName="border-0 bg-transparent"
+                  outerBorder={false}
+                  containerClassName="border-0 border-gray-border bg-transparent"
                   chats={chats.map((c) => ({
                     conversationId: c.id,
                     createdAt: c.createdAt,
@@ -474,15 +475,15 @@ export default function DashboardPage() {
 function SkeletonDashboard() {
   return (
     <div className="space-y-6">
-      <div className="h-10 w-48 animate-pulse rounded-xl bg-zinc-200" />
+      <div className="h-10 w-48 animate-pulse rounded-xl bg-gray-border-soft" />
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-4">
-          <div className="h-6 w-24 animate-pulse rounded-lg bg-zinc-200" />
-          <div className="h-64 animate-pulse rounded-2xl bg-zinc-200" />
+          <div className="h-6 w-24 animate-pulse rounded-lg bg-gray-border-soft" />
+          <div className="h-64 animate-pulse rounded-2xl bg-gray-border-soft" />
         </div>
         <div className="space-y-4">
-          <div className="h-6 w-32 animate-pulse rounded-lg bg-zinc-200" />
-          <div className="h-64 animate-pulse rounded-2xl bg-zinc-200" />
+          <div className="h-6 w-32 animate-pulse rounded-lg bg-gray-border-soft" />
+          <div className="h-64 animate-pulse rounded-2xl bg-gray-border-soft" />
         </div>
       </div>
     </div>

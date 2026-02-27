@@ -41,14 +41,14 @@ export default function MessageBubble({
         <div
           className={[
             "inline-flex w-fit max-w-full rounded-2xl px-4 py-2 text-sm leading-relaxed shadow-sm",
-            isMe ? "bg-blue-950 text-white" : "bg-zinc-100 text-zinc-900",
+            isMe ? "bg-blue-dark text-white" : "bg-gray-soft-2 text-gray-text",
           ].join(" ")}
         >
           <span className="whitespace-pre-wrap break-all">{text}</span>
         </div>
 
         {time ? (
-          <div className="mt-1 w-fit text-xs text-zinc-400">{time}</div>
+          <div className="mt-1 w-fit text-xs text-gray-muted-2">{time}</div>
         ) : null}
       </div>
     </div>

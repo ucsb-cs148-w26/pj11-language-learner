@@ -215,13 +215,13 @@ export default function FriendRequests({
   }
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-zinc-300 bg-white">
+    <section className="overflow-hidden rounded-2xl border border-gray-border bg-white">
       {showHeader && (
         <div className="flex items-center justify-between px-4 py-3">
-          <h2 className="pl-3 text-xl font-semibold text-zinc-900">Requests</h2>
+          <h2 className="pl-3 text-xl font-semibold text-gray-text">Requests</h2>
           <Link
             href="/dashboard"
-            className="mr-2 rounded-xl border border-zinc-400 bg-white px-4 py-2 text-sm font-medium text-zinc-900 opacity-80"
+            className="mr-2 rounded-xl border border-gray-border bg-white px-4 py-2 text-sm font-medium text-gray-text opacity-80"
           >
             Friends
           </Link>
@@ -229,20 +229,20 @@ export default function FriendRequests({
       )}
 
       {error && (
-        <div className="mx-4 mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
+        <div className="mx-4 mb-4 rounded-xl border border-dark-red/20 bg-light-red px-4 py-3 text-sm text-dark-red">
           {error}
         </div>
       )}
 
       {chatPrompt && (
-        <div className="mx-4 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 text-sm text-zinc-900">
+        <div className="mx-4 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-border bg-off-white px-4 py-3 text-sm text-gray-text">
           <div>
             You’re now friends with <span className="font-semibold">{chatPrompt.name}</span>. Open
             your chat?
           </div>
           <div className="flex gap-2">
             <button
-              className="rounded-xl bg-zinc-900 px-3 py-2 text-sm font-medium text-white transition hover:opacity-90"
+              className="rounded-xl bg-gray-text px-3 py-2 text-sm font-medium text-white transition hover:opacity-90"
               onClick={() => {
                 router.push(`/chats?c=${encodeURIComponent(chatPrompt.conversationId)}`);
               }}
@@ -250,7 +250,7 @@ export default function FriendRequests({
               Go to chat
             </button>
             <button
-              className="rounded-xl border border-zinc-400 bg-white px-3 py-2 text-sm font-medium text-zinc-900"
+              className="rounded-xl border border-gray-border bg-white px-3 py-2 text-sm font-medium text-gray-text"
               onClick={() => setChatPrompt(null)}
             >
               Stay here
@@ -260,7 +260,7 @@ export default function FriendRequests({
       )}
 
       {showSubHeader && (
-        <div className="grid grid-cols-[1fr_auto_auto] items-center gap-3 bg-zinc-50 px-4 py-3 text-sm font-semibold text-zinc-900">
+        <div className="grid grid-cols-[1fr_auto_auto] items-center gap-3 bg-off-white px-4 py-3 text-sm font-semibold text-gray-text">
           <div className="pl-2">Incoming</div>
           <div className="pr-[40px] text-right">Accept</div>
           <div className="pr-[40px] text-right">Deny</div>
@@ -269,14 +269,14 @@ export default function FriendRequests({
 
       {loading ? (
         <div className="p-6 text-center">
-          <p className="text-sm text-zinc-700">Loading requests…</p>
+          <p className="text-sm text-gray-muted">Loading requests…</p>
         </div>
       ) : sortedIncoming.length === 0 ? (
         <div className="p-6 text-center">
-          <p className="text-sm text-zinc-700">No incoming requests.</p>
+          <p className="text-sm text-gray-muted">No incoming requests.</p>
           <Link
             href="/discover"
-            className="mt-3 inline-block rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+            className="mt-3 inline-block rounded-xl bg-gray-text px-4 py-2 text-sm font-medium text-white hover:opacity-90"
           >
             Find partners
           </Link>
@@ -290,7 +290,7 @@ export default function FriendRequests({
             return (
               <div
                 key={r.requestId}
-                className="grid h-17 grid-cols-[1fr_auto_auto] items-center gap-3 border-t border-zinc-200 px-4 py-3 text-sm"
+                className="grid h-17 grid-cols-[1fr_auto_auto] items-center gap-3 border-t border-gray-border-soft px-4 py-3 text-sm"
               >
                 <Link
                   href={r.from.profileHref}
@@ -302,7 +302,7 @@ export default function FriendRequests({
                     className="h-10 w-10 shrink-0 rounded-full object-cover"
                   />
                   <div className="min-w-0">
-                    <div className="truncate text-base font-medium text-zinc-900">{r.from.name}</div>
+                    <div className="truncate text-base font-medium text-gray-text">{r.from.name}</div>
                   </div>
                 </Link>
 
@@ -327,14 +327,14 @@ export default function FriendRequests({
         </div>
       )}
 
-      <div className="mt-2 grid grid-cols-[1fr_auto] items-center gap-3 bg-zinc-50 px-4 py-3 text-sm font-semibold text-zinc-900">
+      <div className="mt-2 grid grid-cols-[1fr_auto] items-center gap-3 bg-off-white px-4 py-3 text-sm font-semibold text-gray-text">
         <div className="pl-2">Pending (Sent)</div>
         <div className="pr-[40px] text-right">Cancel</div>
       </div>
 
       {sortedOutgoing.length === 0 ? (
         <div className="p-6 text-center">
-          <p className="text-sm text-zinc-700">No pending requests sent.</p>
+          <p className="text-sm text-gray-muted">No pending requests sent.</p>
         </div>
       ) : (
         <div>
@@ -344,7 +344,7 @@ export default function FriendRequests({
             return (
               <div
                 key={r.requestId}
-                className="grid h-17 grid-cols-[1fr_auto] items-center gap-3 border-t border-zinc-200 px-4 py-3 text-sm"
+                className="grid h-17 grid-cols-[1fr_auto] items-center gap-3 border-t border-gray-border-soft px-4 py-3 text-sm"
               >
                 <Link
                   href={r.to.profileHref}
@@ -356,7 +356,7 @@ export default function FriendRequests({
                     className="h-10 w-10 shrink-0 rounded-full object-cover"
                   />
                   <div className="min-w-0">
-                    <div className="truncate text-base font-medium text-zinc-900">{r.to.name}</div>
+                    <div className="truncate text-base font-medium text-gray-text">{r.to.name}</div>
                   </div>
                 </Link>
 

@@ -308,30 +308,30 @@ export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
 
   if (loading) {
     return (
-      <div className="flex-1 min-h-0 flex items-center justify-center bg-zinc-50">
-        <div className="text-zinc-600">Loading chats…</div>
+      <div className="flex-1 min-h-0 flex items-center justify-center bg-off-white">
+        <div className="text-gray-muted">Loading chats…</div>
       </div>
     );
   }
 
   if (!myUserId) {
     return (
-      <div className="flex-1 min-h-0 flex items-center justify-center bg-zinc-50">
-        <div className="text-zinc-600">Please sign in to view chats.</div>
+      <div className="flex-1 min-h-0 flex items-center justify-center bg-off-white">
+        <div className="text-gray-muted">Please sign in to view chats.</div>
       </div>
     );
   }
 
   if (conversations.length === 0) {
     return (
-      <div className="flex-1 min-h-0 flex items-center justify-center bg-zinc-50">
-        <div className="text-zinc-600">No conversations yet.</div>
+      <div className="flex-1 min-h-0 flex items-center justify-center bg-off-white">
+        <div className="text-gray-muted">No conversations yet.</div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 min-h-0 overflow-hidden bg-zinc-50">
+    <div className="flex-1 min-h-0 overflow-hidden bg-off-white">
       <Chat
         conversations={conversations}
         selectedConversationId={selectedConversationId ?? conversations[0]?.conversationId ?? ""}
