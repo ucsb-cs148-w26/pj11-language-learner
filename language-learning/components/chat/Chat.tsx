@@ -95,12 +95,12 @@ export default function Chat({ conversations, selectedConversationId, onSelectCo
                 await onSendMessage?.(conversationId, text); }}
             />
           ) : (
-            <div className="flex h-full items-center justify-center rounded-2xl border bg-white px-6 text-zinc-600 shadow-sm">
+            <div className="flex h-full items-center justify-center rounded-2xl border bg-white px-6 text-gray-muted shadow-sm">
                 <div className="max-w-md text-center">
-                    <div className="text-lg font-semibold text-zinc-900">No conversations yet</div>
-                    <p className="mt-2 text-sm text-zinc-600">
+                    <div className="text-lg font-semibold text-gray-text">No conversations yet</div>
+                    <p className="mt-2 text-sm text-gray-muted">
                     Start one by heading to the{" "}
-                    <Link href="/discover" className="font-medium text-blue-800 hover:underline">
+                    <Link href="/discover" className="font-medium text-blue hover:underline">
                         Discover
                     </Link>{" "}
                     page.

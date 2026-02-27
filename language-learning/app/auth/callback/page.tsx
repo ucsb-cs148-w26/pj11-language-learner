@@ -280,9 +280,9 @@ function AuthCallbackContent() {
     return (
       <main className="mx-auto max-w-lg p-6 bg-white min-h-screen flex items-center justify-center">
         <div className="w-full">
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
-            <h1 className="text-xl font-semibold text-red-800 mb-2">Authentication Error</h1>
-            <p className="text-sm text-red-700 mb-4 whitespace-pre-line">{error}</p>
+          <div className="rounded-2xl border border-dark-red/20 bg-light-red p-6">
+            <h1 className="text-xl font-semibold text-dark-red mb-2">Authentication Error</h1>
+            <p className="text-sm text-dark-red mb-4 whitespace-pre-line">{error}</p>
             {isDatabaseError && (
               <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <p className="text-sm text-yellow-800 font-medium mb-2">How to fix:</p>
@@ -302,7 +302,7 @@ function AuthCallbackContent() {
             <div className="flex gap-3">
               <button
                 onClick={() => router.push("/auth/signin")}
-                className="flex-1 rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+                className="flex-1 rounded-xl bg-dark-red px-4 py-2 text-sm font-medium text-white hover:opacity-90"
               >
                 Return to Sign In
               </button>
@@ -316,8 +316,8 @@ function AuthCallbackContent() {
   return (
     <main className="mx-auto w-full p-6 bg-white min-h-screen flex items-center justify-center">
       <div className="w-full text-center">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-zinc-900"></div>
-        <p className="mt-4 text-sm text-zinc-600">Completing sign in...</p>
+        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-text"></div>
+        <p className="mt-4 text-sm text-gray-muted">Completing sign in...</p>
       </div>
     </main>
   );
@@ -329,8 +329,8 @@ export default function AuthCallbackPage() {
       fallback={
         <main className="mx-auto max-w-lg p-6 bg-white min-h-screen flex items-center justify-center">
           <div className="w-full text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-zinc-900"></div>
-            <p className="mt-4 text-sm text-zinc-600">Loading...</p>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-text"></div>
+            <p className="mt-4 text-sm text-gray-muted">Loading...</p>
           </div>
         </main>
       }

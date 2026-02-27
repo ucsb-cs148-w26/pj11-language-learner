@@ -19,14 +19,14 @@ export default function RequestsPage() {
 
   if (!userId) {
     return (
-      <div className="mx-auto w-full p-6 text-zinc-900">
-        <p className="text-sm text-zinc-700">Please sign in to view requests.</p>
+      <div className="mx-auto w-full p-6 text-gray-text">
+        <p className="text-sm text-gray-muted">Please sign in to view requests.</p>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto w-full p-6 text-zinc-900">
+    <div className="mx-auto w-full p-6 text-gray-text">
       <FriendRequests userId={userId} />
     </div>
   );

@@ -47,13 +47,13 @@ function Landing() {
   const [hover, setHover] = useState(false);
 
   return (
-    <div className={`${bodyFont.className} min-h-[calc(100dvh-80px)] w-full flex items-center justify-center bg-white px-6`}>
-      <div className="w-full max-w-3xl border-2 border-dashed flex flex-col items-center text-center border-blue-200 rounded-2xl p-10 bg-cyan-50/20">
-          <h1 className="text-4xl font-extrabold text-blue-900 mb-6">
+    <div className={`${bodyFont.className} min-h-[calc(100dvh-80px)] w-full flex items-center justify-center bg-background px-6`}>
+      <div className="w-full max-w-3xl border-2 border-dashed flex flex-col items-center text-center border-blue-soft rounded-2xl p-10 bg-blue-soft/20">
+          <h1 className="text-4xl font-extrabold text-blue-dark mb-6">
             Language Learner
           </h1>
 
-          <p className="text-lg text-blue-900/90 leading-8 mb-10">
+          <p className="text-lg text-gray-text leading-8 mb-10">
               Find a language partner at UCSB<br />
               Learn from each other<br />
               Chat and stay motivated together <br />
@@ -65,7 +65,7 @@ function Landing() {
             href="/auth/signin"
             onMouseEnter={() => setHover(true)}
             onMouseLeave={() => setHover(false)}
-            className="rounded-xl bg-black text-white font-bold text-xl px-6 py-3 transition hover:-translate-y-1 hover:shadow-xl"
+            className="rounded-xl bg-blue text-white font-bold text-xl px-6 py-3 transition hover:bg-blue-dark hover:-translate-y-1 hover:shadow-xl"
           >
             Sign in
           </Link>

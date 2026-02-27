@@ -34,22 +34,22 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white w-full flex items-center justify-center">
+    <div className="min-h-screen bg-background w-full flex items-center justify-center">
       <main className="mx-auto max-w-lg p-6 w-full">
         <div className="w-full space-y-6">
         {/* Header */}
         <header className="text-center">
-          <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">Sign In</h1>
-          <p className="mt-2 text-sm text-zinc-600">
+          <h1 className="text-3xl font-semibold tracking-tight text-gray-text">Sign In</h1>
+          <p className="mt-2 text-sm text-gray-muted">
             Sign in to your account to continue
           </p>
         </header>
 
         {/* Sign In Form */}
-        <div className="rounded-2xl border border-zinc-200 bg-white p-6">
+        <div className="rounded-2xl border border-gray-border-soft bg-white p-6">
           {error && (
-            <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4">
-              <p className="text-sm text-red-800">{error}</p>
+            <div className="mb-4 rounded-xl border border-dark-red/20 bg-light-red p-4">
+              <p className="text-sm text-dark-red">{error}</p>
             </div>
           )}
 
@@ -58,7 +58,7 @@ export default function SignInPage() {
             type="button"
             onClick={handleGoogleSignIn}
             disabled={googleLoading}
-            className="w-full flex items-center justify-center gap-3 rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+            className="w-full flex items-center justify-center gap-3 rounded-xl border border-gray-border bg-white px-4 py-2 text-sm font-medium text-gray-text hover:bg-off-white disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path

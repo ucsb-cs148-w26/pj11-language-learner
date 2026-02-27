@@ -419,10 +419,10 @@ export default function EditProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white w-full">
+      <div className="min-h-screen bg-background w-full">
         <main className="mx-auto max-w-6xl p-6">
-          <div className="h-10 w-1/2 animate-pulse rounded-xl bg-zinc-200" />
-          <div className="mt-4 h-80 animate-pulse rounded-2xl bg-zinc-200" />
+          <div className="h-10 w-1/2 animate-pulse rounded-xl bg-gray-border-soft" />
+          <div className="mt-4 h-80 animate-pulse rounded-2xl bg-gray-border-soft" />
         </main>
       </div>
     );
@@ -433,27 +433,27 @@ export default function EditProfilePage() {
     .filter(Boolean);
 
   return (
-    <div className="min-h-screen bg-white w-full">
+    <div className="min-h-screen bg-background w-full">
       <main className="mx-auto max-w-6xl p-6">
       <div className="space-y-6">
         <header>
-          <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">Edit Profile</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-gray-text">Edit Profile</h1>
         </header>
 
         {error && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-4">
-            <p className="text-sm text-red-800">{error}</p>
+          <div className="rounded-2xl border border-dark-red/20 bg-light-red p-4">
+            <p className="text-sm text-dark-red">{error}</p>
           </div>
         )}
 
         <form onSubmit={onSubmit} className="space-y-4">
             {/* Avatar uploader */}
-        <div className="rounded-2xl border border-zinc-200 bg-white p-6">
+        <div className="rounded-2xl border border-gray-border-soft bg-white p-6">
           <div className="flex items-center gap-4">
             <button
               type="button"
               onClick={onClickAvatar}
-              className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-zinc-100 border border-zinc-200"
+              className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-gray-soft-2 border border-gray-border-soft"
               aria-label="Upload profile photo"
             >
               {avatarPreviewUrl ? (
@@ -465,7 +465,7 @@ export default function EditProfilePage() {
               ) : (
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="h-10 w-10 text-zinc-600"
+                  className="h-10 w-10 text-gray-muted"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -481,8 +481,8 @@ export default function EditProfilePage() {
             </button>
 
             <div className="space-y-1">
-              <p className="text-sm font-medium text-zinc-900">Profile photo</p>
-              <p className="text-xs text-zinc-600">Click the avatar to upload a new one (max 5MB).</p>
+              <p className="text-sm font-medium text-gray-text">Profile photo</p>
+              <p className="text-xs text-gray-muted">Click the avatar to upload a new one (max 5MB).</p>
             </div>
 
             <input
@@ -496,11 +496,11 @@ export default function EditProfilePage() {
         </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl border border-zinc-200 bg-white p-6">
+            <div className="rounded-2xl border border-gray-border-soft bg-white p-6">
               <Field label="First name" required>
                 <input
                   required
-                  className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:border-transparent"
+                  className="w-full rounded-xl border border-gray-border bg-white px-4 py-2 text-sm text-gray-text placeholder:text-gray-muted-2 focus:outline-none focus:ring-2 focus:ring-blue/20 focus:border-transparent"
                   value={form.firstName}
                   onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
                   placeholder="e.g. John"
@@ -508,10 +508,10 @@ export default function EditProfilePage() {
               </Field>
             </div>
 
-            <div className="rounded-2xl border border-zinc-200 bg-white p-6">
+            <div className="rounded-2xl border border-gray-border-soft bg-white p-6">
               <Field label="Last name">
                 <input
-                  className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:border-transparent"
+                  className="w-full rounded-xl border border-gray-border bg-white px-4 py-2 text-sm text-gray-text placeholder:text-gray-muted-2 focus:outline-none focus:ring-2 focus:ring-blue/20 focus:border-transparent"
                   value={form.lastName}
                   onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))}
                   placeholder="e.g. Doe"
@@ -520,10 +520,10 @@ export default function EditProfilePage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6">
+          <div className="rounded-2xl border border-gray-border-soft bg-white p-6">
             <Field label="Bio">
               <textarea
-                className="min-h-[110px] w-full resize-y rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:border-transparent"
+                className="min-h-[110px] w-full resize-y rounded-xl border border-gray-border bg-white px-4 py-2 text-sm text-gray-text placeholder:text-gray-muted-2 focus:outline-none focus:ring-2 focus:ring-blue/20 focus:border-transparent"
                 value={form.bio}
                 onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
                 placeholder="Tell others about yourself..."
@@ -532,11 +532,11 @@ export default function EditProfilePage() {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl border border-zinc-200 bg-white p-6">
+            <div className="rounded-2xl border border-gray-border-soft bg-white p-6">
               <Field label="Native language" required>
                 <select
                   required
-                  className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:border-transparent"
+                  className="w-full rounded-xl border border-gray-border bg-white px-4 py-2 text-sm text-gray-text focus:outline-none focus:ring-2 focus:ring-blue/20 focus:border-transparent"
                   value={form.nativeLanguage}
                   onChange={(e) => setForm((f) => ({ ...f, nativeLanguage: e.target.value }))}
                 >
@@ -553,16 +553,16 @@ export default function EditProfilePage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 space-y-4">
+          <div className="rounded-2xl border border-gray-border-soft bg-white p-6 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-zinc-900">Target languages</p>
-                <p className="text-xs text-zinc-600">Add one or more languages you are learning.</p>
+                <p className="text-sm font-medium text-gray-text">Target languages</p>
+                <p className="text-xs text-gray-muted">Add one or more languages you are learning.</p>
               </div>
               <button
                 type="button"
                 onClick={addTargetLanguageRow}
-                className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-50"
+                className="rounded-xl border border-gray-border-soft bg-white px-3 py-2 text-sm font-medium text-gray-text hover:bg-off-white"
                 disabled={saving}
               >
                 + Add
@@ -575,13 +575,13 @@ export default function EditProfilePage() {
                 return (
                   <div
                     key={`${idx}-${t.name}-${t.level}`}
-                    className="rounded-2xl border border-zinc-200 bg-white p-4"
+                    className="rounded-2xl border border-gray-border-soft bg-white p-4"
                   >
                     <div className="grid gap-3 md:grid-cols-[1fr_220px_44px] items-end">
                       <Field label="Language" required>
                         <select
                           required
-                          className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:border-transparent"
+                          className="w-full rounded-xl border border-gray-border bg-white px-4 py-2 text-sm text-gray-text focus:outline-none focus:ring-2 focus:ring-blue/20 focus:border-transparent"
                           value={t.name}
                           onChange={(e) => updateTargetLanguage(idx, { name: e.target.value })}
                         >
@@ -603,7 +603,7 @@ export default function EditProfilePage() {
 
                       <Field label="Level">
                         <select
-                          className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:border-transparent"
+                          className="w-full rounded-xl border border-gray-border bg-white px-4 py-2 text-sm text-gray-text focus:outline-none focus:ring-2 focus:ring-blue/20 focus:border-transparent"
                           value={t.level}
                           onChange={(e) =>
                             updateTargetLanguage(idx, { level: e.target.value as LevelDisplay })
@@ -618,7 +618,7 @@ export default function EditProfilePage() {
                       <button
                         type="button"
                         onClick={() => removeTargetLanguageRow(idx)}
-                        className="h-10 w-10 rounded-xl border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
+                        className="h-10 w-10 rounded-xl border border-gray-border-soft bg-white text-gray-muted hover:bg-off-white"
                         aria-label="Remove target language"
                         disabled={saving}
                       >
@@ -634,7 +634,7 @@ export default function EditProfilePage() {
           <div className="flex items-center justify-between pt-2">
             <button
               type="button"
-              className="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-50"
+              className="rounded-xl border border-gray-border-soft bg-white px-4 py-2 text-sm font-medium hover:bg-off-white"
               onClick={() => router.push("/profile")}
               disabled={saving}
             >
@@ -643,7 +643,7 @@ export default function EditProfilePage() {
 
             <button
               type="submit"
-              className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60"
+              className="rounded-xl bg-gray-text px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60"
               disabled={saving}
             >
               {saving ? "Saving..." : "Save changes"}
@@ -670,11 +670,11 @@ function Field({
   return (
     <div className="space-y-2">
       <div className="flex items-end justify-between gap-3">
-        <label className="text-sm font-medium text-zinc-700">
+        <label className="text-sm font-medium text-gray-muted">
           {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
+          {required && <span className="text-dark-red ml-1">*</span>}
         </label>
-        {hint ? <span className="text-xs text-zinc-600">{hint}</span> : null}
+        {hint ? <span className="text-xs text-gray-muted">{hint}</span> : null}
       </div>
       {children}
     </div>
