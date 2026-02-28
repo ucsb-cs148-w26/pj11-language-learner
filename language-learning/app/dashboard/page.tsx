@@ -2,18 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabaseClient";
-import { createFriendService } from "@/utils/friends/friendService";
 import FriendsList from "@/components/friends/list";
 import ChatLeftPanel from "@/components/chat/ChatLeftPanel";
-
-function levelToDisplay(level: string | null | undefined): "Beginner" | "Intermediate" | "Advanced" | null {
-  if (!level) return null;
-  const lower = level.toLowerCase();
-  if (lower === "intermediate") return "Intermediate";
-  if (lower === "advanced") return "Advanced";
-  return "Beginner";
-}
 
 type TargetLanguages = {
   name: string;
@@ -49,218 +39,11 @@ type LoadState<T> =
   | { status: "error"; message: string }
   | { status: "success"; data: T };
 
-type ProfileRow = {
-  user_id: string;
-  first_name: string | null;
-  last_name: string | null;
-  profile_picture_url?: string | null;
-  native_language?: string | null;
-};
-
-type ProfileTLRow = {
-  user_id: string;
-  level: string | null;
-  lang: { name: string | null } | Array<{ name: string | null }> | null;
-};
-
-type ConversationRow = {
-  id: string;
-  last_message_text: string | null;
-  last_message_at: string | null;
-  created_at: string;
-};
-
-type ConversationParticipantRow = {
-  conversation_id: string;
-  user_id: string;
-};
-
-async function getUserId(): Promise<string> {
-  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-  if (sessionError) throw sessionError;
-  if (sessionData.session?.user) return sessionData.session.user.id;
-
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError) throw userError;
-  if (userData.user) return userData.user.id;
-
-  throw new Error("Not authenticated");
-}
-
-function getLangName(
-  lang: ProfileTLRow["lang"]
-): string | null {
-  if (!lang) return null;
-  if (Array.isArray(lang)) return lang[0]?.name ?? null;
-  return lang.name ?? null;
-}
-
 async function fetchDashboard(): Promise<DashboardData> {
-  const userId = await getUserId();
-
-  const { data: profileData, error: profileError } = await supabase
-    .from("profiles")
-    .select("native_language, profile_picture_url")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (profileError && profileError.code !== "PGRST116") {
-    throw profileError;
-  }
-
-  const { data: targetLanguagesData, error: tlErr } = await supabase
-    .from("profile_target_languages")
-    .select("level, lang:languages!profile_target_languages_language_id_fkey(name)")
-    .eq("user_id", userId)
-
-  if (tlErr) throw tlErr;
-
-  const targetLanguages: TargetLanguages[] = (targetLanguagesData ?? [])
-    .map((row: any) => {
-      const name = row?.lang?.name ?? null;
-      if (!name) return null;
-      return { name, level: levelToDisplay(row.level) };
-    })
-    .filter(Boolean) as TargetLanguages[];
-
-  const userProfile = {
-    targetLanguages,
-    profilePicture: profileData?.profile_picture_url ?? null,
-    nativeLanguage: profileData?.native_language ?? null,
-  };
-
-  const { data: myParts, error: myPartsErr } = await supabase
-    .from("conversation_participants")
-    .select("conversation_id")
-    .eq("user_id", userId);
-
-  if (myPartsErr) throw myPartsErr;
-
-  const convoIds = (myParts ?? []).map((r: { conversation_id: string }) => r.conversation_id);
-
-  let chats: DashboardData["chats"] = [];
-
-  if (convoIds.length > 0) {
-    const { data: convos, error: convosErr } = await supabase
-      .from("conversations")
-      .select("id,last_message_text,last_message_at,created_at")
-      .in("id", convoIds);
-
-    if (convosErr) throw convosErr;
-
-    const { data: parts, error: partsErr } = await supabase
-      .from("conversation_participants")
-      .select("conversation_id,user_id")
-      .in("conversation_id", convoIds);
-
-    if (partsErr) throw partsErr;
-
-    const partnerByConvo = new Map<string, string>();
-    for (const p of (parts as ConversationParticipantRow[] | null) ?? []) {
-      if (p.user_id !== userId) {
-        partnerByConvo.set(p.conversation_id, p.user_id);
-      }
-    }
-
-    const partnerIds = [...new Set(partnerByConvo.values())];
-
-    const { data: profs, error: profsErr } = await supabase
-      .from("profiles")
-      .select("user_id,first_name,last_name")
-      .in("user_id", partnerIds);
-
-    if (profsErr) throw profsErr;
-
-    const profileById = new Map<string, ProfileRow>();
-    for (const p of (profs as ProfileRow[] | null) ?? []) {
-      profileById.set(p.user_id, p);
-    }
-
-    chats = ((convos as ConversationRow[] | null) ?? []).map((c) => {
-      const pid = partnerByConvo.get(c.id);
-      const prof = pid ? profileById.get(pid) : undefined;
-
-      const partnerName = prof
-        ? `${prof.first_name ?? ""} ${prof.last_name ?? ""}`.trim() || "Unnamed User"
-        : "Deleted User";
-
-      return {
-        id: c.id,
-        partnerId: pid ?? "",
-        partnerName,
-        lastMessage: c.last_message_text,
-        lastMessageAt: c.last_message_at,
-        createdAt: c.created_at,
-        unreadCount: 0,
-      };
-    }).filter(c => c.partnerId !== "");
-  }
-
-  chats.sort((a, b) => {
-    const aTime = new Date(a.lastMessageAt ?? a.createdAt).getTime();
-    const bTime = new Date(b.lastMessageAt ?? b.createdAt).getTime();
-    return bTime - aTime;
-  });
-
-  const friendService = createFriendService(supabase);
-  const friendEdges = await friendService.getFriendsList({ userId, limit: 50 });
-
-  let friends: DashboardData["friends"] = [];
-
-  if (friendEdges.length > 0) {
-    const friendIds = friendEdges.map((e) => e.friend_user_id);
-
-    const { data: friendProfiles, error: friendProfilesError } = await supabase
-      .from("profiles")
-      .select("user_id, first_name, last_name")
-      .in("user_id", friendIds);
-
-    if (friendProfilesError) throw friendProfilesError;
-
-    const { data: friendTLs, error: friendTLsError } = await supabase
-      .from("profile_target_languages")
-      .select("user_id, level, lang:languages!profile_target_languages_language_id_fkey(name)")
-      .in("user_id", friendIds);
-
-    if (friendTLsError) throw friendTLsError;
-
-    const profileById = new Map<string, { first_name: string | null; last_name: string | null }>();
-    for (const p of (friendProfiles as ProfileRow[] | null) ?? []) {
-      profileById.set(p.user_id, { first_name: p.first_name, last_name: p.last_name });
-    }
-
-    const tlById = new Map<
-      string,
-      { targetLanguage: string | null; level: "Beginner" | "Intermediate" | "Advanced" }
-    >();
-
-    for (const row of (friendTLs as ProfileTLRow[] | null) ?? []) {
-      if (tlById.has(row.user_id)) continue;
-      const tlName = getLangName(row.lang);
-      tlById.set(row.user_id, {
-        targetLanguage: tlName,
-        level: levelToDisplay(row.level) ?? "Beginner",
-      });
-    }
-
-    friends = friendEdges.map((edge) => {
-      const prof = profileById.get(edge.friend_user_id);
-      const tl = tlById.get(edge.friend_user_id);
-
-      const name = prof
-        ? `${prof.first_name ?? ""} ${prof.last_name ?? ""}`.trim() || "Unnamed User"
-        : "Deleted User";
-
-      return {
-        id: edge.friend_user_id,
-        name,
-        targetLanguage: tl?.targetLanguage ?? "Unknown",
-        level: tl?.level ?? "Beginner",
-      };
-    });
-  }
-
-  return { user: userProfile, friends, chats };
+  const res = await fetch("/api/dashboard");
+  const body = await res.json();
+  if (!res.ok) throw new Error(body?.error || "Failed to load dashboard");
+  return body as DashboardData;
 }
 
 export default function DashboardPage() {
@@ -412,8 +195,14 @@ export default function DashboardPage() {
                 });
 
                 try {
-                  const svc = createFriendService(supabase);
-                  await svc.unfriend({ otherUserId: friendId });
+                  const res = await fetch("/api/friends/unfriend", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ otherUserId: friendId }),
+                  });
+                  const body = await res.json();
+                  if (!res.ok) throw new Error(body?.error || "Failed to remove friend");
+
                   const data = await fetchDashboard();
                   setState({ status: "success", data });
                 } catch (e) {
