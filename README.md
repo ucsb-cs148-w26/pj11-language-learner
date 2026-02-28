@@ -23,15 +23,6 @@ URL: [https://pj11-language-learner.vercel.app/](https://pj11-language-learner-n
 
 ## Setup (from scratch)
 
-**Prerequisites**
-
-- **Node.js**: v20 or newer (LTS recommended)
-- **Package manager**: `npm` (comes with Node)
-- **Accounts/services**:
-  - A **GitHub** account (to host the repo)
-  - A **Vercel** account (for deployment)
-  - A **Supabase** project (for auth/database)
-
 **1. Clone the repo**
 
 ```bash
@@ -47,7 +38,7 @@ Inside the `language-learning` directory:
 cp .env.example .env.local
 ```
 
-Then open `.env.local` and fill in the Supabase values (e.g. URL, anon key, and any other listed keys) from your Supabase project.
+Then open `.env.local` and fill in the Supabase values (must be given)
 
 **3. Install dependencies**
 
@@ -69,30 +60,6 @@ Open `http://localhost:3000` in your browser. The app will hot-reload as you edi
 npm test          # unit/integration tests
 npm run test:e2e  # Playwright end-to-end tests
 ```
-
-## Deploying to Vercel
-
-**1. Create a new Vercel project**
-
-- Go to Vercel and create a new project by importing this GitHub repository.
-- When prompted for the project root, select the `language-learning` folder (this is where the Next.js app lives).
-
-**2. Set environment variables**
-
-- In the Vercel project settings, add the same variables you set in `.env.local` (Supabase URL, anon key, etc.).
-
-**3. Build & deploy**
-
-- Vercel will auto-detect Next.js and use:
-  - **Install command**: `npm install`
-  - **Build command**: `npm run build`
-  - **Output directory**: `.next`
-- Once the first build succeeds, Vercel will give you a production URL.
-- Every push to the main branch (or whichever branch you connect) will trigger a new deployment.
-
-## Documentation
-
-- **[Design Document (architecture, modules, design process, UX)](docs/DESIGN.md)** — High-level system architecture, software design, design process (with meeting refs), and user flows.
 
 ## Plan
 
