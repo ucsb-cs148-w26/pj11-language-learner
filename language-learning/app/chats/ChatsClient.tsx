@@ -1,23 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Chat, { Conversation } from "@/components/chat/Chat";
-import { supabase } from "@/lib/supabaseClient";
 
-type DbConversation = {
-  id: string;
-  last_message_at: string | null;
-  last_message_text: string | null;
-  created_at: string;
-};
-
-type DbParticipant = {
-  conversation_id: string;
-  user_id: string;
-};
-
-type DbMessage = {
+type ApiMessage = {
   id: string;
   conversation_id: string;
   sender_id: string;
@@ -25,17 +12,10 @@ type DbMessage = {
   created_at: string;
 };
 
-type DbProfile = {
-  user_id: string;
-  first_name: string | null;
-  last_name: string | null;
-  profile_picture_url: string | null;
-};
-
 export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const [loading, setLoading] = useState(true);
   const [myUserId, setMyUserId] = useState<string | null>(null);
 
@@ -44,58 +24,6 @@ export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
 
   const c = searchParams.get("c") ?? cFromUrl;
 
-  useEffect(() => {
-    if (!myUserId || conversations.length === 0) return;
-
-    const convoIdSet = new Set(conversations.map(c => c.conversationId));
-    const filter = `conversation_id=in.(${[...convoIdSet].join(",")})`;
-
-    const channel = supabase
-    .channel("messages:all-my-conversations")
-    .on(
-      "postgres_changes",
-      {
-        event: "INSERT",
-        schema: "public",
-        table: "messages",
-        filter,
-      },
-      (payload) => {
-        const m = payload.new as DbMessage;
-
-        // ignore messages for conversations not currently loaded
-        if (!convoIdSet.has(m.conversation_id)) return;
-
-        const uiMsg = {
-          id: m.id,
-          sender: m.sender_id === myUserId ? ("me" as const) : ("partner" as const),
-          text: m.body,
-          sentAt: m.created_at,
-        };
-
-        setConversations((prev) =>
-          prev.map((c) => {
-            if (c.conversationId !== m.conversation_id) return c;
-
-            if (c.messages.some((x) => x.id === uiMsg.id)) return c;
-
-            return {
-              ...c,
-              messages: [...c.messages, uiMsg],
-              lastMessageText: uiMsg.text,
-              lastMessageAt: uiMsg.sentAt,
-            };
-          })
-        );
-      }
-    )
-    .subscribe();
-
-    return () => {
-       supabase.removeChannel(channel);
-    };
-  }, [myUserId, conversations.map(c => c.conversationId).join("|")]);
-
   // Load conversation list (sidebar)
   useEffect(() => {
     let cancelled = false;
@@ -103,128 +31,21 @@ export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
     async function loadList() {
       setLoading(true);
 
-      const { data: authData, error: authErr } = await supabase.auth.getUser();
-      if (cancelled) return;
+      const res = await fetch("/api/chats");
+      const body = await res.json();
+      if (!res.ok) throw new Error(body?.error || "Failed to load chats");
 
-      const user = authData?.user;
-      if (authErr || !user) {
-        setMyUserId(null);
-        setConversations([]);
-        setSelectedConversationId(null);
-        setLoading(false);
-        return;
-      }
+      setMyUserId(body?.myUserId ?? null);
 
-      setMyUserId(user.id);
-
-      // Get conversation IDs I'm in
-      const { data: myParts, error: partsErr } = await supabase
-        .from("conversation_participants")
-        .select("conversation_id")
-        .eq("user_id", user.id);
-
-      if (partsErr) throw partsErr;
-
-      const convoIds = (myParts ?? []).map((r: any) => r.conversation_id);
-      if (convoIds.length === 0) {
-        setConversations([]);
-        setSelectedConversationId(null);
-        setLoading(false);
-        return;
-      }
-
-      // Fetch conversations
-      const { data: convos, error: convosErr } = await supabase
-        .from("conversations")
-        .select("id,last_message_at,last_message_text,created_at")
-        .in("id", convoIds)
-        .order("last_message_at", { ascending: false, nullsFirst: false });
-
-      if (convosErr) throw convosErr;
-
-      // Fetch participants for those conversations (to find partner id)
-      const { data: parts, error: allPartsErr } = await supabase
-        .from("conversation_participants")
-        .select("conversation_id,user_id")
-        .in("conversation_id", convoIds);
-
-      if (allPartsErr) throw allPartsErr;
-
-      const partnerByConvo = new Map<string, string>();
-      for (const row of (parts as DbParticipant[]) ?? []) {
-        if (row.user_id !== user.id) {
-          partnerByConvo.set(row.conversation_id, row.user_id);
-        }
-      }
-
-      // compute partnerIds
-      const partnerIds = Array.from(new Set(Array.from(partnerByConvo.values()))).filter(Boolean);
-
-      // Fetch partner profiles
-      const profilesById = new Map<string, DbProfile>();
-      if (partnerIds.length > 0) {
-        const { data: profs, error: profErr } = await supabase
-          .from("profiles")
-          .select("user_id, first_name, last_name, profile_picture_url")
-          .in("user_id", partnerIds);
-
-        if (profErr) throw profErr;
-
-        for (const p of (profs as DbProfile[]) ?? []) {
-          profilesById.set(p.user_id, p);
-        }
-      }
-
-      // Fetch partner target languages 
-      const targetLangNamesByUser = new Map<string, string[]>();
-
-      if (partnerIds.length > 0) {
-        const { data: tlRows, error: tlErr } = await supabase
-          .from("profile_target_languages")
-          .select("user_id, lang:languages!profile_target_languages_language_id_fkey(name)")
-          .in("user_id", partnerIds);
-
-        if (tlErr) throw tlErr;
-
-        for (const r of (tlRows as any[]) ?? []) {
-          const name = r?.lang?.name ?? null;
-          if (!name) continue;
-
-          const existing = targetLangNamesByUser.get(r.user_id) ?? [];
-          if (!existing.includes(name)) {
-            targetLangNamesByUser.set(r.user_id, [...existing, name]);
-          }
-        }
-      }
-
-      // Build UI conversations (profiles + language)
-      const ui: Conversation[] = ((convos as DbConversation[]) ?? []).map((c) => {
-        const partnerId = partnerByConvo.get(c.id) ?? "unknown";
-        const p = profilesById.get(partnerId);
-
-        const first = p ? (p.first_name ?? "") : "Deleted";
-        const last  = p ? (p.last_name ?? "")  : "User";
-        const avatar = p?.profile_picture_url ?? null;
-
-        return {
-          conversationId: c.id,
-          createdAt: c.created_at,
-          partnerId,
-          partnerFirstName: first,
-          partnerLastName: last,
-          partnerAvatarUrl: avatar,
-          targetLanguages: targetLangNamesByUser.get(partnerId) ?? [],
-          lastMessageText: c.last_message_text ?? "No messages yet",
-          lastMessageAt: c.last_message_at,
-          unreadCount: 0,
-          messages: [],
-        };
-      });
+      const ui: Conversation[] = (body?.conversations ?? []).map((c: Conversation) => ({
+        ...c,
+        messages: [],
+      }));
 
       const preferred =
-      c && ui.some((x) => x.conversationId === c)
-        ? c
-        : ui[0]?.conversationId ?? null;
+        c && ui.some((x) => x.conversationId === c)
+          ? c
+          : ui[0]?.conversationId ?? null;
 
       if (cancelled) return;
 
@@ -253,53 +74,65 @@ export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
 
   // Fetch messages for a given conversation and patch into state
   async function loadMessagesForConversation(conversationId: string, userId: string) {
-    const { data, error } = await supabase
-      .from("messages")
-      .select("id,conversation_id,sender_id,body,created_at")
-      .eq("conversation_id", conversationId)
-      .order("created_at", { ascending: true });
+    const res = await fetch(`/api/chats/${encodeURIComponent(conversationId)}/messages`);
+    const body = await res.json();
+    if (!res.ok) throw new Error(body?.error || "Failed to load messages");
 
-    if (error) throw error;
+    const data = (body?.messages ?? []) as ApiMessage[];
 
-    const msgs = (data as DbMessage[]) ?? [];
-    const last = msgs.length > 0 ? msgs[msgs.length - 1] : null;
+    const ui = data.map((m) => ({
+      id: m.id,
+      sender: m.sender_id === userId ? ("me" as const) : ("partner" as const),
+      text: m.body,
+      sentAt: m.created_at,
+    }));
 
     setConversations((prev) =>
       prev.map((c) =>
         c.conversationId === conversationId
           ? {
               ...c,
-              messages: msgs.map((m) => ({
-                id: m.id,
-                sender: m.sender_id === userId ? "me" : "partner",
-                text: m.body,
-                sentAt: m.created_at,
-              })),
-              lastMessageText: last?.body ?? c.lastMessageText,
-              lastMessageAt: last?.created_at ?? c.lastMessageAt,
+              messages: ui,
             }
           : c
       )
     );
   }
 
-  async function sendMessageToDb(conversationId: string, text: string) {
-    if (!myUserId) throw new Error("Not signed in");
+  async function handleSendMessage(conversationId: string, text: string) {
+    if (!myUserId) return;
 
-    // 1) insert into messages (this triggers the last_message_* trigger)
-    const { error } = await supabase.from("messages").insert({
-      conversation_id: conversationId,
-      sender_id: myUserId,
-      body: text,
+    const res = await fetch(`/api/chats/${encodeURIComponent(conversationId)}/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
     });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body?.error || "Failed to send message");
 
-    if (error) throw error;
+    setConversations((prev) =>
+      prev.map((c) => {
+        if (c.conversationId !== conversationId) return c;
 
-    // 2) reload messages for this conversation
-    await loadMessagesForConversation(conversationId, myUserId);
+        return {
+          ...c,
+          messages: [
+            ...c.messages,
+            {
+              id: `tmp-${Date.now()}`,
+              sender: "me",
+              text,
+              sentAt: new Date().toISOString(),
+            },
+          ],
+          lastMessageText: text,
+          lastMessageAt: new Date().toISOString(),
+        };
+      })
+    );
   }
 
-  // Load messages for initial selection once it’s known
+  // Load messages for initial selection once it is known
   useEffect(() => {
     if (!selectedConversationId || !myUserId) return;
 
@@ -309,7 +142,7 @@ export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
   if (loading) {
     return (
       <div className="flex-1 min-h-0 flex items-center justify-center bg-off-white">
-        <div className="text-gray-muted">Loading chats…</div>
+        <div className="text-gray-muted">Loading chats...</div>
       </div>
     );
   }
@@ -340,7 +173,7 @@ export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
           router.replace(`/chats?c=${encodeURIComponent(id)}`);
           if (myUserId) loadMessagesForConversation(id, myUserId).catch(console.error);
         }}
-        onSendMessage={sendMessageToDb}
+        onSendMessage={handleSendMessage}
       />
     </div>
   );
