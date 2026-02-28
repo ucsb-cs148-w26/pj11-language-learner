@@ -35,11 +35,11 @@ export default function MessageComposer({ onSend }: MessageComposerProps) {
             onChange={(e) => setText(e.target.value)}
             className="
             h-12 w-full resize-none rounded-2xl px-4 py-3 text-sm leading-5
-            border border-zinc-200 bg-zinc-50 text-zinc-900
-            placeholder:text-zinc-500
+            border border-gray-border-soft bg-off-white text-gray-text
+            placeholder:text-gray-muted-2
             outline-none transition
-            focus:border-zinc-200
-            focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-zinc-300/60
+            focus:border-gray-border-soft
+            focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-border/60
             "
         />
         </div>
@@ -54,10 +54,10 @@ export default function MessageComposer({ onSend }: MessageComposerProps) {
                 "group relative inline-flex h-12 items-center justify-center overflow-hidden rounded-2xl px-5",
                 "text-sm font-medium shadow-sm transition",
                 "active:scale-[0.98] active:translate-y-[1px]",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-950/60",
-                "bg-blue-950 text-white",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue/60",
+                "bg-blue-dark text-white",
 
-                !canSend && !suppressDisabledStyle ? "opacity-50 pointer-events-none cursor-default" : "hover:bg-blue-900",
+                !canSend && !suppressDisabledStyle ? "opacity-50 pointer-events-none cursor-default" : "hover:bg-blue-dark",
             ].join(" ")}
         >
         {/* Default content: "Send" */}

@@ -1,5 +1,6 @@
 # Leadership Roles 
 
+### Meeting Logs
 | Date      | Name              | Activity                                                           |
 |-----------|-------------------|--------------------------------------------------------            |
 | Tues 01/13| Jovia Low         | Led stand-up meeting                                               | 
@@ -12,12 +13,16 @@
 | Mon 02/09 | Natalie Forte     | Led stand-up meeting                                               | 
 | Wed 02/11 | Julia Lin         | Led stand-up meeting                                               |
 | Mon 02/18 | Abhiram Agina     | Led stand-up meeting                                               |
+| Mon 02/23 | Jovia Low         | Led stand-up meeting                                               |
 
+### Retro Rotation
+* Retro 1 Leader: Kun Cheng
+* Retro 2 Leader: Julia Lin   
 
+### General Role Allocation
 * Product Owner: Jovia Low
 * Scrum Master: Annie Yang
 * Testing/QA Coordinator: Natalie Forte
-* Retro 1 Leader: Kun Cheng
 * UX Coordinator: Abhiram Agina
 * Design Document Coordinator: Julia Lin
 * Deployment Document Coordinator: Benny Zhang

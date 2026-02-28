@@ -54,7 +54,7 @@ export default function ChatLayout({
         />
       </div>
 
-      <div className="shrink-0 border-t px-4 py-3">
+      <div className="shrink-0 border-t border-gray-border-soft px-4 py-3">
         <MessageComposer onSend={(text) => onSendMessage(conversationId, text)} />
       </div>
     </div>

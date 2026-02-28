@@ -14,19 +14,19 @@ export function FriendActionButton({ partner, onAction }: Props) {
   const config: Record<FriendshipStatus, { label: string; className: string }> = {
     none: { 
       label: "Connect", 
-      className: "bg-[var(--brand)] hover:bg-[#055690] text-white" 
+      className: "bg-blue hover:bg-blue-dark text-white" 
     },
     pending_sent: { 
       label: "Cancel Request", 
-      className: "bg-gray-200 hover:bg-red-100 hover:text-red-600 text-gray-700" 
+      className: "bg-gray-soft-2 border border-gray-border-soft hover:bg-light-red hover:text-dark-red text-gray-muted" 
     },
     pending_received: { 
       label: "Accept Request", 
-      className: "bg-green-600 hover:bg-green-700 text-white" 
+      className: "bg-green hover:bg-green-dark text-white" 
     },
     accepted: { 
       label: "Friends ✅", 
-      className: "bg-gray-100 text-gray-500 cursor-default" 
+      className: "bg-gray-soft-2 text-gray-muted-2 cursor-default" 
     },
   };
 
