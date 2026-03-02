@@ -230,7 +230,7 @@ export default function DashboardPage() {
             </div>
 
             {chats.length === 0 ? (
-              <div className="rounded-2xl border border-gray-border p-6 text-center text-sm text-gray-muted bg-white">No chats yet.</div>
+              <div className="rounded-2xl border border-gray-border bg-white p-6 text-center text-sm text-gray-muted">No chats yet.</div>
             ) : (
               <div className="overflow-hidden rounded-2xl border border-gray-border bg-white">
                 <ChatLeftPanel
