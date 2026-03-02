@@ -3,21 +3,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
 
 // Database stores lowercase values
 type LevelDB = "beginner" | "intermediate" | "advanced";
 // UI displays capitalized values
 type LevelDisplay = "Beginner" | "Intermediate" | "Advanced";
-
-// Helper functions to convert between database and display formats
-function levelToDisplay(level: LevelDB | string | null | undefined): LevelDisplay {
-  if (!level) return "Beginner";
-  const lower = level.toLowerCase();
-  if (lower === "intermediate") return "Intermediate";
-  if (lower === "advanced") return "Advanced";
-  return "Beginner";
-}
 
 function levelToDB(level: LevelDisplay): LevelDB {
   const lower = level.toLowerCase();
@@ -60,174 +50,37 @@ type ProfileAPI = {
   targetLanguages: { name: string; level: LevelDB }[];
 };
 
-async function getUserId(): Promise<string> {
-  try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (!authError && user) {
-      return user.id;
-    }
-  } catch (e) {
-    // Ignore auth errors in test mode
-  }
-  // TEST MODE: Use a test user ID when not authenticated
-  return "test-user-id";
-}
-
 async function fetchLanguages(): Promise<LanguageOption[]> {
-  const { data, error } = await supabase
-    .from("languages")
-    .select("id, name")
-    .order("name", { ascending: true });
-
-  if (error) throw error;
-  return (data ?? []) as LanguageOption[];
+  const res = await fetch("/api/profile/languages");
+  const body = await res.json();
+  if (!res.ok) throw new Error(body?.error || "Failed to load languages");
+  return (body.languages ?? []) as LanguageOption[];
 }
 
 async function fetchMyProfile(): Promise<ProfileDisplay> {
-  const userId = await getUserId();
-  console.log("Fetching profile for user:", userId);
+  const res = await fetch("/api/profile/me");
+  const body = await res.json();
+  if (!res.ok) throw new Error(body?.error || "Failed to load profile");
 
-  const { data: profileData, error: profileError } = await supabase
-    .from("profiles")
-    .select("first_name, last_name, bio, native_language")
-    .eq("user_id", userId)
-    .single();
+  const data = body.profile as ProfileDisplay;
 
-  console.log("Profile fetch result:", { profileData, profileError });
-
-  if (profileError) {
-    // If no profile exists, return empty profile
-    if (profileError.code === 'PGRST116') {
-      console.log("No profile found, returning empty profile");
-      return {
-        firstName: "",
-        lastName: "",
-        bio: "",
-        nativeLanguage: "",
-        targetLanguages: [],
-      };
-    }
-    console.error("Profile fetch error:", profileError);
-    throw profileError;
-  }
-
-  // Fetch target languages from separate table
-  const { data: targetLanguagesData, error: targetLanguagesError } = await supabase
-    .from("profile_target_languages")
-    .select("level, languages!profile_target_languages_language_id_fkey(name)")
-    .eq("user_id", userId);
-
-  console.log("Target languages fetch result:", { targetLanguagesData, targetLanguagesError });
-  if (targetLanguagesError) console.error("Target languages fetch error:", targetLanguagesError);
-
-  const targetLanguages: TargetLanguageFormItem[] = (targetLanguagesData ?? [])
-    .map((row: any) => {
-      const name = row?.languages?.name ?? "";
-      if (!name) return null;
-      return { name, level: levelToDisplay(row.level) };
-    })
-    .filter(Boolean) as TargetLanguageFormItem[];
-
-  const result: ProfileDisplay = {
-    firstName: profileData.first_name || "",
-    lastName: profileData.last_name || "",
-    bio: profileData.bio || "",
-    nativeLanguage: profileData.native_language || "",
-    targetLanguages,
+  return {
+    firstName: data.firstName || "",
+    lastName: data.lastName || "",
+    bio: data.bio || "",
+    nativeLanguage: data.nativeLanguage || "",
+    targetLanguages: data.targetLanguages ?? [],
   };
-
-  console.log("Returning profile data:", result);
-  return result;
 }
 
 async function saveMyProfile(payload: ProfileAPI): Promise<void> {
-  const userId = await getUserId();
-
-  // Get existing profile to preserve email, or get email from auth user
-  const { data: existingProfile } = await supabase
-    .from("profiles")
-    .select("email")
-    .eq("user_id", userId)
-    .single();
-
-  let email: string | null = existingProfile?.email || null;
-  if (!email) {
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      email = user?.email || null;
-    } catch {
-      // ignore
-    }
-  }
-
-  // Upsert profile
-  const { error: profileError } = await supabase
-    .from("profiles")
-    .upsert(
-      {
-        user_id: userId,
-        email: email,
-        first_name: payload.firstName?.trim() || null,
-        last_name: payload.lastName?.trim() || null,
-        bio: payload.bio || null,
-        native_language: payload.nativeLanguage?.trim() || null,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id" }
-    );
-
-  if (profileError) throw profileError;
-
-  // Replace ALL target languages
-  const cleaned = (payload.targetLanguages ?? [])
-    .map((t) => ({ name: t.name.trim(), level: t.level }))
-    .filter((t) => !!t.name);
-
-  const { error: delErr } = await supabase
-    .from("profile_target_languages")
-    .delete()
-    .eq("user_id", userId);
-
-  if (delErr) throw delErr;
-
-  if (cleaned.length === 0) return;
-
-  // Dedupe by language name
-  const seen = new Set<string>();
-  const deduped = cleaned.filter((t) => {
-    const k = t.name.toLowerCase();
-    if (seen.has(k)) return false;
-    seen.add(k);
-    return true;
+  const res = await fetch("/api/profile/me", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
   });
-
-  // Fetch language ids in one query
-  const names = deduped.map((t) => t.name);
-  const { data: langRows, error: langSelectError } = await supabase
-    .from("languages")
-    .select("id, name")
-    .in("name", names);
-
-  if (langSelectError) throw langSelectError;
-
-  const idByName = new Map<string, number>();
-  (langRows ?? []).forEach((r: any) => idByName.set(String(r.name), Number(r.id)));
-
-  const missing = names.filter((n) => !idByName.has(n));
-  if (missing.length > 0) {
-    throw new Error(`Selected language(s) not found in languages table: ${missing.join(", ")}`);
-  }
-
-  const inserts = deduped.map((t) => ({
-    user_id: userId,
-    language_id: idByName.get(t.name)!,
-    level: t.level,
-  }));
-
-  const { error: insErr } = await supabase.from("profile_target_languages").insert(inserts);
-  if (insErr) throw insErr;
+  const body = await res.json();
+  if (!res.ok) throw new Error(body?.error || "Failed to save profile");
 }
 
 export default function EditProfilePage() {

@@ -20,9 +20,10 @@ export async function POST(req: NextRequest) {
           recipientId: targetUserId 
         });
         return NextResponse.json({ success: true, request_id: newReq.id });
-      case "accept":
-        await friends.acceptFriendRequest({ requestId: request_id });
-        break;
+      case "accept": {
+        const conversationId = await friends.acceptFriendRequest({ requestId: request_id });
+        return NextResponse.json({ success: true, conversationId });
+      }
       case "cancel":
         console.log("Cancelling Request ID:", request_id);
         if (!request_id) throw new Error("Server received null request_id for cancel");
