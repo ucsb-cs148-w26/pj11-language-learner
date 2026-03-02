@@ -6,11 +6,11 @@
 # Retro
 Jovia Low:      
 * Start
-    * 1.  
+    * 1.  Catching bugs.
 * Stop
-    * 1. 
+    * 1. Letting PRs sit in the Kanban Backlog.
 * Continue:
-    * 1.  
+    * 1. Improving UI/cohesiveness of website.
 
 Julia Lin:   
 * Start
@@ -55,11 +55,11 @@ Kun Cheng:
 
 Ryan Choi:      
 * Start
-    * 1. 
+    * 1. Keep on top of project issues and in-class activity.
 * Stop
-    * 1. 
+    * 1. None
 * Continue:
-    * 1. 
+    * 1. Communicating effectively and smoothly.
 
 Abhiram Agina:  
 * Start
