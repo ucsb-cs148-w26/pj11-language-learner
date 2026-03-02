@@ -26,7 +26,7 @@ function HeaderContent() {
     { href: "/dashboard", label: "Dashboard" },
     { href: "/chats", label: "Chats" },
     { href: "/discover", label: "Discover" },
-    { href: "/requests", label: "Requests" },
+    { href: "/friends", label: "Friends" },
   ];
 
   useEffect(() => {
