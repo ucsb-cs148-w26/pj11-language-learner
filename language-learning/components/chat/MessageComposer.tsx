@@ -4,6 +4,28 @@
 "use client";
 
 import { useState } from "react";
+import {
+  RegExpMatcher,
+  englishDataset,
+  englishRecommendedTransformers,
+} from "obscenity";
+
+const profanityMatcher = new RegExpMatcher({
+  ...englishDataset.build(),
+  ...englishRecommendedTransformers,
+});
+
+export function censorProfanity(input: string): string {
+  const matches = profanityMatcher.getAllMatches(input, true);
+  let out = input;
+
+  for (let i = matches.length - 1; i >= 0; i--) {
+    const { startIndex, endIndex } = englishDataset.getPayloadWithPhraseMetadata(matches[i]);
+    out = out.slice(0, startIndex) + "*".repeat(endIndex - startIndex) + out.slice(endIndex);
+  }
+
+  return out;
+}
 
 type MessageComposerProps = {
   onSend: (text: string) => Promise<void> | void;
@@ -18,9 +40,19 @@ export default function MessageComposer({ onSend }: MessageComposerProps) {
   async function handleSend() {
     if (!canSend) return;
     const trimmed = text.trim();
+    const sanitized = censorProfanity(trimmed);
     setText("");
-    await onSend(trimmed);
+    await onSend(sanitized);
     setSuppressDisabledStyle(true)
+  }
+
+  async function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.nativeEvent.isComposing) return;
+
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      await handleSend();
+    }
   }
 
   return (
@@ -33,6 +65,7 @@ export default function MessageComposer({ onSend }: MessageComposerProps) {
             placeholder="Type a message…"
             value={text}
             onChange={(e) => setText(e.target.value)}
+            onKeyDown={handleKeyDown}
             className="
             h-12 w-full resize-none rounded-2xl px-4 py-3 text-sm leading-5
             border border-gray-border-soft bg-off-white text-gray-text

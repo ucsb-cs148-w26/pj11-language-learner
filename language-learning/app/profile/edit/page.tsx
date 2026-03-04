@@ -3,6 +3,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  RegExpMatcher,
+  englishDataset,
+  englishRecommendedTransformers,
+} from "obscenity";
 
 // Database stores lowercase values
 type LevelDB = "beginner" | "intermediate" | "advanced";
@@ -81,6 +86,23 @@ async function saveMyProfile(payload: ProfileAPI): Promise<void> {
   });
   const body = await res.json();
   if (!res.ok) throw new Error(body?.error || "Failed to save profile");
+}
+
+const profanityMatcher = new RegExpMatcher({
+  ...englishDataset.build(),
+  ...englishRecommendedTransformers,
+});
+
+function censorProfanity(input: string): string {
+  const matches = profanityMatcher.getAllMatches(input, true);
+  let out = input;
+
+  for (let i = matches.length - 1; i >= 0; i--) {
+    const { startIndex, endIndex } = englishDataset.getPayloadWithPhraseMetadata(matches[i]);
+    out = out.slice(0, startIndex) + "*".repeat(endIndex - startIndex) + out.slice(endIndex);
+  }
+
+  return out;
 }
 
 export default function EditProfilePage() {
@@ -232,10 +254,14 @@ export default function EditProfilePage() {
       seen.add(k);
     }
 
+    const firstName = censorProfanity(form.firstName.trim());
+    const lastName = censorProfanity(form.lastName.trim());
+    const bio = censorProfanity(form.bio.trim());
+
     const payload: ProfileAPI = {
-      firstName: form.firstName.trim(),
-      lastName: form.lastName.trim(),
-      bio: form.bio.trim(),
+      firstName,
+      lastName,
+      bio,
       nativeLanguage: form.nativeLanguage.trim(),
       targetLanguages: cleaned.map((t) => ({
         name: t.name,
