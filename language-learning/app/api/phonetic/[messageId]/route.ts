@@ -199,7 +199,7 @@ async function getMessageTextById(
     .maybeSingle();
 
   console.log("data:", data);
-  console.log("error:", error);
+  // console.log("error:", error);
   if (error || !data) return null;
 
   const row = data as MessageRow;

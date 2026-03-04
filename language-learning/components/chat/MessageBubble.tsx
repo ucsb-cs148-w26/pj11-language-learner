@@ -96,24 +96,25 @@ export default function MessageBubble({
       >
         <div
           className={[
-            "inline-flex w-fit max-w-full rounded-2xl px-4 py-2 text-sm leading-relaxed shadow-sm",
-            isMe ? "bg-blue-dark text-white" : "bg-gray-soft-2 text-gray-text",
+            "flex w-fit max-w-full items-start gap-2",
+            isMe ? "flex-row-reverse" : "flex-row",
           ].join(" ")}
         >
-          <span className="whitespace-pre-wrap break-all">{text}</span>
-        </div>
+          <div
+            className={[
+              "inline-flex w-fit max-w-full rounded-2xl px-4 py-2 text-sm leading-relaxed shadow-sm",
+              isMe ? "bg-blue-dark text-white" : "bg-gray-soft-2 text-gray-text",
+            ].join(" ")}
+          >
+            <span className="whitespace-pre-wrap break-all">{text}</span>
+          </div>
 
-        {time ? (
-          <div className="mt-1 w-fit text-xs text-gray-muted-2">{time}</div>
-        ) : null}
-
-        <div className="mt-2 flex w-fit flex-col gap-1">
           <button
             type="button"
             onClick={handleTogglePhonetic}
             disabled={isLoading}
             className={[
-              "w-fit rounded-full border px-3 py-1 text-xs font-medium transition",
+              "mt-1 h-fit rounded-full border px-3 py-1 text-xs font-medium transition",
               "border-gray-border-soft text-gray-muted-2 hover:text-gray-text",
               "disabled:cursor-not-allowed disabled:opacity-60",
             ].join(" ")}
@@ -121,23 +122,27 @@ export default function MessageBubble({
             {isLoading
               ? "Loading phonetic..."
               : phoneticOpen
-                ? "Hide phonetic"
-                : "Show phonetic"}
+                ? "Hide"
+                : "Phonetic"}
           </button>
-
-          {error ? (
-            <div className="text-xs text-red-600">{error}</div>
-          ) : null}
-
-          {phoneticOpen && phonetic ? (
-            <div className="rounded-xl border border-gray-border-soft bg-off-white px-3 py-2 text-xs text-gray-text">
-              <div className="font-medium text-gray-muted-2">
-                {labelForType(phonetic.type)} phonetic
-              </div>
-              <div className="mt-1 break-words">{phonetic.pronunciation}</div>
-            </div>
-          ) : null}
         </div>
+
+        {time ? (
+          <div className="mt-1 w-fit text-xs text-gray-muted-2">{time}</div>
+        ) : null}
+
+        {error ? (
+          <div className="mt-1 text-xs text-red-600">{error}</div>
+        ) : null}
+
+        {phoneticOpen && phonetic ? (
+          <div className="mt-2 rounded-xl border border-gray-border-soft bg-off-white px-3 py-2 text-xs text-gray-text">
+            <div className="font-medium text-gray-muted-2">
+              {labelForType(phonetic.type)} phonetic
+            </div>
+            <div className="mt-1 break-words">{phonetic.pronunciation}</div>
+          </div>
+        ) : null}
       </div>
     </div>
   );
