@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabaseClient";
 
 type TargetLanguage = {
   name: string;
@@ -83,14 +84,16 @@ export default function ProfilePage() {
     setError(null);
 
     try {
-      const res = await fetch("/api/auth/signout", { method: "POST" });
-      const body = await res.json();
-      if (!res.ok) {
-        setError(body?.error || "Sign out failed");
-        setSignOutLoading(false);
-        return;
+      // Sign out on the client so Header/auth state updates immediately
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        throw error;
       }
-      router.push("/");
+
+      // Also hit the server route to clear any auth cookies/session server-side
+      await fetch("/api/auth/signout", { method: "POST" });
+
+      router.push("/auth/signin");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "An unexpected error occurred";
       setError(msg);
