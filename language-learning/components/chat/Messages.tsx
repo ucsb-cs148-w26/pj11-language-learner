@@ -91,6 +91,7 @@ export default function Messages({
             {showDivider ? <DateDivider label={formatDateLabel(d)} /> : null}
 
             <MessageBubble
+              messageId={m.id}
               text={m.text}
               isMe={m.sender === "me"}
               time={showTime ? formatTimeLabel(d) : undefined}
