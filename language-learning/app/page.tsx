@@ -6,6 +6,8 @@ import type { Session } from "@supabase/supabase-js";
 import { Nunito } from "next/font/google";
 import { supabase } from "@/lib/supabaseClient";
 import DashboardPage from "./dashboard/page";
+import Image from "next/image";
+import logo from "./logo.png";
 
 const bodyFont = Nunito({
   subsets: ["latin"],
@@ -47,25 +49,24 @@ function Landing() {
   const [hover, setHover] = useState(false);
 
   return (
-    <div className={`${bodyFont.className} min-h-[calc(100dvh-80px)] w-full flex items-center justify-center bg-background px-6`}>
-      <div className="w-full max-w-3xl border-2 border-dashed flex flex-col items-center text-center border-blue-soft rounded-2xl p-10 bg-blue-soft/20">
-          <h1 className="text-4xl font-extrabold text-blue-dark mb-6">
+    <div className={`${bodyFont.className} min-h-[calc(100dvh-80px)] w-full flex items-start justify-center bg-background px-6 pt-10`} >
+      <div className="w-full max-w-5xl border-2 border-dashed flex flex-col items-center text-center border-blue-soft rounded-2xl p-20 bg-blue-soft/20">
+          <h1 className="text-4xl font-extrabold text-blue-dark mb-10">
             Language Learner
           </h1>
 
-          <p className="text-lg text-gray-text leading-8 mb-10">
-              Find a language partner at UCSB<br />
-              Learn from each other<br />
-              Chat and stay motivated together <br />
-              Natural, fun, and low-pressure practice
+          <p className="text-lg text-gray-text leading-8 mb-18">
+            Set up your profile first<br />
+            Get matched with a UCSB partner by target language and proficiency level<br />
+            Chat and stay motivated together<br />
+            Try tools like translation and text-to-speech
           </p>
 
-          <div className="flex justify-center"></div>
           <Link
             href="/auth/signin"
             onMouseEnter={() => setHover(true)}
             onMouseLeave={() => setHover(false)}
-            className="rounded-xl bg-blue text-white font-bold text-xl px-6 py-3 transition hover:bg-blue-dark hover:-translate-y-1 hover:shadow-xl"
+            className="rounded-xl bg-blue text-white font-bold text-xl px-5 py-2 transition hover:bg-blue-dark hover:-translate-y-1 hover:shadow-xl"
           >
             Sign in
           </Link>
