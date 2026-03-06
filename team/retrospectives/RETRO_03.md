@@ -69,4 +69,10 @@ Abhiram Agina:
 * Continue:
     * 1. Assign and Complete Issues before Code Freeze, 3/9/26. Make Detailed PRs.
 
-## Retro Outcomes - Complete (3/5/2026)
+# Retro Outcomes - Complete (3/5/2026)
+In Retrospective #3 our team followed the Start/Stop/Continue outline. Each team member began by individually preparing a list of actions that they feel the team should Start, Stop, and Continue, then we each expressed our ideas and highlighted the action items that we felt most important to improve going forward. 
+
+Report:
+* Successes: Division of Issues/Work Evenly, Communication in Text/EdStem, Meeting Project Deadlines
+* Goal: Improve workflow efficiency by ensuring all pull requests are actively tracked, reviewed, and completed so that remaining features and polish are finalized before the code freeze.
+* Commitment: Each team member will work to complete an issue before the code freeze, Monday (3/9).
