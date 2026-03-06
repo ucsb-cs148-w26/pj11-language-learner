@@ -23,7 +23,7 @@ type ChatLayoutProps = {
   onSendMessage: (conversationId: string, text: string) => Promise<void>;
 };
 
-export default function ChatLayout({
+export default function ChatRightPanel({
   partnerId,
   partnerFirstName,
   partnerLastName,

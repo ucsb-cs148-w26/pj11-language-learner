@@ -88,7 +88,7 @@ export async function GET(req: NextRequest) {
       user_id,
       language_id,
       level,
-      profiles!inner(first_name, native_language, updated_at),
+      profiles!inner(first_name, last_name, native_language, profile_picture_url, updated_at),
       lang:languages!inner(name)
     `)
     .not('user_id', 'in', `(${excludeList.map(id => `"${id}"`).join(',')})`);
@@ -124,7 +124,9 @@ export async function GET(req: NextRequest) {
       grouped.set(row.user_id, {
         id: row.user_id,
         first_name: profile?.first_name ?? null,
+        last_name: profile?.last_name ?? null,
         native_language: profile?.native_language ?? null,
+        profile_picture_url: profile?.profile_picture_url ?? null,
         updated_at: profile?.updated_at ?? null,
         targets: [nextTarget],
         friendship: {

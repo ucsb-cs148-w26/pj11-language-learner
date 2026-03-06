@@ -33,12 +33,12 @@ function HeaderContent() {
     const getProfile = async (userId: string) => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("profilePicture")
-        .eq("id", userId)
+        .select("profile_picture_url")
+        .eq("user_id", userId)
         .single();
 
       if (!error && data) {
-        setUserProfile(data);
+        setUserProfile({ profilePicture: data.profile_picture_url });
       } else {
         setUserProfile(null);
       }

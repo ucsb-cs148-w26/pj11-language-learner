@@ -52,9 +52,17 @@ export default function DiscoverPage() {
                   className="min-w-[280px] flex-shrink-0 border border-gray-border-soft rounded-2xl p-6 bg-off-white hover:border-gray-border transition-all shadow-sm cursor-pointer"
                 >
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-full bg-gray-soft-2 flex items-center justify-center text-gray-muted border border-gray-border-soft">
-                      {partner.first_name?.[0] || 'U'}
-                    </div>
+                    {partner.profile_picture_url ? (
+                      <img
+                        src={partner.profile_picture_url}
+                        alt={`${partner.first_name}'s avatar`}
+                        className="w-10 h-10 rounded-full object-cover border border-gray-border-soft"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gray-soft-2 flex items-center justify-center text-gray-muted border border-gray-border-soft">
+                        {partner.first_name?.[0] || 'U'}
+                      </div>
+                    )}
                     <p className="font-semibold text-gray-text">{partner.first_name}</p>
                   </div>
                   <p className="text-sm text-gray-muted mb-4">
