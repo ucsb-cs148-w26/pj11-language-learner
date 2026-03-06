@@ -172,7 +172,13 @@ export default function DiscoverPage() {
                           <p className="text-sm text-gray-muted">
                             {(() => {
                               const first = partner.targets && partner.targets.length > 0 ? partner.targets[0] : null;
-                              return `Learning ${first?.name || 'Unknown'} • ${first?.level || 'Beginner'}`;
+                              return (
+                                <>
+                                  Learning <span className="text-gray-text font-medium">{first?.name || 'Unknown'}</span>
+                                  <span className="mx-1">•</span>
+                                  {first?.level || 'Beginner'}
+                                </>
+                              );
                             })()}
                           </p>
                         </div>
