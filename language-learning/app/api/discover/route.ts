@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
       profiles!inner(first_name, last_name, native_language, profile_picture_url, updated_at),
       lang:languages!inner(name)
     `)
-    .not('user_id', 'in', `(${excludeList.map(id => `"${id}"`).join(',')})`);
+    .not('user_id', 'in', `(${excludeList.map(id => `"${id}"`).join(',')})`);;
 
   if (levelFilter && levelFilter !== "All") {
     query = query.ilike('level', levelFilter);
@@ -172,20 +172,16 @@ export async function GET(req: NextRequest) {
         return rankLevel(b.level) - rankLevel(a.level);
       });
 
-      const displayTarget = sortedTargets[0] ?? {
-        language_id: -1,
-        name: "None",
-        level: "beginner",
-      };
-
       return {
         id: candidate.id,
         first_name: candidate.first_name,
-        target_language: displayTarget.name,
-        level: toDisplayLevel(displayTarget.level),
+        last_name: candidate.last_name,
+        native_language: candidate.native_language,
+        profile_picture_url: candidate.profile_picture_url,
+        updated_at: candidate.updated_at,
+        targets: sortedTargets,
         tier,
         levelDelta,
-        updated_at: candidate.updated_at,
         friendship: candidate.friendship,
       };
     });
@@ -205,7 +201,7 @@ export async function GET(req: NextRequest) {
     return a.id.localeCompare(b.id);
   });
 
-  const partners = scored.map(({ tier: _tier, levelDelta: _levelDelta, updated_at: _updatedAt, ...rest }) => rest);
+  const partners = scored.map(({ tier: _tier, levelDelta: _levelDelta, ...rest }) => rest);
   if (isRecommended) {
     return NextResponse.json(partners.slice(0, 5));
   }

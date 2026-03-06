@@ -28,11 +28,15 @@ export type DiscoverRow = {
   level: string | null;
   profiles: {
     first_name: string | null;
+    last_name: string | null;
     native_language: string | null;
+    profile_picture_url: string | null;
     updated_at: string | null;
   } | Array<{
     first_name: string | null;
+    last_name: string | null;
     native_language: string | null;
+    profile_picture_url: string | null;
     updated_at: string | null;
   }> | null;
   lang: {
