@@ -40,7 +40,7 @@ export default function ChatRightPanel({
           partnerId={partnerId}
           partnerFirstName={partnerFirstName}
           partnerLastName={partnerLastName}
-          partnerAvatarUrl={partnerAvatarUrl ?? "/default-avatar.jpg"}
+          partnerAvatarUrl={partnerAvatarUrl}
           targetLanguages={targetLanguages}
         />
       </div>
@@ -50,7 +50,7 @@ export default function ChatRightPanel({
             messages={messages}
             partnerFirstName={partnerFirstName}
             partnerLastName={partnerLastName}
-            partnerAvatarUrl={partnerAvatarUrl ?? "/default-avatar.jpg"}
+            partnerAvatarUrl={partnerAvatarUrl}
         />
       </div>
 

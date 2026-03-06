@@ -1,6 +1,48 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabaseServer";
 
+export async function DELETE() {
+  try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (!user || authError) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // get current avatar URL
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("profile_picture_url")
+      .eq("user_id", user.id)
+      .single();
+
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({ profile_picture_url: null })
+      .eq("user_id", user.id);
+
+    if (updateError) {
+      return NextResponse.json({ error: "Failed to remove avatar" }, { status: 500 });
+    }
+
+    // delete the file from storage
+    if (profileData?.profile_picture_url) {
+      try {
+        const fileName = profileData.profile_picture_url.split("/avatars/").pop();
+        if (fileName) {
+          await supabase.storage.from("avatars").remove([fileName]);
+        }
+      } catch {}
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Avatar remove error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
@@ -44,7 +86,7 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(arrayBuffer);
 
     // Upload to Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from("avatars")
       .upload(fileName, buffer, {
         contentType: file.type,

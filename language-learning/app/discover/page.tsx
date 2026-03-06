@@ -3,6 +3,7 @@ import Link from "next/link";
 import DiscoverPagination from "./DiscoverPagination";
 import { useDiscoverData } from "./useDiscoverData";
 import { FriendActionButton } from "./FriendActionButton";
+import Avatar from "@/components/Avatar";
 
 const levels = ['All', 'Beginner', 'Intermediate', 'Advanced'];
 
@@ -52,17 +53,13 @@ export default function DiscoverPage() {
                   className="min-w-[280px] flex-shrink-0 border border-gray-border-soft rounded-2xl p-6 bg-off-white hover:border-gray-border transition-all shadow-sm cursor-pointer"
                 >
                   <div className="flex items-center gap-3 mb-3">
-                    {partner.profile_picture_url ? (
-                      <img
-                        src={partner.profile_picture_url}
-                        alt={`${partner.first_name}'s avatar`}
-                        className="w-10 h-10 rounded-full object-cover border border-gray-border-soft"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-gray-soft-2 flex items-center justify-center text-gray-muted border border-gray-border-soft">
-                        {partner.first_name?.[0] || 'U'}
-                      </div>
-                    )}
+                    <Avatar
+                      src={partner.profile_picture_url}
+                      alt={`${partner.first_name}'s avatar`}
+                      size="w-10 h-10"
+                      iconSize="w-5 h-5"
+                      imgClassName="border border-gray-border-soft"
+                    />
                     <p className="font-semibold text-gray-text">{partner.first_name}</p>
                   </div>
                   <p className="text-sm text-gray-muted mb-4">
@@ -162,11 +159,13 @@ export default function DiscoverPage() {
                       className="group border border-gray-border-soft p-5 rounded-2xl hover:border-gray-border transition bg-off-white shadow-sm flex items-center justify-between cursor-pointer"
                     >
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-off-white border border-gray-border-soft flex items-center justify-center text-gray-muted-2 group-hover:bg-gray-soft-2 transition">
-                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                          </svg>
-                        </div>
+                        <Avatar
+                          src={partner.profile_picture_url}
+                          alt={partner.first_name || 'User'}
+                          size="w-12 h-12"
+                          iconSize="w-6 h-6"
+                          className="group-hover:bg-gray-soft-2 transition"
+                        />
                         <div>
                           <p className="font-semibold text-gray-text">{partner.first_name}</p>
                           <p className="text-sm text-gray-muted">

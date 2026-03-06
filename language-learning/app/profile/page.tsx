@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import Avatar from "@/components/Avatar";
 
 // Helper function to convert database level to display format
 function levelToDisplay(
@@ -102,6 +103,7 @@ export default function ProfilePage() {
       // Refresh profile data to show new avatar
       const updatedProfile = await fetchMyProfile();
       setState({ status: "success", data: updatedProfile });
+      window.dispatchEvent(new CustomEvent("avatar-changed"));
 
     } catch (error) {
       console.error("Avatar upload error:", error);
@@ -237,29 +239,13 @@ export default function ProfilePage() {
 
             <div className="flex items-start gap-4">
               <div className="relative">
-                {p.profilePicture ? (
-                  <img
-                    src={p.profilePicture}
-                    alt="Profile"
-                    className="w-20 h-20 rounded-full object-cover border-2 border-gray-border-soft"
-                  />
-                ) : (
-                  <div className="w-20 h-20 rounded-full bg-gray-soft-2 border-2 border-gray-border-soft flex items-center justify-center">
-                    <svg
-                      className="w-10 h-10 text-gray-muted"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                      />
-                    </svg>
-                  </div>
-                )}
+                <Avatar
+                  src={p.profilePicture}
+                  alt="Profile"
+                  size="w-20 h-20"
+                  iconSize="w-10 h-10"
+                  imgClassName="border-2 border-gray-border-soft"
+                />
 
                 {/* Avatar Upload Button */}
                 <div className="absolute -bottom-2 -right-2">
