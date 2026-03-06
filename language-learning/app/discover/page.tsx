@@ -57,10 +57,16 @@ export default function DiscoverPage() {
                     </div>
                     <p className="font-semibold text-gray-text">{partner.first_name}</p>
                   </div>
+                  <p className="text-sm text-gray-muted">
+                    Native <span className="text-gray-text font-medium">{partner.native_language || "Unknown"}</span>
+                  </p>
                   <p className="text-sm text-gray-muted mb-4">
-                    Learning <span className="text-gray-text font-medium">{partner.target_language}</span>
-                    <span className="mx-1">•</span>
-                    {partner.level}
+                    Learning{" "}
+                    <span className="text-gray-text font-medium">
+                      {partner.target_languages.length > 0
+                        ? partner.target_languages.map((target) => `${target.name} (${target.level})`).join(", ")
+                        : `${partner.target_language} (${partner.level})`}
+                    </span>
                   </p>
                   <FriendActionButton 
                     partner={partner} 
@@ -155,7 +161,13 @@ export default function DiscoverPage() {
                         <div>
                           <p className="font-semibold text-gray-text">{partner.first_name}</p>
                           <p className="text-sm text-gray-muted">
-                            Learning {partner.target_language} • {partner.level}
+                            Native {partner.native_language || "Unknown"}
+                          </p>
+                          <p className="text-sm text-gray-muted">
+                            Learning{" "}
+                            {partner.target_languages.length > 0
+                              ? partner.target_languages.map((target) => `${target.name} (${target.level})`).join(", ")
+                              : `${partner.target_language} (${partner.level})`}
                           </p>
                         </div>
                       </div>

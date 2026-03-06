@@ -148,6 +148,41 @@ export async function GET(req: NextRequest) {
     existing.targets.push(nextTarget);
   }
 
+  const candidateIds = [...grouped.keys()];
+  if (candidateIds.length > 0) {
+    const { data: allTargetRows, error: allTargetRowsError } = await supabase
+      .from("profile_target_languages")
+      .select("user_id, language_id, level, lang:languages!inner(name)")
+      .in("user_id", candidateIds);
+
+    if (allTargetRowsError) {
+      return NextResponse.json({ error: allTargetRowsError.message }, { status: 500 });
+    }
+
+    const allTargetsByUserId = new Map<string, CandidateTarget[]>();
+    for (const row of allTargetRows ?? []) {
+      const lang = firstRelation((row as any).lang);
+      const target: CandidateTarget = {
+        language_id: (row as any).language_id,
+        name: lang?.name ?? "None",
+        level: ((row as any).level ?? "beginner").toLowerCase(),
+      };
+      const existingTargets = allTargetsByUserId.get((row as any).user_id);
+      if (existingTargets) {
+        existingTargets.push(target);
+      } else {
+        allTargetsByUserId.set((row as any).user_id, [target]);
+      }
+    }
+
+    for (const candidate of grouped.values()) {
+      const completeTargets = allTargetsByUserId.get(candidate.id);
+      if (completeTargets && completeTargets.length > 0) {
+        candidate.targets = completeTargets;
+      }
+    }
+  }
+
   const scored = [...grouped.values()]
     .filter((candidate) => {
       const candidateLanguages = new Set<string>();
@@ -204,8 +239,13 @@ export async function GET(req: NextRequest) {
       return {
         id: candidate.id,
         first_name: candidate.first_name,
+        native_language: candidate.native_language,
         target_language: displayTarget.name,
         level: toDisplayLevel(displayTarget.level),
+        target_languages: sortedTargets.map((target) => ({
+          name: target.name,
+          level: toDisplayLevel(target.level),
+        })),
         tier,
         levelDelta,
         updated_at: candidate.updated_at,
