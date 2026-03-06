@@ -63,10 +63,10 @@ export default function DiscoverPage() {
                     <p className="font-semibold text-gray-text">{partner.first_name}</p>
                   </div>
                   <p className="text-sm text-gray-muted">
-                    Native <span className="text-gray-text font-medium">{partner.native_language || "Unknown"}</span>
+                    Native: <span className="text-gray-text font-medium">{partner.native_language || "Unknown"}</span>
                   </p>
                   <p className="text-sm text-gray-muted mb-4">
-                    Learning{" "}
+                    Learning:{" "}
                     <span className="text-gray-text font-medium">
                       {partner.target_languages.length > 0
                         ? partner.target_languages.map((target) => `${target.name} (${target.level})`).join(", ")
@@ -168,10 +168,10 @@ export default function DiscoverPage() {
                         <div>
                           <p className="font-semibold text-gray-text">{partner.first_name}</p>
                           <p className="text-sm text-gray-muted">
-                            Native {partner.native_language || "Unknown"}
+                            Native: {partner.native_language || "Unknown"}
                           </p>
                           <p className="text-sm text-gray-muted">
-                            Learning{" "}
+                            Learning:{" "}
                             {partner.target_languages.length > 0
                               ? partner.target_languages.map((target) => `${target.name} (${target.level})`).join(", ")
                               : `${partner.target_language} (${partner.level})`}
