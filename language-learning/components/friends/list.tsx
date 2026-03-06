@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Avatar from "@/components/Avatar";
 
 export type FriendListItem = {
   id: string;
@@ -74,11 +75,7 @@ export default function FriendsList({
                   href={f.profileHref}
                   className="flex items-center gap-3 min-w-0 rounded-lg px-0 py-0 bg-transparent transition"
                 >
-                  <img
-                    src={f.avatarUrl ?? "/default-avatar.jpg"}
-                    alt={f.name}
-                    className="h-10 w-10 rounded-full object-cover shrink-0"
-                  />
+                  <Avatar src={f.avatarUrl} alt={f.name} className="shrink-0" />
                   <div className="min-w-0">
                     <div className="truncate text-base font-medium text-gray-text">
                       {f.name}

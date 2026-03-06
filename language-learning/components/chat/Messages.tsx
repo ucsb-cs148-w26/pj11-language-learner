@@ -15,7 +15,7 @@ type MessagesProps = {
   messages: ChatMessage[];
   partnerFirstName: string;
   partnerLastName: string;
-  partnerAvatarUrl: string;
+  partnerAvatarUrl: string | null;
   myNativeLanguage: string | null;
 };
 
