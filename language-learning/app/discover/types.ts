@@ -3,11 +3,16 @@ export type FriendshipStatus = "none" | "pending_sent" | "pending_received" | "a
 export type DiscoverPartner = {
   id: string;
   first_name: string | null;
-  last_name: string | null;
   native_language: string | null;
+  level: string;
+  target_language: string;
+  target_languages: Array<{
+    name: string;
+    level: string;
+  }>;
+  last_name: string | null;
   profile_picture_url: string | null;
   updated_at: string | null;
-  targets: CandidateTarget[];
   friendship: {
     status: FriendshipStatus,
     request_id: string | null,

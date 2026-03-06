@@ -62,17 +62,16 @@ export default function DiscoverPage() {
                     />
                     <p className="font-semibold text-gray-text">{partner.first_name}</p>
                   </div>
+                  <p className="text-sm text-gray-muted">
+                    Native: <span className="text-gray-text font-medium">{partner.native_language || "Unknown"}</span>
+                  </p>
                   <p className="text-sm text-gray-muted mb-4">
-                    {(() => {
-                      const first = partner.targets && partner.targets.length > 0 ? partner.targets[0] : null;
-                      return (
-                        <>
-                          Learning <span className="text-gray-text font-medium">{first?.name || 'Unknown'}</span>
-                          <span className="mx-1">•</span>
-                          {first?.level || 'Beginner'}
-                        </>
-                      );
-                    })()}
+                    Learning:{" "}
+                    <span className="text-gray-text font-medium">
+                      {partner.target_languages.length > 0
+                        ? partner.target_languages.map((target) => `${target.name} (${target.level})`).join(", ")
+                        : `${partner.target_language} (${partner.level})`}
+                    </span>
                   </p>
                   <FriendActionButton 
                     partner={partner} 
@@ -169,16 +168,13 @@ export default function DiscoverPage() {
                         <div>
                           <p className="font-semibold text-gray-text">{partner.first_name}</p>
                           <p className="text-sm text-gray-muted">
-                            {(() => {
-                              const first = partner.targets && partner.targets.length > 0 ? partner.targets[0] : null;
-                              return (
-                                <>
-                                  Learning <span className="text-gray-text font-medium">{first?.name || 'Unknown'}</span>
-                                  <span className="mx-1">•</span>
-                                  {first?.level || 'Beginner'}
-                                </>
-                              );
-                            })()}
+                            Native: {partner.native_language || "Unknown"}
+                          </p>
+                          <p className="text-sm text-gray-muted">
+                            Learning:{" "}
+                            {partner.target_languages.length > 0
+                              ? partner.target_languages.map((target) => `${target.name} (${target.level})`).join(", ")
+                              : `${partner.target_language} (${partner.level})`}
                           </p>
                         </div>
                       </div>
