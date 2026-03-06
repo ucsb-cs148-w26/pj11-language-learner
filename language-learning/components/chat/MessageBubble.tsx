@@ -1,6 +1,10 @@
 // Displays a chat message bubble, styled differently for messages sent by the user and their partner.
 // Includes time and partner avatar for partner messages.
 // Made for Messages.tsx, which is for ChatRightPanel.tsx.
+//
+"use client";
+
+import { useState } from "react";
 
 type MessageBubbleProps = {
   text: string;
@@ -9,6 +13,7 @@ type MessageBubbleProps = {
   partnerFirstName: string;
   partnerLastName: string;
   partnerAvatarUrl: string | null;
+  myNativeLanguage: string | null;
 };
 
 export default function MessageBubble({
@@ -18,17 +23,50 @@ export default function MessageBubble({
   partnerFirstName,
   partnerLastName,
   partnerAvatarUrl,
+  myNativeLanguage,
 }: MessageBubbleProps) {
+  const [translated, setTranslated] = useState<string | null>(null);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleTranslateClick() {
+    if (isTranslating || translated) return;
+    setIsTranslating(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text,
+          targetLanguageName: myNativeLanguage,
+        }),
+      });
+
+      const body = await res.json();
+      if (!res.ok || !body || body.error) {
+        throw new Error(body?.error || "Translation failed");
+      }
+
+      setTranslated(body.translatedText ?? "");
+    } catch (e: any) {
+      setError(e?.message ?? "Translation failed");
+    } finally {
+      setIsTranslating(false);
+    }
+  }
+
   return (
     <div className={["flex", isMe ? "justify-end" : "justify-start"].join(" ")}>
       {/* Left side: avatar for partner messages */}
       {!isMe ? (
         <div className="mr-2 flex w-9 items-start">
-            <img
+          <img
             src={partnerAvatarUrl ?? "/default-avatar.jpg"}
             alt={`${partnerFirstName} ${partnerLastName} avatar`}
             className="h-8 w-8 rounded-full object-cover"
-            />
+          />
         </div>
       ) : null}
 
@@ -39,13 +77,45 @@ export default function MessageBubble({
         ].join(" ")}
       >
         <div
-          className={[
-            "inline-flex w-fit max-w-full rounded-2xl px-4 py-2 text-sm leading-relaxed shadow-sm",
-            isMe ? "bg-blue-dark text-white" : "bg-gray-soft-2 text-gray-text",
-          ].join(" ")}
+          className={["flex items-start gap-1", isMe ? "flex-row-reverse" : "flex-row"].join(" ")}
         >
-          <span className="whitespace-pre-wrap break-all">{text}</span>
+          <div
+            className={[
+              "inline-flex w-fit max-w-full rounded-2xl px-4 py-2 text-sm leading-relaxed shadow-sm",
+              isMe ? "bg-blue-dark text-white" : "bg-gray-soft-2 text-gray-text",
+            ].join(" ")}
+          >
+            <span className="whitespace-pre-wrap break-all">{text}</span>
+          </div>
+
+          {/* Translate icon/button for partner messages */}
+          {!isMe && myNativeLanguage && (
+            <button
+              type="button"
+              onClick={handleTranslateClick}
+              disabled={isTranslating || !!translated}
+              className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full border border-gray-border-soft bg-white text-[10px] font-medium text-gray-muted-2 hover:text-gray-muted hover:bg-off-white disabled:opacity-60"
+              aria-label={`Translate to ${myNativeLanguage}`}
+            >
+              <span>tr</span>
+            </button>
+          )}
         </div>
+
+        {translated && (
+          <div className="mt-1 w-fit text-xs italic text-gray-muted">
+            <span className="font-medium not-italic">Translated</span>
+            {myNativeLanguage ? ` (${myNativeLanguage})` : null}
+            {": "}
+            {translated}
+          </div>
+        )}
+
+        {error && (
+          <div className="mt-1 w-fit text-xs text-dark-red">
+            {error}
+          </div>
+        )}
 
         {time ? (
           <div className="mt-1 w-fit text-xs text-gray-muted-2">{time}</div>
@@ -54,3 +124,4 @@ export default function MessageBubble({
     </div>
   );
 }
+
