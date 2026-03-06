@@ -1,7 +1,9 @@
 // Combines all message bubbles in a chat.
 // Made for ChatRightPanel.tsx.
 
-import { useEffect, useMemo, useRef } from "react";
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import MessageBubble from "./MessageBubble";
 
 export type ChatMessage = {
@@ -56,11 +58,43 @@ export default function Messages({
   partnerAvatarUrl,
 }: MessagesProps) {
   const endRef = useRef<HTMLDivElement | null>(null);
+  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
   const sorted = [...messages].sort((a, b) => a.sentAt.localeCompare(b.sentAt));
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [sorted.length]);
+
+  useEffect(() => {
+    return () => {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  function handleSpeak(messageId: string, text: string) {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+      console.warn("Speech synthesis is not supported in this browser.");
+      return;
+    }
+
+    const synth = window.speechSynthesis;
+
+    if (speakingMessageId === messageId && synth.speaking) {
+      synth.cancel();
+      setSpeakingMessageId(null);
+      return;
+    }
+
+    synth.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.onstart = () => {setSpeakingMessageId(messageId);};
+    utterance.onend = () => {setSpeakingMessageId((current) => (current === messageId ? null : current));};
+    utterance.onerror = () => {setSpeakingMessageId((current) => (current === messageId ? null : current));};
+    synth.speak(utterance);
+  }
 
   let lastDay: string | null = null;
 
@@ -73,7 +107,7 @@ export default function Messages({
         const showDivider = day !== lastDay;
         if (showDivider) lastDay = day;
 
-        const next = sorted.length - 1 ? sorted[idx + 1] : null;
+        const next = idx < sorted.length - 1 ? sorted[idx + 1] : null;
         let showTime = true;
 
         if (!showDivider && next) {
@@ -97,6 +131,8 @@ export default function Messages({
               partnerFirstName={partnerFirstName}
               partnerLastName={partnerLastName}
               partnerAvatarUrl={partnerAvatarUrl}
+              isSpeaking={speakingMessageId === m.id}
+              onSpeak={() => handleSpeak(m.id, m.text)}
             />
           </div>
         );
