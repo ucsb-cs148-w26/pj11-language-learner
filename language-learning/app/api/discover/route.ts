@@ -232,6 +232,12 @@ export async function GET(req: NextRequest) {
         return rankLevel(b.level) - rankLevel(a.level);
       });
 
+      const displayTarget = sortedTargets[0] ?? {
+        language_id: -1,
+        name: "None",
+        level: "beginner",
+      };
+
       return {
         id: candidate.id,
         first_name: candidate.first_name,
