@@ -23,7 +23,7 @@ type ChatLayoutProps = {
   onSendMessage: (conversationId: string, text: string) => Promise<void>;
 };
 
-export default function ChatLayout({
+export default function ChatRightPanel({
   partnerId,
   partnerFirstName,
   partnerLastName,
@@ -40,7 +40,7 @@ export default function ChatLayout({
           partnerId={partnerId}
           partnerFirstName={partnerFirstName}
           partnerLastName={partnerLastName}
-          partnerAvatarUrl={partnerAvatarUrl ?? "/default-avatar.jpg"}
+          partnerAvatarUrl={partnerAvatarUrl}
           targetLanguages={targetLanguages}
         />
       </div>
@@ -50,7 +50,7 @@ export default function ChatLayout({
             messages={messages}
             partnerFirstName={partnerFirstName}
             partnerLastName={partnerLastName}
-            partnerAvatarUrl={partnerAvatarUrl ?? "/default-avatar.jpg"}
+            partnerAvatarUrl={partnerAvatarUrl}
         />
       </div>
 

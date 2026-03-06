@@ -98,10 +98,10 @@ export async function GET(req: NextRequest) {
       user_id,
       language_id,
       level,
-      profiles!inner(first_name, native_language, updated_at),
+      profiles!inner(first_name, last_name, native_language, profile_picture_url, updated_at),
       lang:languages!inner(name)
     `)
-    .not('user_id', 'in', `(${excludeList.map(id => `"${id}"`).join(',')})`);
+    .not('user_id', 'in', `(${excludeList.map(id => `"${id}"`).join(',')})`);;
 
   if (levelFilter && levelFilter !== "All") {
     query = query.ilike('level', levelFilter);
@@ -134,7 +134,9 @@ export async function GET(req: NextRequest) {
       grouped.set(row.user_id, {
         id: row.user_id,
         first_name: profile?.first_name ?? null,
+        last_name: profile?.last_name ?? null,
         native_language: profile?.native_language ?? null,
+        profile_picture_url: profile?.profile_picture_url ?? null,
         updated_at: profile?.updated_at ?? null,
         targets: [nextTarget],
         friendship: {
@@ -230,12 +232,6 @@ export async function GET(req: NextRequest) {
         return rankLevel(b.level) - rankLevel(a.level);
       });
 
-      const displayTarget = sortedTargets[0] ?? {
-        language_id: -1,
-        name: "None",
-        level: "beginner",
-      };
-
       return {
         id: candidate.id,
         first_name: candidate.first_name,
@@ -246,9 +242,12 @@ export async function GET(req: NextRequest) {
           name: target.name,
           level: toDisplayLevel(target.level),
         })),
+          
+        last_name: candidate.last_name,
+        profile_picture_url: candidate.profile_picture_url,
+        updated_at: candidate.updated_at,
         tier,
         levelDelta,
-        updated_at: candidate.updated_at,
         friendship: candidate.friendship,
       };
     });
@@ -268,7 +267,7 @@ export async function GET(req: NextRequest) {
     return a.id.localeCompare(b.id);
   });
 
-  const partners = scored.map(({ tier: _tier, levelDelta: _levelDelta, updated_at: _updatedAt, ...rest }) => rest);
+  const partners = scored.map(({ tier: _tier, levelDelta: _levelDelta, ...rest }) => rest);
   if (isRecommended) {
     return NextResponse.json(partners.slice(0, 5));
   }

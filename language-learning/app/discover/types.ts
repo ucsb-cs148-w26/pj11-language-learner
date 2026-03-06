@@ -10,6 +10,9 @@ export type DiscoverPartner = {
     name: string;
     level: string;
   }>;
+  last_name: string | null;
+  profile_picture_url: string | null;
+  updated_at: string | null;
   friendship: {
     status: FriendshipStatus,
     request_id: string | null,
@@ -30,11 +33,15 @@ export type DiscoverRow = {
   level: string | null;
   profiles: {
     first_name: string | null;
+    last_name: string | null;
     native_language: string | null;
+    profile_picture_url: string | null;
     updated_at: string | null;
   } | Array<{
     first_name: string | null;
+    last_name: string | null;
     native_language: string | null;
+    profile_picture_url: string | null;
     updated_at: string | null;
   }> | null;
   lang: {
@@ -63,7 +70,9 @@ export type CandidateTarget = {
 export type Candidate = {
   id: string;
   first_name: string | null;
+  last_name?: string | null;
   native_language: string | null;
+  profile_picture_url?: string | null;
   updated_at: string | null;
   targets: CandidateTarget[];
   friendship: {
