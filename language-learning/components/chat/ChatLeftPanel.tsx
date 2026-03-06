@@ -2,6 +2,7 @@
 // Made for Chat.tsx
 
 import Link from "next/link";
+import Avatar from "@/components/Avatar";
 
 type ChatListItem = {
   conversationId: string;
@@ -73,8 +74,6 @@ export default function ChatLeftPanel({
       <div className="min-h-0 flex-1 overflow-y-auto">
         {sorted.map((c) => {
           const isSelected = c.conversationId === selectedConversationId;
-          const avatarSrc = c.partnerAvatarUrl ?? "/default-avatar.jpg";
-
           const className = [
             "w-full block h-17 border-b border-gray-border-soft last:border-0 px-4 py-3 text-left transition",
             isSelected ? "bg-gray-soft-2" : "hover:bg-off-white",
@@ -82,11 +81,7 @@ export default function ChatLeftPanel({
 
           const content = (
             <div className="flex items-center gap-3">
-              <img
-                src={avatarSrc}
-                alt={`${c.partnerFirstName} ${c.partnerLastName}`}
-                className="h-10 w-10 rounded-full object-cover"
-              />
+              <Avatar src={c.partnerAvatarUrl} alt={`${c.partnerFirstName} ${c.partnerLastName}`} />
 
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-3">

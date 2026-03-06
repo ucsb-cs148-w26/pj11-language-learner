@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import type { RelationshipStatus } from "@/utils/friends/friendTypes";
+import Avatar from "@/components/Avatar";
 
 type TargetLanguage = {
   name: string;
@@ -392,29 +393,13 @@ export default function UserProfilePage() {
         <div className="rounded-2xl border border-gray-border-soft bg-white p-6">
           <div className="flex items-start gap-4">
             <div className="relative">
-              {p.profilePicture ? (
-                <img
-                  src={p.profilePicture}
-                  alt="Profile"
-                  className="w-20 h-20 rounded-full object-cover border-2 border-gray-border-soft"
-                />
-              ) : (
-                <div className="w-20 h-20 rounded-full bg-gray-soft-2 border-2 border-gray-border-soft flex items-center justify-center">
-                  <svg
-                    className="w-10 h-10 text-gray-muted"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
-                </div>
-              )}
+              <Avatar
+                src={p.profilePicture}
+                alt="Profile"
+                size="w-20 h-20"
+                iconSize="w-10 h-10"
+                imgClassName="border-2 border-gray-border-soft"
+              />
             </div>
 
             <div className="flex-1 min-w-0">

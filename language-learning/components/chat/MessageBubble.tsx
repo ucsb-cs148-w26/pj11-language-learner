@@ -2,6 +2,8 @@
 // Includes time and partner avatar for partner messages.
 // Made for Messages.tsx, which is for ChatRightPanel.tsx.
 
+import Avatar from "@/components/Avatar";
+
 type MessageBubbleProps = {
   text: string;
   isMe: boolean;
@@ -24,11 +26,12 @@ export default function MessageBubble({
       {/* Left side: avatar for partner messages */}
       {!isMe ? (
         <div className="mr-2 flex w-9 items-start">
-            <img
-            src={partnerAvatarUrl ?? "/default-avatar.jpg"}
+          <Avatar
+            src={partnerAvatarUrl}
             alt={`${partnerFirstName} ${partnerLastName} avatar`}
-            className="h-8 w-8 rounded-full object-cover"
-            />
+            size="w-8 h-8"
+            iconSize="w-4 h-4"
+          />
         </div>
       ) : null}
 

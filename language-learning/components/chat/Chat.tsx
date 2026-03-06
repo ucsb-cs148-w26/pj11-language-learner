@@ -43,7 +43,7 @@ export type Conversation = {
 
 type ChatProps = {
   conversations: Conversation[];
-  selectedConversationId: string;
+  selectedConversationId: string | null;
   onSelectConversationId?: (conversationId: string) => void;
   onSendMessage?: (conversationId: string, text: string) => Promise<void>;
 };
@@ -54,7 +54,7 @@ export default function Chat({ conversations, selectedConversationId, onSelectCo
   }
 
   const selected = useMemo(
-    () => conversations.find((c) => c.conversationId === selectedConversationId) ?? conversations[0],
+    () => selectedConversationId ? conversations.find((c) => c.conversationId === selectedConversationId) ?? null : null,
     [conversations, selectedConversationId]
   );
 
@@ -75,7 +75,7 @@ export default function Chat({ conversations, selectedConversationId, onSelectCo
               lastMessageAt: c.lastMessageAt,
               unreadCount: c.unreadCount,
             }))}
-            selectedConversationId={selectedConversationId}
+            //selectedConversationId={selectedConversationId}
             onSelectConversation={handleSelectConversation}
           />
         </div>
