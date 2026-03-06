@@ -23,6 +23,10 @@ function rankLevel(level: string | null | undefined): number {
   return LEVEL_RANK[(level ?? "").toLowerCase()] ?? 0;
 }
 
+function normalizeLanguage(value: string | null | undefined): string {
+  return (value ?? "").trim().toLowerCase();
+}
+
 function firstRelation<T>(value: T | T[] | null | undefined): T | null {
   if (!value) return null;
   return Array.isArray(value) ? (value[0] ?? null) : value;
@@ -55,8 +59,14 @@ export async function GET(req: NextRequest) {
   ]);
 
   const userNative = userProfile?.native_language ?? "";
+  const userNativeNormalized = normalizeLanguage(userNative);
   const userTargets = new Map(userTargetRows?.map(r => [r.language_id, { name: (r.lang as any).name, level: r.level }]) ?? []);
-  const userTargetNameSet = new Set(userTargetRows?.map(r => (r.lang as any).name));
+  const userTargetNameSet = new Set(
+    (userTargetRows ?? [])
+      .map((r) => normalizeLanguage((r.lang as any).name))
+      .filter(Boolean)
+  );
+  const userLanguageSet = new Set([userNativeNormalized, ...userTargetNameSet].filter(Boolean));
   const userTargetIdSet = new Set(userTargets.keys());
 
   const friends = createFriendService(supabase);
@@ -140,18 +150,33 @@ export async function GET(req: NextRequest) {
     existing.targets.push(nextTarget);
   }
 
-  const scored = [...grouped.values()].map((candidate) => {
+  const scored = [...grouped.values()]
+    .filter((candidate) => {
+      const candidateLanguages = new Set<string>();
+      const candidateNative = normalizeLanguage(candidate.native_language);
+      if (candidateNative) candidateLanguages.add(candidateNative);
+      for (const target of candidate.targets) {
+        const normalizedTarget = normalizeLanguage(target.name);
+        if (normalizedTarget) candidateLanguages.add(normalizedTarget);
+      }
+
+      for (const lang of candidateLanguages) {
+        if (userLanguageSet.has(lang)) return true;
+      }
+      return false;
+    })
+    .map((candidate) => {
       const candidateNativeLanguage = candidate.native_language ?? "";
       const sharedTargets = candidate.targets.filter((target) =>
         userTargetIdSet.has(target.language_id),
       );
       const hasSharedTarget = sharedTargets.length > 0;
 
-      const candidateLearnsUserNative = userNative
-        ? candidate.targets.some((target) => target.name === userNative)
+      const candidateLearnsUserNative = userNativeNormalized
+        ? candidate.targets.some((target) => normalizeLanguage(target.name) === userNativeNormalized)
         : false;
       const userLearnsCandidateNative = candidateNativeLanguage
-        ? userTargetNameSet.has(candidateNativeLanguage)
+        ? userTargetNameSet.has(normalizeLanguage(candidateNativeLanguage))
         : false;
       const isMutualExchange = candidateLearnsUserNative && userLearnsCandidateNative;
 
