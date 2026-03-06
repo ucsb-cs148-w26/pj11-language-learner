@@ -225,7 +225,7 @@ export async function GET() {
 
     const profileById = new Map<string, { first_name: string | null; last_name: string | null; profile_picture_url: string | null }>();
     for (const p of (friendProfiles as ProfileRow[] | null) ?? []) {
-      profileById.set(p.user_id, { first_name: p.first_name, last_name: p.last_name, profile_picture_url: p.profile_picture_url });
+      profileById.set(p.user_id, { first_name: p.first_name, last_name: p.last_name, profile_picture_url: p.profile_picture_url ?? null });
     }
 
     const tlById = new Map<
