@@ -9,7 +9,7 @@ import { supabase } from "@/lib/supabaseClient";
 import ThemeToggle from "./ThemeToggle";
 
 type UserProfile = {
-  profilePicture: string;
+  profilePicture: string | null;
 };
 
 function HeaderContent() {
@@ -154,7 +154,7 @@ function HeaderContent() {
 
           {!loading && session && (
             <Link href="/profile" className="transition hover:opacity-80">
-              {userProfile ? (
+              {userProfile && userProfile.profilePicture ? (
                 <img
                   src={userProfile.profilePicture}
                   alt="Profile"

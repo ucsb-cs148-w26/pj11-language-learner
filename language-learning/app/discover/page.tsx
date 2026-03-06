@@ -66,9 +66,16 @@ export default function DiscoverPage() {
                     <p className="font-semibold text-gray-text">{partner.first_name}</p>
                   </div>
                   <p className="text-sm text-gray-muted mb-4">
-                    Learning <span className="text-gray-text font-medium">{partner.target_language}</span>
-                    <span className="mx-1">•</span>
-                    {partner.level}
+                    {(() => {
+                      const first = partner.targets && partner.targets.length > 0 ? partner.targets[0] : null;
+                      return (
+                        <>
+                          Learning <span className="text-gray-text font-medium">{first?.name || 'Unknown'}</span>
+                          <span className="mx-1">•</span>
+                          {first?.level || 'Beginner'}
+                        </>
+                      );
+                    })()}
                   </p>
                   <FriendActionButton 
                     partner={partner} 
@@ -163,7 +170,10 @@ export default function DiscoverPage() {
                         <div>
                           <p className="font-semibold text-gray-text">{partner.first_name}</p>
                           <p className="text-sm text-gray-muted">
-                            Learning {partner.target_language} • {partner.level}
+                            {(() => {
+                              const first = partner.targets && partner.targets.length > 0 ? partner.targets[0] : null;
+                              return `Learning ${first?.name || 'Unknown'} • ${first?.level || 'Beginner'}`;
+                            })()}
                           </p>
                         </div>
                       </div>

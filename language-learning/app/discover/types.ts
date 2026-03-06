@@ -6,8 +6,8 @@ export type DiscoverPartner = {
   last_name: string | null;
   native_language: string | null;
   profile_picture_url: string | null;
-  level: string;
-  target_language: string;
+  updated_at: string | null;
+  targets: CandidateTarget[];
   friendship: {
     status: FriendshipStatus,
     request_id: string | null,
