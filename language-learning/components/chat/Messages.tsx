@@ -16,6 +16,7 @@ type MessagesProps = {
   partnerFirstName: string;
   partnerLastName: string;
   partnerAvatarUrl: string | null;
+  myNativeLanguage: string | null;
 };
 
 function dateKey(d: Date) {
@@ -54,6 +55,7 @@ export default function Messages({
   partnerFirstName,
   partnerLastName,
   partnerAvatarUrl,
+  myNativeLanguage,
 }: MessagesProps) {
   const endRef = useRef<HTMLDivElement | null>(null);
   const sorted = [...messages].sort((a, b) => a.sentAt.localeCompare(b.sentAt));
@@ -97,6 +99,7 @@ export default function Messages({
               partnerFirstName={partnerFirstName}
               partnerLastName={partnerLastName}
               partnerAvatarUrl={partnerAvatarUrl}
+              myNativeLanguage={myNativeLanguage}
             />
           </div>
         );
