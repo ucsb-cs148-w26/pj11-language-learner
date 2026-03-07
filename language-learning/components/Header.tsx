@@ -13,6 +13,9 @@ type UserProfile = {
   profilePicture: string | null;
 };
 
+// logo color: #0f78c1
+// highlight color: #539bcd
+
 function HeaderContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -97,15 +100,15 @@ function HeaderContent() {
 
   return (
     <nav className="w-full bg-white border-b border-gray-border shadow-sm">
-      <div className="mx-auto w-full h-full px-8 pt-3 pb-1.5 flex items-center text-lg justify-between">
+      <div className="mx-auto w-full h-full px-4 pt-3 pb-1.5 flex items-center text-lg justify-between">
         {/* Logo */}
         <div className="flex items-center">
-          <Image
-            src="/logo.png"
+          <Image 
+            src="/lingo.png" 
             alt="App Logo"
-            width={50}
-            height={50}
-            className="rounded-full"
+            height={60}
+            width={120}
+            className="h-auto w-[120px] bg-transparent"
             priority
           />
         </div>

@@ -1,4 +1,5 @@
 // components/FriendActionButton.tsx
+// hover color: #055690
 import { DiscoverPartner, FriendshipStatus } from "@/app/discover/types";
 
 interface Props {
