@@ -75,6 +75,14 @@ export default function Messages({
     };
   }, []);
 
+  function detectLangTag(text: string): string {
+    if (/[\u3040-\u309F\u30A0-\u30FF]/.test(text)) return "ja-JP";
+    if (/[\u4E00-\u9FFF]/.test(text)) return "zh-CN";
+    if (/[\uAC00-\uD7A3\u1100-\u11FF]/.test(text)) return "ko-KR";
+    if (/[\u0400-\u04FF]/.test(text)) return "ru-RU";
+    return "";
+  }
+
   function handleSpeak(messageId: string, text: string) {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) {
       console.warn("Speech synthesis is not supported in this browser.");
@@ -92,6 +100,8 @@ export default function Messages({
     synth.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
+    const langTag = detectLangTag(text);
+    if (langTag) utterance.lang = langTag;
     utterance.onstart = () => {setSpeakingMessageId(messageId);};
     utterance.onend = () => {setSpeakingMessageId((current) => (current === messageId ? null : current));};
     utterance.onerror = () => {setSpeakingMessageId((current) => (current === messageId ? null : current));};
