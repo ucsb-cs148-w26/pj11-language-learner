@@ -3,54 +3,47 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import Avatar from "@/components/Avatar";
 
-import { createFriendService } from "@/utils/friends/friendService";
-import type { FriendRequestRow, FriendRequestsList } from "@/utils/friends/friendTypes";
-
-type RequestUser = {
+export type RequestUser = {
   id: string;
   name: string;
   profileHref: string;
   avatarUrl?: string | null;
 };
 
-type IncomingRequestItem = {
+export type IncomingRequestItem = {
   requestId: string;
   from: RequestUser;
 };
 
-type OutgoingRequestItem = {
+export type OutgoingRequestItem = {
   requestId: string;
   to: RequestUser;
 };
 
-type ProfileRow = {
-  user_id: string;
-  first_name: string | null;
-  profile_picture_url: string | null;
-};
-
 export default function FriendRequests({
-  userId,
-  incomingRequests,
-  outgoingRequests,
+  incomingRequests = [],
+  outgoingRequests = [],
   showHeader = true,
   showSubHeader = true,
+  onAccept,
+  onDeny,
+  onCancel,
 }: {
-  userId: string;
   incomingRequests?: IncomingRequestItem[];
   outgoingRequests?: OutgoingRequestItem[];
   showHeader?: boolean;
   showSubHeader?: boolean;
+  onAccept?: (requestId: string, name: string) => Promise<{ conversationId?: string | null } | void>;
+  onDeny?: (requestId: string) => Promise<void> | void;
+  onCancel?: (requestId: string) => Promise<void> | void;
 }) {
   const router = useRouter();
-  const friendSvc = useMemo(() => createFriendService(supabase), []);
 
-  const [incoming, setIncoming] = useState<IncomingRequestItem[]>(incomingRequests ?? []);
-  const [outgoing, setOutgoing] = useState<OutgoingRequestItem[]>(outgoingRequests ?? []);
+  const [incoming, setIncoming] = useState<IncomingRequestItem[]>(incomingRequests);
+  const [outgoing, setOutgoing] = useState<OutgoingRequestItem[]>(outgoingRequests);
 
-  const [loading, setLoading] = useState<boolean>(!incomingRequests && !outgoingRequests);
   const [error, setError] = useState<string | null>(null);
 
   const [acceptingIds, setAcceptingIds] = useState<Set<string>>(new Set());
@@ -60,6 +53,14 @@ export default function FriendRequests({
   const [chatPrompt, setChatPrompt] = useState<{ conversationId: string; name: string } | null>(
     null
   );
+
+  useEffect(() => {
+    setIncoming(incomingRequests);
+  }, [incomingRequests]);
+
+  useEffect(() => {
+    setOutgoing(outgoingRequests);
+  }, [outgoingRequests]);
 
   const sortedIncoming = useMemo(() => {
     return [...incoming].sort((a, b) =>
@@ -90,127 +91,53 @@ export default function FriendRequests({
     }
   };
 
-  async function hydrateRequests(list: FriendRequestsList) {
-    const rows: FriendRequestRow[] = [...(list.incoming ?? []), ...(list.outgoing ?? [])];
-
-    const ids = Array.from(
-      new Set(rows.flatMap((r) => [r.requester_id, r.recipient_id]).filter(Boolean))
-    );
-
-    if (ids.length === 0) {
-      return {
-        incomingItems: [] as IncomingRequestItem[],
-        outgoingItems: [] as OutgoingRequestItem[],
-      };
-    }
-
-    const { data: profiles, error: profErr } = await supabase
-      .from("profiles")
-      .select("user_id, first_name, profile_picture_url")
-      .in("user_id", ids);
-
-    if (profErr) throw profErr;
-
-    const profileMap = new Map<string, { name: string; avatarUrl: string | null }>();
-
-    (profiles as ProfileRow[] | null)?.forEach((p) => {
-      profileMap.set(p.user_id, {
-        name: p.first_name ?? "Unknown",
-        avatarUrl: p.profile_picture_url ?? null,
-      });
-    });
-
-    const incomingItems: IncomingRequestItem[] = (list.incoming ?? []).map((r) => {
-      const prof = profileMap.get(r.requester_id) ?? { name: "Unknown", avatarUrl: null };
-      return {
-        requestId: r.id,
-        from: {
-          id: r.requester_id,
-          name: prof.name,
-          avatarUrl: prof.avatarUrl,
-          profileHref: `/profile/${r.requester_id}`,
-        },
-      };
-    });
-
-    const outgoingItems: OutgoingRequestItem[] = (list.outgoing ?? []).map((r) => {
-      const prof = profileMap.get(r.recipient_id) ?? { name: "Unknown", avatarUrl: null };
-      return {
-        requestId: r.id,
-        to: {
-          id: r.recipient_id,
-          name: prof.name,
-          avatarUrl: prof.avatarUrl,
-          profileHref: `/profile/${r.recipient_id}`,
-        },
-      };
-    });
-
-    return { incomingItems, outgoingItems };
-  }
-
-  useEffect(() => {
-    let cancelled = false;
-
-    (async () => {
-      if (incomingRequests || outgoingRequests) return;
-
-      try {
-        setLoading(true);
-        setError(null);
-
-        const list = await friendSvc.getFriendRequestsList({ userId, status: "pending" });
-        const { incomingItems, outgoingItems } = await hydrateRequests(list);
-
-        if (!cancelled) {
-          setIncoming(incomingItems);
-          setOutgoing(outgoingItems);
-        }
-      } catch (e: unknown) {
-        if (!cancelled) {
-          const msg = e instanceof Error ? e.message : "Failed to load requests.";
-          setError(msg);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [friendSvc, userId, incomingRequests, outgoingRequests]);
-
   async function handleAccept(requestId: string, name: string) {
+    if (!onAccept) return;
     setError(null);
 
     await withRowLoading(setAcceptingIds, requestId, async () => {
-      const conversationId = await friendSvc.acceptFriendRequest({ requestId });
+      try {
+        const result = await onAccept(requestId, name);
 
-      if (!conversationId) {
-        throw new Error("Accept succeeded but no conversationId was returned.");
+        setIncoming((prev) => prev.filter((r) => r.requestId !== requestId));
+
+        if (result?.conversationId) {
+          setChatPrompt({ conversationId: result.conversationId, name });
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Failed to accept request.";
+        setError(msg);
       }
-
-      setIncoming((prev) => prev.filter((r) => r.requestId !== requestId));
-      setChatPrompt({ conversationId, name });
     });
   }
 
   async function handleDeny(requestId: string) {
+    if (!onDeny) return;
     setError(null);
 
     await withRowLoading(setDenyingIds, requestId, async () => {
-      await friendSvc.denyFriendRequest({ requestId });
-      setIncoming((prev) => prev.filter((r) => r.requestId !== requestId));
+      try {
+        await onDeny(requestId);
+        setIncoming((prev) => prev.filter((r) => r.requestId !== requestId));
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Failed to deny request.";
+        setError(msg);
+      }
     });
   }
 
   async function handleCancel(requestId: string) {
+    if (!onCancel) return;
     setError(null);
 
     await withRowLoading(setCancelingIds, requestId, async () => {
-      await friendSvc.cancelFriendRequest({ requestId });
-      setOutgoing((prev) => prev.filter((r) => r.requestId !== requestId));
+      try {
+        await onCancel(requestId);
+        setOutgoing((prev) => prev.filter((r) => r.requestId !== requestId));
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Failed to cancel request.";
+        setError(msg);
+      }
     });
   }
 
@@ -267,11 +194,7 @@ export default function FriendRequests({
         </div>
       )}
 
-      {loading ? (
-        <div className="p-6 text-center">
-          <p className="text-sm text-gray-muted">Loading requests…</p>
-        </div>
-      ) : sortedIncoming.length === 0 ? (
+      {sortedIncoming.length === 0 ? (
         <div className="p-6 text-center">
           <p className="text-sm text-gray-muted">No incoming requests.</p>
           <Link
@@ -296,11 +219,7 @@ export default function FriendRequests({
                   href={r.from.profileHref}
                   className="flex min-w-0 items-center gap-3 rounded-lg bg-transparent px-0 py-0 transition"
                 >
-                  <img
-                    src={r.from.avatarUrl ?? "/default-avatar.jpg"}
-                    alt={r.from.name}
-                    className="h-10 w-10 shrink-0 rounded-full object-cover"
-                  />
+                  <Avatar src={r.from.avatarUrl} alt={r.from.name} className="shrink-0" />
                   <div className="min-w-0">
                     <div className="truncate text-base font-medium text-gray-text">{r.from.name}</div>
                   </div>
@@ -350,11 +269,7 @@ export default function FriendRequests({
                   href={r.to.profileHref}
                   className="flex min-w-0 items-center gap-3 rounded-lg bg-transparent px-0 py-0 transition"
                 >
-                  <img
-                    src={r.to.avatarUrl ?? "/default-avatar.jpg"}
-                    alt={r.to.name}
-                    className="h-10 w-10 shrink-0 rounded-full object-cover"
-                  />
+                  <Avatar src={r.to.avatarUrl} alt={r.to.name} className="shrink-0" />
                   <div className="min-w-0">
                     <div className="truncate text-base font-medium text-gray-text">{r.to.name}</div>
                   </div>

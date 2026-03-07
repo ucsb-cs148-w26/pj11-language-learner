@@ -2,6 +2,7 @@
 // Made for ChatRightPanel.tsx.
 
 import Link from "next/link";
+import Avatar from "@/components/Avatar";
 
 type ChatHeaderProps = {
   partnerId: string; 
@@ -21,11 +22,7 @@ export default function ChatHeader({
   return (
     <div className="border-b border-gray-border-soft px-5 py-4">
       <div className="flex items-center gap-3">
-        <img
-          src={partnerAvatarUrl ?? "/default-avatar.jpg"}
-          alt={`${partnerFirstName} ${partnerLastName}`}
-          className="h-10 w-10 rounded-full object-cover"
-        />
+        <Avatar src={partnerAvatarUrl} alt={`${partnerFirstName} ${partnerLastName}`} />
 
         <div>
           <Link href={`/profile/${partnerId}`} className="text-base font-semibold text-gray-text hover:underline">

@@ -4,20 +4,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
-import { createFriendService } from "@/utils/friends/friendService";
 import type { RelationshipStatus } from "@/utils/friends/friendTypes";
-
-// Helper function to convert database level to display format
-function levelToDisplay(
-  level: string | null | undefined
-): "Beginner" | "Intermediate" | "Advanced" | null {
-  if (!level) return null;
-  const lower = level.toLowerCase();
-  if (lower === "intermediate") return "Intermediate";
-  if (lower === "advanced") return "Advanced";
-  return "Beginner";
-}
+import Avatar from "@/components/Avatar";
 
 type TargetLanguage = {
   name: string;
@@ -28,7 +16,7 @@ type Profile = {
   firstName?: string | null;
   lastName?: string | null;
   bio?: string | null;
-  targetLanguages: TargetLanguage[]; // ✅ multiple
+  targetLanguages: TargetLanguage[];
   profilePicture?: string | null;
   nativeLanguage?: string | null;
 };
@@ -38,72 +26,13 @@ type LoadState<T> =
   | { status: "error"; message: string }
   | { status: "success"; data: T };
 
-async function getUserId(): Promise<string | null> {
-  try {
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (!authError && user) return user.id;
-  } catch {
-    // ignore auth errors
-  }
-  return null;
-}
-
 async function fetchUserProfile(userId: string): Promise<Profile> {
-  // Fetch profile data
-  const { data: profileData, error: profileError } = await supabase
-    .from("profiles")
-    .select("first_name, last_name, bio, native_language, profile_picture_url")
-    .eq("user_id", userId)
-    .single();
-
-  if (profileError) {
-    if (profileError.code === "PGRST116") throw new Error("Profile not found");
-    const errorMessage =
-      profileError.message || `Supabase error: ${profileError.code || "Unknown"}`;
-    const enhancedError = new Error(errorMessage);
-    (enhancedError as any).code = profileError.code;
-    (enhancedError as any).details = profileError.details;
-    throw enhancedError;
+  const res = await fetch(`/api/profile/${encodeURIComponent(userId)}`);
+  const body = await res.json();
+  if (!res.ok) {
+    throw new Error(body?.error || "Profile not found");
   }
-
-  // Fetch ALL target languages
-  const { data: targetLanguagesData, error: targetLanguagesError } = await supabase
-    .from("profile_target_languages")
-    .select("level, languages!profile_target_languages_language_id_fkey(name)")
-    .eq("user_id", userId);
-
-  if (targetLanguagesError) {
-    const errorMessage =
-      targetLanguagesError.message ||
-      `Supabase error: ${targetLanguagesError.code || "Unknown"}`;
-    const enhancedError = new Error(errorMessage);
-    (enhancedError as any).code = targetLanguagesError.code;
-    (enhancedError as any).details = targetLanguagesError.details;
-    throw enhancedError;
-  }
-
-  const targetLanguages: TargetLanguage[] = (targetLanguagesData ?? [])
-    .map((row: any) => {
-      const name = row?.languages?.name ?? null;
-      if (!name) return null;
-      return {
-        name,
-        level: levelToDisplay(row.level),
-      };
-    })
-    .filter(Boolean) as TargetLanguage[];
-
-  return {
-    firstName: profileData.first_name,
-    lastName: profileData.last_name,
-    bio: profileData.bio,
-    targetLanguages,
-    profilePicture: profileData.profile_picture_url,
-    nativeLanguage: profileData.native_language,
-  };
+  return body.profile as Profile;
 }
 
 export default function UserProfilePage() {
@@ -162,25 +91,12 @@ export default function UserProfilePage() {
     (async () => {
       setStatusLoading(true);
       try {
-        const vid = await getUserId();
+        const res = await fetch(`/api/friends/status?targetUserId=${encodeURIComponent(userId)}`);
+        const body = await res.json();
         if (cancelled) return;
-        setViewerId(vid);
 
-        if (!vid) {
-          setRelStatus(null);
-          return;
-        }
-        if (vid === userId) {
-          setRelStatus({ kind: "self" });
-          return;
-        }
-
-        const friends = createFriendService(supabase);
-        const status = await friends.getRelationshipStatus({
-          viewerId: vid,
-          otherUserId: userId,
-        });
-        if (!cancelled) setRelStatus(status);
+        setViewerId(body?.viewerId ?? null);
+        setRelStatus(body?.status ?? null);
       } catch (e) {
         if (!cancelled) {
           console.error("Relationship status error:", e);
@@ -197,16 +113,15 @@ export default function UserProfilePage() {
   }, [userId]);
 
   const refreshStatus = async () => {
-    if (!viewerId || viewerId === userId) {
-      setRelStatus(viewerId === userId ? { kind: "self" } : null);
-      return;
+    try {
+      const res = await fetch(`/api/friends/status?targetUserId=${encodeURIComponent(userId)}`);
+      const body = await res.json();
+      setViewerId(body?.viewerId ?? null);
+      setRelStatus(body?.status ?? null);
+    } catch (e) {
+      console.error("Relationship status error:", e);
+      setRelStatus(null);
     }
-    const friends = createFriendService(supabase);
-    const status = await friends.getRelationshipStatus({
-      viewerId,
-      otherUserId: userId,
-    });
-    setRelStatus(status);
   };
 
   const withAction = async (
@@ -231,37 +146,70 @@ export default function UserProfilePage() {
       setActionError("Please sign in to send friend requests.");
       return;
     }
-    const friends = createFriendService(supabase);
-    await withAction("send", () =>
-      friends.sendFriendRequest({ requesterId: viewerId, recipientId: userId })
-    );
+    await withAction("send", async () => {
+      const res = await fetch("/api/friends/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetUserId: userId, action: "send" }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body?.error || "Failed to send request");
+    });
   }
 
   async function handleAccept(requestId?: string) {
     if (!viewerId || !requestId) return;
-    const friends = createFriendService(supabase);
     await withAction("accept", async () => {
-      const conversationId = await friends.acceptFriendRequest({ requestId });
-      router.push(`/chats?c=${encodeURIComponent(conversationId)}`);
+      const res = await fetch("/api/friends/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetUserId: userId, action: "accept", request_id: requestId }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body?.error || "Failed to accept request");
+      if (body?.conversationId) {
+        router.push(`/chats?c=${encodeURIComponent(body.conversationId)}`);
+      }
     });
   }
 
   async function handleDeny(requestId?: string) {
     if (!viewerId || !requestId) return;
-    const friends = createFriendService(supabase);
-    await withAction("deny", () => friends.denyFriendRequest({ requestId }));
+    await withAction("deny", async () => {
+      const res = await fetch("/api/friends/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetUserId: userId, action: "deny", request_id: requestId }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body?.error || "Failed to deny request");
+    });
   }
 
   async function handleCancel(requestId?: string) {
     if (!viewerId || !requestId) return;
-    const friends = createFriendService(supabase);
-    await withAction("cancel", () => friends.cancelFriendRequest({ requestId }));
+    await withAction("cancel", async () => {
+      const res = await fetch("/api/friends/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetUserId: userId, action: "cancel", request_id: requestId }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body?.error || "Failed to cancel request");
+    });
   }
 
   async function handleUnfriend() {
     if (!viewerId) return;
-    const friends = createFriendService(supabase);
-    await withAction("unfriend", () => friends.unfriend({ otherUserId: userId }));
+    await withAction("unfriend", async () => {
+      const res = await fetch("/api/friends/unfriend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ otherUserId: userId }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body?.error || "Failed to unfriend");
+    });
   }
 
   async function handleMessage() {
@@ -270,13 +218,15 @@ export default function UserProfilePage() {
       setMessaging(true);
       setError(null);
 
-      const { data, error } = await supabase.rpc("start_conversation_no_dupe", {
-        partner_id: userId,
+      const res = await fetch("/api/profile/start-conversation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ partnerId: userId }),
       });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body?.error || "Failed to start conversation");
 
-      if (error) throw error;
-
-      const conversationId = data as string;
+      const conversationId = body.conversationId as string;
       router.push(`/chats?c=${encodeURIComponent(conversationId)}`);
     } catch (e) {
       console.error(e);
@@ -443,29 +393,13 @@ export default function UserProfilePage() {
         <div className="rounded-2xl border border-gray-border-soft bg-white p-6">
           <div className="flex items-start gap-4">
             <div className="relative">
-              {p.profilePicture ? (
-                <img
-                  src={p.profilePicture}
-                  alt="Profile"
-                  className="w-20 h-20 rounded-full object-cover border-2 border-gray-border-soft"
-                />
-              ) : (
-                <div className="w-20 h-20 rounded-full bg-gray-soft-2 border-2 border-gray-border-soft flex items-center justify-center">
-                  <svg
-                    className="w-10 h-10 text-gray-muted"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
-                </div>
-              )}
+              <Avatar
+                src={p.profilePicture}
+                alt="Profile"
+                size="w-20 h-20"
+                iconSize="w-10 h-10"
+                imgClassName="border-2 border-gray-border-soft"
+              />
             </div>
 
             <div className="flex-1 min-w-0">

@@ -85,7 +85,9 @@ Abhiram Agina:
   * Main is functional 
 
 * **Assessment of results:**
-* update by Tuesday, Feb. 24, 11:59pm
+  * Friend requests have been successfully implemented
+  * Friend component and friend utility functions have been used by each relevant frontend page
+  * Each team member communicated after completing each respective part, minimal conflicts
 
 ## Retro Assessment
 

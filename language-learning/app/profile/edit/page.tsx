@@ -1,23 +1,18 @@
 // app/(app)/profile/edit/page.tsx
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
+import {
+  RegExpMatcher,
+  englishDataset,
+  englishRecommendedTransformers,
+} from "obscenity";
 
 // Database stores lowercase values
 type LevelDB = "beginner" | "intermediate" | "advanced";
 // UI displays capitalized values
 type LevelDisplay = "Beginner" | "Intermediate" | "Advanced";
-
-// Helper functions to convert between database and display formats
-function levelToDisplay(level: LevelDB | string | null | undefined): LevelDisplay {
-  if (!level) return "Beginner";
-  const lower = level.toLowerCase();
-  if (lower === "intermediate") return "Intermediate";
-  if (lower === "advanced") return "Advanced";
-  return "Beginner";
-}
 
 function levelToDB(level: LevelDisplay): LevelDB {
   const lower = level.toLowerCase();
@@ -50,6 +45,7 @@ type ProfileDisplay = {
   bio?: string | null;
   nativeLanguage?: string | null;
   targetLanguages: TargetLanguageFormItem[];
+  profilePicture?: string | null;
 };
 
 type ProfileAPI = {
@@ -60,181 +56,65 @@ type ProfileAPI = {
   targetLanguages: { name: string; level: LevelDB }[];
 };
 
-async function getUserId(): Promise<string> {
-  try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (!authError && user) {
-      return user.id;
-    }
-  } catch (e) {
-    // Ignore auth errors in test mode
-  }
-  // TEST MODE: Use a test user ID when not authenticated
-  return "test-user-id";
-}
-
 async function fetchLanguages(): Promise<LanguageOption[]> {
-  const { data, error } = await supabase
-    .from("languages")
-    .select("id, name")
-    .order("name", { ascending: true });
-
-  if (error) throw error;
-  return (data ?? []) as LanguageOption[];
+  const res = await fetch("/api/profile/languages");
+  const body = await res.json();
+  if (!res.ok) throw new Error(body?.error || "Failed to load languages");
+  return (body.languages ?? []) as LanguageOption[];
 }
 
 async function fetchMyProfile(): Promise<ProfileDisplay> {
-  const userId = await getUserId();
-  console.log("Fetching profile for user:", userId);
+  const res = await fetch("/api/profile/me");
+  const body = await res.json();
+  if (!res.ok) throw new Error(body?.error || "Failed to load profile");
 
-  const { data: profileData, error: profileError } = await supabase
-    .from("profiles")
-    .select("first_name, last_name, bio, native_language")
-    .eq("user_id", userId)
-    .single();
+  const data = body.profile as ProfileDisplay;
 
-  console.log("Profile fetch result:", { profileData, profileError });
-
-  if (profileError) {
-    // If no profile exists, return empty profile
-    if (profileError.code === 'PGRST116') {
-      console.log("No profile found, returning empty profile");
-      return {
-        firstName: "",
-        lastName: "",
-        bio: "",
-        nativeLanguage: "",
-        targetLanguages: [],
-      };
-    }
-    console.error("Profile fetch error:", profileError);
-    throw profileError;
-  }
-
-  // Fetch target languages from separate table
-  const { data: targetLanguagesData, error: targetLanguagesError } = await supabase
-    .from("profile_target_languages")
-    .select("level, languages!profile_target_languages_language_id_fkey(name)")
-    .eq("user_id", userId);
-
-  console.log("Target languages fetch result:", { targetLanguagesData, targetLanguagesError });
-  if (targetLanguagesError) console.error("Target languages fetch error:", targetLanguagesError);
-
-  const targetLanguages: TargetLanguageFormItem[] = (targetLanguagesData ?? [])
-    .map((row: any) => {
-      const name = row?.languages?.name ?? "";
-      if (!name) return null;
-      return { name, level: levelToDisplay(row.level) };
-    })
-    .filter(Boolean) as TargetLanguageFormItem[];
-
-  const result: ProfileDisplay = {
-    firstName: profileData.first_name || "",
-    lastName: profileData.last_name || "",
-    bio: profileData.bio || "",
-    nativeLanguage: profileData.native_language || "",
-    targetLanguages,
+  return {
+    firstName: data.firstName || "",
+    lastName: data.lastName || "",
+    bio: data.bio || "",
+    nativeLanguage: data.nativeLanguage || "",
+    targetLanguages: data.targetLanguages ?? [],
+    profilePicture: data.profilePicture ?? null,
   };
-
-  console.log("Returning profile data:", result);
-  return result;
 }
 
 async function saveMyProfile(payload: ProfileAPI): Promise<void> {
-  const userId = await getUserId();
-
-  // Get existing profile to preserve email, or get email from auth user
-  const { data: existingProfile } = await supabase
-    .from("profiles")
-    .select("email")
-    .eq("user_id", userId)
-    .single();
-
-  let email: string | null = existingProfile?.email || null;
-  if (!email) {
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      email = user?.email || null;
-    } catch {
-      // ignore
-    }
-  }
-
-  // Upsert profile
-  const { error: profileError } = await supabase
-    .from("profiles")
-    .upsert(
-      {
-        user_id: userId,
-        email: email,
-        first_name: payload.firstName?.trim() || null,
-        last_name: payload.lastName?.trim() || null,
-        bio: payload.bio || null,
-        native_language: payload.nativeLanguage?.trim() || null,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id" }
-    );
-
-  if (profileError) throw profileError;
-
-  // Replace ALL target languages
-  const cleaned = (payload.targetLanguages ?? [])
-    .map((t) => ({ name: t.name.trim(), level: t.level }))
-    .filter((t) => !!t.name);
-
-  const { error: delErr } = await supabase
-    .from("profile_target_languages")
-    .delete()
-    .eq("user_id", userId);
-
-  if (delErr) throw delErr;
-
-  if (cleaned.length === 0) return;
-
-  // Dedupe by language name
-  const seen = new Set<string>();
-  const deduped = cleaned.filter((t) => {
-    const k = t.name.toLowerCase();
-    if (seen.has(k)) return false;
-    seen.add(k);
-    return true;
+  const res = await fetch("/api/profile/me", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
   });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body?.error || "Failed to save profile");
+}
 
-  // Fetch language ids in one query
-  const names = deduped.map((t) => t.name);
-  const { data: langRows, error: langSelectError } = await supabase
-    .from("languages")
-    .select("id, name")
-    .in("name", names);
+const profanityMatcher = new RegExpMatcher({
+  ...englishDataset.build(),
+  ...englishRecommendedTransformers,
+});
 
-  if (langSelectError) throw langSelectError;
+function censorProfanity(input: string): string {
+  const matches = profanityMatcher.getAllMatches(input, true);
+  let out = input;
 
-  const idByName = new Map<string, number>();
-  (langRows ?? []).forEach((r: any) => idByName.set(String(r.name), Number(r.id)));
-
-  const missing = names.filter((n) => !idByName.has(n));
-  if (missing.length > 0) {
-    throw new Error(`Selected language(s) not found in languages table: ${missing.join(", ")}`);
+  for (let i = matches.length - 1; i >= 0; i--) {
+    const { startIndex, endIndex } = englishDataset.getPayloadWithPhraseMetadata(matches[i]);
+    out = out.slice(0, startIndex) + "*".repeat(endIndex - startIndex) + out.slice(endIndex);
   }
 
-  const inserts = deduped.map((t) => ({
-    user_id: userId,
-    language_id: idByName.get(t.name)!,
-    level: t.level,
-  }));
-
-  const { error: insErr } = await supabase.from("profile_target_languages").insert(inserts);
-  if (insErr) throw insErr;
+  return out;
 }
 
 export default function EditProfilePage() {
   const router = useRouter();
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [currentAvatarUrl, setCurrentAvatarUrl] = useState<string | null>(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [removeAvatar, setRemoveAvatar] = useState(false);
 
   function onClickAvatar() {
     fileInputRef.current?.click();
@@ -254,13 +134,22 @@ export default function EditProfilePage() {
     }
 
     setError(null);
+    setRemoveAvatar(false);
 
     if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
 
     const url = URL.createObjectURL(file);
     setAvatarPreviewUrl(url);
+    setSelectedFile(file);
 
     e.target.value = "";
+  }
+
+  function onRemoveAvatar() {
+    if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+    setAvatarPreviewUrl(null);
+    setSelectedFile(null);
+    setRemoveAvatar(true);
   }
 
   useEffect(() => {
@@ -295,6 +184,7 @@ export default function EditProfilePage() {
         if (cancelled) return;
 
         setLanguages(langs);
+        setCurrentAvatarUrl(p.profilePicture ?? null);
 
         const validSet = new Set(langs.map((x) => x.name));
         const filteredTargets = (p.targetLanguages ?? []).filter((t) => validSet.has(t.name));
@@ -379,10 +269,14 @@ export default function EditProfilePage() {
       seen.add(k);
     }
 
+    const firstName = censorProfanity(form.firstName.trim());
+    const lastName = censorProfanity(form.lastName.trim());
+    const bio = censorProfanity(form.bio.trim());
+
     const payload: ProfileAPI = {
-      firstName: form.firstName.trim(),
-      lastName: form.lastName.trim(),
-      bio: form.bio.trim(),
+      firstName,
+      lastName,
+      bio,
       nativeLanguage: form.nativeLanguage.trim(),
       targetLanguages: cleaned.map((t) => ({
         name: t.name,
@@ -391,7 +285,24 @@ export default function EditProfilePage() {
     };
 
     try {
+      // Handle avatar changes before saving profile fields
+      let avatarChanged = false;
+      if (removeAvatar) {
+        await fetch("/api/profile/avatar", { method: "DELETE" });
+        avatarChanged = true;
+      } else if (selectedFile) {
+        const formData = new FormData();
+        formData.append("avatar", selectedFile);
+        const res = await fetch("/api/profile/avatar", { method: "POST", body: formData });
+        if (!res.ok) {
+          const body = await res.json();
+          throw new Error(body?.error || "Failed to upload avatar");
+        }
+        avatarChanged = true;
+      }
+
       await saveMyProfile(payload);
+      if (avatarChanged) window.dispatchEvent(new CustomEvent("avatar-changed"));
       router.push("/profile");
     } catch (e) {
       console.error("Error saving profile:", e);
@@ -453,36 +364,48 @@ export default function EditProfilePage() {
             <button
               type="button"
               onClick={onClickAvatar}
-              className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-gray-soft-2 border border-gray-border-soft"
+              className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-off-white border border-gray-border-soft"
               aria-label="Upload profile photo"
             >
-              {avatarPreviewUrl ? (
-                <img
-                  src={avatarPreviewUrl}
-                  alt="Uploaded avatar preview"
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-10 w-10 text-gray-muted"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+              {(() => {
+                const displayUrl = avatarPreviewUrl ?? (removeAvatar ? null : currentAvatarUrl);
+                return displayUrl ? (
+                  <img
+                    src={displayUrl}
+                    alt="Profile photo"
+                    className="h-full w-full object-cover"
                   />
-                </svg>
-              )}
+                ) : (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-10 w-10 text-gray-muted-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
+                    />
+                  </svg>
+                );
+              })()}
             </button>
 
-            <div className="space-y-1">
+            <div className="space-y-2">
               <p className="text-sm font-medium text-gray-text">Profile photo</p>
               <p className="text-xs text-gray-muted">Click the avatar to upload a new one (max 5MB).</p>
+              {(avatarPreviewUrl || (!removeAvatar && currentAvatarUrl)) && (
+                <button
+                  type="button"
+                  onClick={onRemoveAvatar}
+                  className="text-xs text-dark-red hover:underline"
+                >
+                  Remove photo
+                </button>
+              )}
             </div>
 
             <input

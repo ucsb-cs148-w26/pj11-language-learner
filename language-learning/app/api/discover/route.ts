@@ -23,6 +23,10 @@ function rankLevel(level: string | null | undefined): number {
   return LEVEL_RANK[(level ?? "").toLowerCase()] ?? 0;
 }
 
+function normalizeLanguage(value: string | null | undefined): string {
+  return (value ?? "").trim().toLowerCase();
+}
+
 function firstRelation<T>(value: T | T[] | null | undefined): T | null {
   if (!value) return null;
   return Array.isArray(value) ? (value[0] ?? null) : value;
@@ -55,8 +59,14 @@ export async function GET(req: NextRequest) {
   ]);
 
   const userNative = userProfile?.native_language ?? "";
+  const userNativeNormalized = normalizeLanguage(userNative);
   const userTargets = new Map(userTargetRows?.map(r => [r.language_id, { name: (r.lang as any).name, level: r.level }]) ?? []);
-  const userTargetNameSet = new Set(userTargetRows?.map(r => (r.lang as any).name));
+  const userTargetNameSet = new Set(
+    (userTargetRows ?? [])
+      .map((r) => normalizeLanguage((r.lang as any).name))
+      .filter(Boolean)
+  );
+  const userLanguageSet = new Set([userNativeNormalized, ...userTargetNameSet].filter(Boolean));
   const userTargetIdSet = new Set(userTargets.keys());
 
   const friends = createFriendService(supabase);
@@ -88,10 +98,10 @@ export async function GET(req: NextRequest) {
       user_id,
       language_id,
       level,
-      profiles!inner(first_name, native_language, updated_at),
+      profiles!inner(first_name, last_name, native_language, profile_picture_url, updated_at),
       lang:languages!inner(name)
     `)
-    .not('user_id', 'in', `(${excludeList.map(id => `"${id}"`).join(',')})`);
+    .not('user_id', 'in', `(${excludeList.map(id => `"${id}"`).join(',')})`);;
 
   if (levelFilter && levelFilter !== "All") {
     query = query.ilike('level', levelFilter);
@@ -124,7 +134,9 @@ export async function GET(req: NextRequest) {
       grouped.set(row.user_id, {
         id: row.user_id,
         first_name: profile?.first_name ?? null,
+        last_name: profile?.last_name ?? null,
         native_language: profile?.native_language ?? null,
+        profile_picture_url: profile?.profile_picture_url ?? null,
         updated_at: profile?.updated_at ?? null,
         targets: [nextTarget],
         friendship: {
@@ -138,18 +150,68 @@ export async function GET(req: NextRequest) {
     existing.targets.push(nextTarget);
   }
 
-  const scored = [...grouped.values()].map((candidate) => {
+  const candidateIds = [...grouped.keys()];
+  if (candidateIds.length > 0) {
+    const { data: allTargetRows, error: allTargetRowsError } = await supabase
+      .from("profile_target_languages")
+      .select("user_id, language_id, level, lang:languages!inner(name)")
+      .in("user_id", candidateIds);
+
+    if (allTargetRowsError) {
+      return NextResponse.json({ error: allTargetRowsError.message }, { status: 500 });
+    }
+
+    const allTargetsByUserId = new Map<string, CandidateTarget[]>();
+    for (const row of allTargetRows ?? []) {
+      const lang = firstRelation((row as any).lang);
+      const target: CandidateTarget = {
+        language_id: (row as any).language_id,
+        name: lang?.name ?? "None",
+        level: ((row as any).level ?? "beginner").toLowerCase(),
+      };
+      const existingTargets = allTargetsByUserId.get((row as any).user_id);
+      if (existingTargets) {
+        existingTargets.push(target);
+      } else {
+        allTargetsByUserId.set((row as any).user_id, [target]);
+      }
+    }
+
+    for (const candidate of grouped.values()) {
+      const completeTargets = allTargetsByUserId.get(candidate.id);
+      if (completeTargets && completeTargets.length > 0) {
+        candidate.targets = completeTargets;
+      }
+    }
+  }
+
+  const scored = [...grouped.values()]
+    .filter((candidate) => {
+      const candidateLanguages = new Set<string>();
+      const candidateNative = normalizeLanguage(candidate.native_language);
+      if (candidateNative) candidateLanguages.add(candidateNative);
+      for (const target of candidate.targets) {
+        const normalizedTarget = normalizeLanguage(target.name);
+        if (normalizedTarget) candidateLanguages.add(normalizedTarget);
+      }
+
+      for (const lang of candidateLanguages) {
+        if (userLanguageSet.has(lang)) return true;
+      }
+      return false;
+    })
+    .map((candidate) => {
       const candidateNativeLanguage = candidate.native_language ?? "";
       const sharedTargets = candidate.targets.filter((target) =>
         userTargetIdSet.has(target.language_id),
       );
       const hasSharedTarget = sharedTargets.length > 0;
 
-      const candidateLearnsUserNative = userNative
-        ? candidate.targets.some((target) => target.name === userNative)
+      const candidateLearnsUserNative = userNativeNormalized
+        ? candidate.targets.some((target) => normalizeLanguage(target.name) === userNativeNormalized)
         : false;
       const userLearnsCandidateNative = candidateNativeLanguage
-        ? userTargetNameSet.has(candidateNativeLanguage)
+        ? userTargetNameSet.has(normalizeLanguage(candidateNativeLanguage))
         : false;
       const isMutualExchange = candidateLearnsUserNative && userLearnsCandidateNative;
 
@@ -179,11 +241,19 @@ export async function GET(req: NextRequest) {
       return {
         id: candidate.id,
         first_name: candidate.first_name,
+        native_language: candidate.native_language,
         target_language: displayTarget.name,
         level: toDisplayLevel(displayTarget.level),
+        target_languages: sortedTargets.map((target) => ({
+          name: target.name,
+          level: toDisplayLevel(target.level),
+        })),
+          
+        last_name: candidate.last_name,
+        profile_picture_url: candidate.profile_picture_url,
+        updated_at: candidate.updated_at,
         tier,
         levelDelta,
-        updated_at: candidate.updated_at,
         friendship: candidate.friendship,
       };
     });
@@ -203,7 +273,7 @@ export async function GET(req: NextRequest) {
     return a.id.localeCompare(b.id);
   });
 
-  const partners = scored.map(({ tier: _tier, levelDelta: _levelDelta, updated_at: _updatedAt, ...rest }) => rest);
+  const partners = scored.map(({ tier: _tier, levelDelta: _levelDelta, ...rest }) => rest);
   if (isRecommended) {
     return NextResponse.json(partners.slice(0, 5));
   }
