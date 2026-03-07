@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
+import Avatar from "@/components/Avatar";
 
 export type RequestUser = {
   id: string;
@@ -218,11 +219,7 @@ export default function FriendRequests({
                   href={r.from.profileHref}
                   className="flex min-w-0 items-center gap-3 rounded-lg bg-transparent px-0 py-0 transition"
                 >
-                  <img
-                    src={r.from.avatarUrl ?? "/default-avatar.jpg"}
-                    alt={r.from.name}
-                    className="h-10 w-10 shrink-0 rounded-full object-cover"
-                  />
+                  <Avatar src={r.from.avatarUrl} alt={r.from.name} className="shrink-0" />
                   <div className="min-w-0">
                     <div className="truncate text-base font-medium text-gray-text">{r.from.name}</div>
                   </div>
@@ -272,11 +269,7 @@ export default function FriendRequests({
                   href={r.to.profileHref}
                   className="flex min-w-0 items-center gap-3 rounded-lg bg-transparent px-0 py-0 transition"
                 >
-                  <img
-                    src={r.to.avatarUrl ?? "/default-avatar.jpg"}
-                    alt={r.to.name}
-                    className="h-10 w-10 shrink-0 rounded-full object-cover"
-                  />
+                  <Avatar src={r.to.avatarUrl} alt={r.to.name} className="shrink-0" />
                   <div className="min-w-0">
                     <div className="truncate text-base font-medium text-gray-text">{r.to.name}</div>
                   </div>

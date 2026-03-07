@@ -21,9 +21,10 @@ type ChatLayoutProps = {
   messages: Message[];
   conversationId: string;
   onSendMessage: (conversationId: string, text: string) => Promise<void>;
+  myNativeLanguage: string | null;
 };
 
-export default function ChatLayout({
+export default function ChatRightPanel({
   partnerId,
   partnerFirstName,
   partnerLastName,
@@ -32,6 +33,7 @@ export default function ChatLayout({
   messages,
   conversationId,
   onSendMessage,
+  myNativeLanguage,
 }: ChatLayoutProps) {
   return (
     <div className="h-[calc(100dvh-72px)] flex flex-col overflow-hidden">
@@ -40,7 +42,7 @@ export default function ChatLayout({
           partnerId={partnerId}
           partnerFirstName={partnerFirstName}
           partnerLastName={partnerLastName}
-          partnerAvatarUrl={partnerAvatarUrl ?? "/default-avatar.jpg"}
+          partnerAvatarUrl={partnerAvatarUrl}
           targetLanguages={targetLanguages}
         />
       </div>
@@ -50,7 +52,8 @@ export default function ChatLayout({
             messages={messages}
             partnerFirstName={partnerFirstName}
             partnerLastName={partnerLastName}
-            partnerAvatarUrl={partnerAvatarUrl ?? "/default-avatar.jpg"}
+            partnerAvatarUrl={partnerAvatarUrl}
+            myNativeLanguage={myNativeLanguage}
         />
       </div>
 

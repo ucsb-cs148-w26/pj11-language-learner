@@ -73,15 +73,15 @@ export async function POST(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { error } = await supabase.from("messages").insert({
+  const { data: inserted, error } = await supabase.from("messages").insert({
     conversation_id: conversationId,
     sender_id: user.id,
     body: text,
-  });
+  }).select("id, created_at").single();
 
   if (error) {
     return NextResponse.json({ error: error.message || "Failed to send message" }, { status: 500 });
   }
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, message: { id: inserted.id, created_at: inserted.created_at } });
 }

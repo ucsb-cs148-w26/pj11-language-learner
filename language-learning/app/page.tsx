@@ -52,7 +52,7 @@ function Landing() {
     <div className={`${bodyFont.className} min-h-[calc(100dvh-80px)] w-full flex items-start justify-center bg-background px-6 pt-10`} >
       <div className="w-full max-w-5xl border-2 border-dashed flex flex-col items-center text-center border-blue-soft rounded-2xl p-20 bg-blue-soft/20">
           <h1 className="text-4xl font-extrabold text-blue-dark mb-10">
-            Language Learner
+            Lingo Connect
           </h1>
 
           <p className="text-lg text-gray-text leading-8 mb-18">

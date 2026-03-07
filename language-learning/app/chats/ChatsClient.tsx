@@ -12,12 +12,17 @@ type ApiMessage = {
   created_at: string;
 };
 
+type ProfileForChats = {
+  nativeLanguage?: string | null;
+};
+
 export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const [loading, setLoading] = useState(true);
   const [myUserId, setMyUserId] = useState<string | null>(null);
+  const [myNativeLanguage, setMyNativeLanguage] = useState<string | null>(null);
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
@@ -31,33 +36,51 @@ export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
     async function loadList() {
       setLoading(true);
 
-      const res = await fetch("/api/chats");
-      const body = await res.json();
-      if (!res.ok) throw new Error(body?.error || "Failed to load chats");
+      try {
+        const [chatsRes, profileRes] = await Promise.all([
+          fetch("/api/chats"),
+          fetch("/api/profile/me"),
+        ]);
 
-      setMyUserId(body?.myUserId ?? null);
+        const chatsBody = await chatsRes.json();
+        if (!chatsRes.ok) {
+          throw new Error(chatsBody?.error || "Failed to load chats");
+        }
 
-      const ui: Conversation[] = (body?.conversations ?? []).map((c: Conversation) => ({
-        ...c,
-        messages: [],
-      }));
+        const profileBody = await profileRes.json().catch(() => null);
 
-      const preferred =
-        c && ui.some((x) => x.conversationId === c)
-          ? c
-          : ui[0]?.conversationId ?? null;
+        if (!cancelled) {
+          setMyUserId(chatsBody?.myUserId ?? null);
 
-      if (cancelled) return;
+          const ui: Conversation[] = (chatsBody?.conversations ?? []).map((c: Conversation) => ({
+            ...c,
+            messages: [],
+          }));
 
-      setConversations(ui);
-      setSelectedConversationId(preferred);
-      setLoading(false);
+          const preferred =
+            c && ui.some((x) => x.conversationId === c)
+              ? c
+              : ui[0]?.conversationId ?? null;
+
+          const profile: ProfileForChats | null =
+            profileBody && typeof profileBody === "object" ? (profileBody.profile as ProfileForChats) : null;
+
+          setMyNativeLanguage(profile?.nativeLanguage ?? null);
+
+          setConversations(ui);
+          setSelectedConversationId(preferred);
+          setLoading(false);
+        }
+      } catch (e) {
+        console.error("loadList failed:", (e as any)?.message ?? e, e);
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+
     }
 
-    loadList().catch((e) => {
-      console.error("loadList failed:", e?.message ?? e, e);
-      setLoading(false);
-    });
+    loadList();
 
     return () => {
       cancelled = true;
@@ -119,14 +142,14 @@ export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
           messages: [
             ...c.messages,
             {
-              id: `tmp-${Date.now()}`,
+              id: body?.message?.id ?? `tmp-${Date.now()}`,
               sender: "me",
               text,
-              sentAt: new Date().toISOString(),
+              sentAt: body?.message?.created_at ?? new Date().toISOString(),
             },
           ],
           lastMessageText: text,
-          lastMessageAt: new Date().toISOString(),
+          lastMessageAt: body?.message?.created_at ?? new Date().toISOString(),
         };
       })
     );
@@ -168,6 +191,7 @@ export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
       <Chat
         conversations={conversations}
         selectedConversationId={selectedConversationId ?? conversations[0]?.conversationId ?? ""}
+        myNativeLanguage={myNativeLanguage}
         onSelectConversationId={(id) => {
           setSelectedConversationId(id);
           router.replace(`/chats?c=${encodeURIComponent(id)}`);

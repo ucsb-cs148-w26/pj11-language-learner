@@ -28,6 +28,7 @@ type DashboardData = {
     targetLanguage: string;
     level: "Beginner" | "Intermediate" | "Advanced";
     lastActive?: string | null;
+    avatarUrl?: string | null;
   }>;
   chats: Array<{
     id: string;
@@ -197,6 +198,7 @@ export default function RequestsPage() {
                 name: f.name,
                 profileHref: `/profile/${f.id}`,
                 chatHref: convoId ? `/chats?c=${encodeURIComponent(convoId)}` : "/chats",
+                avatarUrl: f.avatarUrl,
               };
             })}
             onRemove={async (friendId) => {

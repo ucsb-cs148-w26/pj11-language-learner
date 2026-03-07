@@ -1,7 +1,7 @@
 // app/(app)/profile/edit/page.tsx
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   RegExpMatcher,
@@ -45,6 +45,7 @@ type ProfileDisplay = {
   bio?: string | null;
   nativeLanguage?: string | null;
   targetLanguages: TargetLanguageFormItem[];
+  profilePicture?: string | null;
 };
 
 type ProfileAPI = {
@@ -75,6 +76,7 @@ async function fetchMyProfile(): Promise<ProfileDisplay> {
     bio: data.bio || "",
     nativeLanguage: data.nativeLanguage || "",
     targetLanguages: data.targetLanguages ?? [],
+    profilePicture: data.profilePicture ?? null,
   };
 }
 
@@ -109,7 +111,10 @@ export default function EditProfilePage() {
   const router = useRouter();
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [currentAvatarUrl, setCurrentAvatarUrl] = useState<string | null>(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [removeAvatar, setRemoveAvatar] = useState(false);
 
   function onClickAvatar() {
     fileInputRef.current?.click();
@@ -129,13 +134,22 @@ export default function EditProfilePage() {
     }
 
     setError(null);
+    setRemoveAvatar(false);
 
     if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
 
     const url = URL.createObjectURL(file);
     setAvatarPreviewUrl(url);
+    setSelectedFile(file);
 
     e.target.value = "";
+  }
+
+  function onRemoveAvatar() {
+    if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+    setAvatarPreviewUrl(null);
+    setSelectedFile(null);
+    setRemoveAvatar(true);
   }
 
   useEffect(() => {
@@ -170,6 +184,7 @@ export default function EditProfilePage() {
         if (cancelled) return;
 
         setLanguages(langs);
+        setCurrentAvatarUrl(p.profilePicture ?? null);
 
         const validSet = new Set(langs.map((x) => x.name));
         const filteredTargets = (p.targetLanguages ?? []).filter((t) => validSet.has(t.name));
@@ -270,7 +285,24 @@ export default function EditProfilePage() {
     };
 
     try {
+      // Handle avatar changes before saving profile fields
+      let avatarChanged = false;
+      if (removeAvatar) {
+        await fetch("/api/profile/avatar", { method: "DELETE" });
+        avatarChanged = true;
+      } else if (selectedFile) {
+        const formData = new FormData();
+        formData.append("avatar", selectedFile);
+        const res = await fetch("/api/profile/avatar", { method: "POST", body: formData });
+        if (!res.ok) {
+          const body = await res.json();
+          throw new Error(body?.error || "Failed to upload avatar");
+        }
+        avatarChanged = true;
+      }
+
       await saveMyProfile(payload);
+      if (avatarChanged) window.dispatchEvent(new CustomEvent("avatar-changed"));
       router.push("/profile");
     } catch (e) {
       console.error("Error saving profile:", e);
@@ -332,36 +364,48 @@ export default function EditProfilePage() {
             <button
               type="button"
               onClick={onClickAvatar}
-              className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-gray-soft-2 border border-gray-border-soft"
+              className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-off-white border border-gray-border-soft"
               aria-label="Upload profile photo"
             >
-              {avatarPreviewUrl ? (
-                <img
-                  src={avatarPreviewUrl}
-                  alt="Uploaded avatar preview"
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-10 w-10 text-gray-muted"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+              {(() => {
+                const displayUrl = avatarPreviewUrl ?? (removeAvatar ? null : currentAvatarUrl);
+                return displayUrl ? (
+                  <img
+                    src={displayUrl}
+                    alt="Profile photo"
+                    className="h-full w-full object-cover"
                   />
-                </svg>
-              )}
+                ) : (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-10 w-10 text-gray-muted-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
+                    />
+                  </svg>
+                );
+              })()}
             </button>
 
-            <div className="space-y-1">
+            <div className="space-y-2">
               <p className="text-sm font-medium text-gray-text">Profile photo</p>
               <p className="text-xs text-gray-muted">Click the avatar to upload a new one (max 5MB).</p>
+              {(avatarPreviewUrl || (!removeAvatar && currentAvatarUrl)) && (
+                <button
+                  type="button"
+                  onClick={onRemoveAvatar}
+                  className="text-xs text-dark-red hover:underline"
+                >
+                  Remove photo
+                </button>
+              )}
             </div>
 
             <input

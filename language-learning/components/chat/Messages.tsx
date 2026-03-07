@@ -1,8 +1,24 @@
 // Combines all message bubbles in a chat.
 // Made for ChatRightPanel.tsx.
 
-import { useEffect, useMemo, useRef } from "react";
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { franc } from "franc";
 import MessageBubble from "./MessageBubble";
+
+const FRANC_TO_BCP47: Record<string, string> = {
+  // Latin-script languages
+  eng: "en-US",
+  spa: "es-ES", fra: "fr-FR", deu: "de-DE", por: "pt-PT",
+  ita: "it-IT", nld: "nl-NL", pol: "pl-PL", swe: "sv-SE",
+  nor: "nb-NO", dan: "da-DK", fin: "fi-FI", tur: "tr-TR",
+  ron: "ro-RO", ces: "cs-CZ", slk: "sk-SK", hun: "hu-HU",
+  // Non-Latin (fallback in case Unicode check missed something)
+  cmn: "zh-CN", jpn: "ja-JP", kor: "ko-KR",
+  ara: "ar-SA", rus: "ru-RU", hin: "hi-IN", ben: "bn-BD",
+  vie: "vi-VN", tha: "th-TH",
+};
 
 export type ChatMessage = {
   id: string;
@@ -15,7 +31,8 @@ type MessagesProps = {
   messages: ChatMessage[];
   partnerFirstName: string;
   partnerLastName: string;
-  partnerAvatarUrl: string;
+  partnerAvatarUrl: string | null;
+  myNativeLanguage: string | null;
 };
 
 function dateKey(d: Date) {
@@ -54,13 +71,116 @@ export default function Messages({
   partnerFirstName,
   partnerLastName,
   partnerAvatarUrl,
+  myNativeLanguage,
 }: MessagesProps) {
   const endRef = useRef<HTMLDivElement | null>(null);
+  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
+  const [speakErrorId, setSpeakErrorId] = useState<string | null>(null);
+  const speakTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
   const sorted = [...messages].sort((a, b) => a.sentAt.localeCompare(b.sentAt));
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [sorted.length]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    const synth = window.speechSynthesis;
+    function loadVoices() {
+      const v = synth.getVoices();
+      if (v.length > 0) voicesRef.current = v;
+    }
+    loadVoices();
+    synth.addEventListener("voiceschanged", loadVoices);
+    return () => {
+      synth.removeEventListener("voiceschanged", loadVoices);
+      if (speakTimeoutRef.current) clearTimeout(speakTimeoutRef.current);
+      synth.cancel();
+    };
+  }, []);
+
+  function hasVoiceFor(langTag: string): boolean {
+    const voices = voicesRef.current;
+    if (voices.length === 0) return true; // not loaded yet, proceed and let timeout handle it
+    const prefix = langTag.split("-")[0];
+    return voices.some(v => v.lang === langTag || v.lang.startsWith(prefix + "-") || v.lang === prefix);
+  }
+
+  function detectLangTag(text: string): string {
+    // Fast Unicode checks for scripts with distinct character ranges
+    if (/[\u3040-\u309F\u30A0-\u30FF]/.test(text)) return "ja-JP";
+    if (/[\u4E00-\u9FFF]/.test(text)) return "zh-CN";
+    if (/[\uAC00-\uD7A3\u1100-\u11FF]/.test(text)) return "ko-KR";
+    if (/[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text)) return "ar-SA";
+    if (/[\u0400-\u04FF]/.test(text)) return "ru-RU";
+    // Use franc for Latin-script and anything else
+    const code = franc(text, { minLength: 3, only: Object.keys(FRANC_TO_BCP47) });
+    return FRANC_TO_BCP47[code] ?? "";
+  }
+
+  function handleSpeak(messageId: string, text: string) {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+      console.warn("Speech synthesis is not supported in this browser.");
+      return;
+    }
+
+    const synth = window.speechSynthesis;
+
+    if (speakTimeoutRef.current) {
+      clearTimeout(speakTimeoutRef.current);
+      speakTimeoutRef.current = null;
+    }
+
+    if (speakingMessageId === messageId && synth.speaking) {
+      synth.cancel();
+      setSpeakingMessageId(null);
+      setSpeakErrorId(null);
+      return;
+    }
+
+    synth.cancel();
+    setSpeakErrorId(null);
+
+    const langTag = detectLangTag(text);
+    if (!langTag || !hasVoiceFor(langTag)) {
+      setSpeakErrorId(messageId);
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = langTag;
+
+    let started = false;
+    utterance.onstart = () => {
+      started = true;
+      if (speakTimeoutRef.current) {
+        clearTimeout(speakTimeoutRef.current);
+        speakTimeoutRef.current = null;
+      }
+      setSpeakingMessageId(messageId);
+    };
+    utterance.onend = () => { setSpeakingMessageId((current) => (current === messageId ? null : current)); };
+    utterance.onerror = (event) => {
+      if (speakTimeoutRef.current) {
+        clearTimeout(speakTimeoutRef.current);
+        speakTimeoutRef.current = null;
+      }
+      setSpeakingMessageId((current) => (current === messageId ? null : current));
+      if (event.error !== "canceled" && event.error !== "interrupted") {
+        setSpeakErrorId(messageId);
+      }
+    };
+    synth.speak(utterance);
+
+    speakTimeoutRef.current = setTimeout(() => {
+      speakTimeoutRef.current = null;
+      if (!started) {
+        setSpeakErrorId(messageId);
+        setSpeakingMessageId((current) => (current === messageId ? null : current));
+      }
+    }, 750);
+  }
 
   let lastDay: string | null = null;
 
@@ -73,7 +193,7 @@ export default function Messages({
         const showDivider = day !== lastDay;
         if (showDivider) lastDay = day;
 
-        const next = sorted.length - 1 ? sorted[idx + 1] : null;
+        const next = idx < sorted.length - 1 ? sorted[idx + 1] : null;
         let showTime = true;
 
         if (!showDivider && next) {
@@ -91,12 +211,17 @@ export default function Messages({
             {showDivider ? <DateDivider label={formatDateLabel(d)} /> : null}
 
             <MessageBubble
+              messageId={m.id}
               text={m.text}
               isMe={m.sender === "me"}
               time={showTime ? formatTimeLabel(d) : undefined}
               partnerFirstName={partnerFirstName}
               partnerLastName={partnerLastName}
               partnerAvatarUrl={partnerAvatarUrl}
+              myNativeLanguage={myNativeLanguage}
+              isSpeaking={speakingMessageId === m.id}
+              hasSpeakError={speakErrorId === m.id}
+              onSpeak={() => handleSpeak(m.id, m.text)}
             />
           </div>
         );
