@@ -34,7 +34,7 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background w-full flex items-center justify-center">
+    <div className="min-h-[calc(100dvh-80px)] bg-background w-full flex items-center justify-center">
       <main className="mx-auto max-w-lg p-6 w-full">
         <div className="w-full space-y-6">
         {/* Header */}
