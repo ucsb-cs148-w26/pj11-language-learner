@@ -7,7 +7,15 @@
 import { useState } from "react";
 import Avatar from "@/components/Avatar";
 
+type PhoneticResponse = {
+  messageId: string;
+  text: string;
+  type: "cmn" | "jpn" | "eng" | "und";
+  pronunciation: string;
+};
+
 type MessageBubbleProps = {
+  messageId: string;
   text: string;
   isMe: boolean;
   time?: string;
@@ -18,6 +26,7 @@ type MessageBubbleProps = {
 };
 
 export default function MessageBubble({
+  messageId,
   text,
   isMe,
   time,
@@ -26,12 +35,25 @@ export default function MessageBubble({
   partnerAvatarUrl,
   myNativeLanguage,
 }: MessageBubbleProps) {
-  const [translated, setTranslated] = useState<string | null>(null);
-  const [isTranslating, setIsTranslating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
+  const [translated, setTranslated] = useState<string | null>(null);
+  const [translationOpen, setTranslationOpen] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
+
+  const [phonetic, setPhonetic] = useState<PhoneticResponse | null>(null);
+  const [phoneticOpen, setPhoneticOpen] = useState(false);
+
+  // translation
   async function handleTranslateClick() {
-    if (isTranslating || translated) return;
+    if (isTranslating) return;
+
+    if (translated) {
+      setTranslationOpen((prev) => !prev);
+      return;
+    }
+
     setIsTranslating(true);
     setError(null);
 
@@ -51,10 +73,52 @@ export default function MessageBubble({
       }
 
       setTranslated(body.translatedText ?? "");
+      setTranslationOpen(true);
     } catch (e: any) {
       setError(e?.message ?? "Translation failed");
     } finally {
       setIsTranslating(false);
+    }
+  }
+
+  // phonetics
+  function labelForType(type: PhoneticResponse["type"]) {
+    switch (type) {
+      case "cmn":
+        return "Mandarin";
+      case "jpn":
+        return "Japanese";
+      case "eng":
+        return "English";
+      default:
+        return "Unsupported";
+    }
+  }
+
+  async function handleTogglePhonetic() {
+    if (phonetic) {
+      setPhoneticOpen((prev) => !prev);
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch(`/api/phonetic/${messageId}`);
+      if (!res.ok) {
+        const payload = await res.json().catch(() => null);
+        const reason = payload?.error || "request_failed";
+        throw new Error(reason);
+      }
+
+      const data = (await res.json()) as PhoneticResponse;
+      setPhonetic(data);
+      setPhoneticOpen(true);
+    } catch (err) {
+      setError("Failed to load phonetic info.");
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -92,42 +156,114 @@ export default function MessageBubble({
 
           {/* Translate icon/button for partner messages */}
           {!isMe && myNativeLanguage && (
-            <button
+              <button
+                type="button"
+                onClick={handleTranslateClick}
+                disabled={isTranslating}
+                aria-label={
+                  isTranslating
+                    ? `Translating to ${myNativeLanguage}`
+                    : translated && translationOpen
+                      ? `Hide translation`
+                      : translated
+                        ? `Show translation`
+                        : `Translate to ${myNativeLanguage}`
+                }
+                title={
+                  isTranslating
+                    ? `Translating to ${myNativeLanguage}`
+                    : translated && translationOpen
+                      ? `Hide translation`
+                      : translated
+                        ? `Show translation`
+                        : `Translate to ${myNativeLanguage}`
+                }
+                className={[
+                  "mt-2 inline-flex h-6 w-6 items-center justify-center rounded-full transition disabled:opacity-60",
+                  translated && translationOpen
+                    ? "bg-blue-dark text-white"
+                    : "bg-gray-soft-2 text-gray-muted hover:bg-gray-200",
+                ].join(" ")}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M5 8l6 6" />
+                  <path d="M4 14l6-6 2-3" />
+                  <path d="M2 5h12" />
+                  <path d="M7 2h1" />
+                  <path d="M22 22l-5-10-5 10" />
+                  <path d="M14 18h6" />
+                </svg>
+              </button>
+          )}
+          <button
               type="button"
-              onClick={handleTranslateClick}
-              disabled={isTranslating || !!translated}
-              aria-label={`Translate to ${myNativeLanguage}`}
-              title={`Translate to ${myNativeLanguage}`}
+              onClick={handleTogglePhonetic}
+              disabled={isLoading}
+              aria-label={
+                isLoading
+                  ? "Loading phonetic"
+                  : phoneticOpen
+                    ? "Hide phonetic"
+                    : "Show phonetic"
+              }
+              title={
+                isLoading
+                  ? "Loading phonetic"
+                  : phoneticOpen
+                    ? "Hide phonetic"
+                    : "Show phonetic"
+              }
               className={[
                 "mt-2 inline-flex h-6 w-6 items-center justify-center rounded-full transition disabled:opacity-60",
-                translated
+                phoneticOpen
                   ? "bg-blue-dark text-white"
                   : "bg-gray-soft-2 text-gray-muted hover:bg-gray-200",
               ].join(" ")}
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M5 8l6 6" />
-                <path d="M4 14l6-6 2-3" />
-                <path d="M2 5h12" />
-                <path d="M7 2h1" />
-                <path d="M22 22l-5-10-5 10" />
-                <path d="M14 18h6" />
-              </svg>
+              {isLoading ? (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                </svg>
+              ) : (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M4 12c2.5-3 5.2-4.5 8-4.5s5.5 1.5 8 4.5c-2.5 3-5.2 4.5-8 4.5S6.5 15 4 12Z" />
+                  <path d="M8 12c1.2 1 2.6 1.5 4 1.5s2.8-.5 4-1.5" />
+                </svg>
+              )}
             </button>
-          )}
         </div>
 
-        {translated && (
+        {translated && translationOpen && (
           <div className="mt-1 w-fit text-xs italic text-gray-muted">
             <span className="font-medium not-italic">Translated</span>
             {myNativeLanguage ? ` (${myNativeLanguage})` : null}
@@ -141,6 +277,21 @@ export default function MessageBubble({
             {error}
           </div>
         )}
+
+        {phoneticOpen && phonetic ? (
+          phonetic.type === "und" ? (
+            <div className="mt-1 w-fit text-xs text-gray-muted">
+              Language not supported for phonetics
+            </div>
+          ) : (
+            <div className="mt-1 w-fit text-xs italic text-gray-muted">
+              <span className="font-medium not-italic">Phonetic </span>
+              ({labelForType(phonetic.type)})
+              {`: `}
+              {phonetic.pronunciation}
+            </div>
+          )
+        ) : null}
 
         {time ? (
           <div className="mt-1 w-fit text-xs text-gray-muted-2">{time}</div>
