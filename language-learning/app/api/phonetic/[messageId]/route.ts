@@ -198,8 +198,6 @@ async function getMessageTextById(
     .eq("id", messageId)
     .maybeSingle();
 
-  console.log("data:", data);
-  // console.log("error:", error);
   if (error || !data) return null;
 
   const row = data as MessageRow;
