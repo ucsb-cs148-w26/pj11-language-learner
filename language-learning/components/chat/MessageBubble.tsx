@@ -96,10 +96,33 @@ export default function MessageBubble({
               type="button"
               onClick={handleTranslateClick}
               disabled={isTranslating || !!translated}
-              className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full border border-gray-border-soft bg-white text-[10px] font-medium text-gray-muted-2 hover:text-gray-muted hover:bg-off-white disabled:opacity-60"
               aria-label={`Translate to ${myNativeLanguage}`}
+              title={`Translate to ${myNativeLanguage}`}
+              className={[
+                "mt-2 inline-flex h-6 w-6 items-center justify-center rounded-full transition disabled:opacity-60",
+                translated
+                  ? "bg-blue-dark text-white"
+                  : "bg-gray-soft-2 text-gray-muted hover:bg-gray-200",
+              ].join(" ")}
             >
-              <span>tr</span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M5 8l6 6" />
+                <path d="M4 14l6-6 2-3" />
+                <path d="M2 5h12" />
+                <path d="M7 2h1" />
+                <path d="M22 22l-5-10-5 10" />
+                <path d="M14 18h6" />
+              </svg>
             </button>
           )}
         </div>
