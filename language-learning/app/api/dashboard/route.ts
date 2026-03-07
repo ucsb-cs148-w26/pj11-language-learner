@@ -19,6 +19,7 @@ type DashboardData = {
     targetLanguage: string;
     level: "Beginner" | "Intermediate" | "Advanced";
     lastActive?: string | null;
+    avatarUrl?: string | null;
   }>;
   chats: Array<{
     id: string;
@@ -206,7 +207,7 @@ export async function GET() {
 
     const { data: friendProfiles, error: friendProfilesError } = await supabase
       .from("profiles")
-      .select("user_id, first_name, last_name")
+      .select("user_id, first_name, last_name, profile_picture_url")
       .in("user_id", friendIds);
 
     if (friendProfilesError) {
@@ -222,9 +223,9 @@ export async function GET() {
       return NextResponse.json({ error: friendTLsError.message || "Failed to load friend languages" }, { status: 500 });
     }
 
-    const profileById = new Map<string, { first_name: string | null; last_name: string | null }>();
+    const profileById = new Map<string, { first_name: string | null; last_name: string | null; profile_picture_url: string | null }>();
     for (const p of (friendProfiles as ProfileRow[] | null) ?? []) {
-      profileById.set(p.user_id, { first_name: p.first_name, last_name: p.last_name });
+      profileById.set(p.user_id, { first_name: p.first_name, last_name: p.last_name, profile_picture_url: p.profile_picture_url ?? null });
     }
 
     const tlById = new Map<
@@ -254,6 +255,7 @@ export async function GET() {
         name,
         targetLanguage: tl?.targetLanguage ?? "Unknown",
         level: tl?.level ?? "Beginner",
+        avatarUrl: prof?.profile_picture_url ?? null,
       };
     });
   }

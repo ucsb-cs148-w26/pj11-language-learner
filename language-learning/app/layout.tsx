@@ -15,8 +15,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Language Learners",
+  title: "Lingo Connect",
   description: "Connect & Practice Conversation Language Skills",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
