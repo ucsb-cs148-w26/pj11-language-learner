@@ -25,6 +25,7 @@ type DashboardData = {
     id: string;
     partnerId: string;
     partnerName: string;
+    partnerAvatarUrl: string | null;
     lastMessage?: string | null;
     lastMessageAt?: string | null;
     createdAt: string;
@@ -157,7 +158,7 @@ export async function GET() {
 
     const { data: profs, error: profsErr } = await supabase
       .from("profiles")
-      .select("user_id,first_name,last_name")
+      .select("user_id,first_name,last_name,profile_picture_url")
       .in("user_id", partnerIds);
 
     if (profsErr) {
@@ -182,6 +183,7 @@ export async function GET() {
           id: c.id,
           partnerId: pid ?? "",
           partnerName,
+          partnerAvatarUrl: prof?.profile_picture_url ?? null,
           lastMessage: c.last_message_text,
           lastMessageAt: c.last_message_at,
           createdAt: c.created_at,

@@ -23,11 +23,13 @@ type DashboardData = {
     targetLanguage: string;
     level: "Beginner" | "Intermediate" | "Advanced";
     lastActive?: string | null;
+    avatarUrl?: string | null;
   }>;
   chats: Array<{
     id: string;
     partnerId: string;
     partnerName: string;
+    partnerAvatarUrl: string | null;
     lastMessage?: string | null;
     lastMessageAt?: string | null;
     createdAt: string;
@@ -169,6 +171,7 @@ export default function DashboardPage() {
                   name: f.name,
                   profileHref: `/profile/${f.id}`,
                   chatHref: convoId ? `/chats?c=${encodeURIComponent(convoId)}` : "/chats",
+                  avatarUrl: f.avatarUrl ?? null,
                 };
               })}
               onRemove={async (friendId) => {
@@ -232,7 +235,7 @@ export default function DashboardPage() {
                     partnerId: c.partnerId,
                     partnerFirstName: c.partnerName.split(" ")[0],
                     partnerLastName: c.partnerName.split(" ")[1] ?? "",
-                    partnerAvatarUrl: null,
+                    partnerAvatarUrl: c.partnerAvatarUrl,
                     lastMessageText: c.lastMessage ?? "",
                     lastMessageAt: c.lastMessageAt ?? null,
                     unreadCount: c.unreadCount,
