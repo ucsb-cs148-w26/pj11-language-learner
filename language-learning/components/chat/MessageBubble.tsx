@@ -91,7 +91,7 @@ export default function MessageBubble({
       case "eng":
         return "English";
       default:
-        return "Unknown";
+        return "Unsupported";
     }
   }
 
@@ -257,7 +257,7 @@ export default function MessageBubble({
                   aria-hidden="true"
                 >
                   <path d="M4 12c2.5-3 5.2-4.5 8-4.5s5.5 1.5 8 4.5c-2.5 3-5.2 4.5-8 4.5S6.5 15 4 12Z" />
-  <path d="M8 12c1.2 1 2.6 1.5 4 1.5s2.8-.5 4-1.5" />
+                  <path d="M8 12c1.2 1 2.6 1.5 4 1.5s2.8-.5 4-1.5" />
                 </svg>
               )}
             </button>
@@ -279,12 +279,18 @@ export default function MessageBubble({
         )}
 
         {phoneticOpen && phonetic ? (
-          <div className="mt-1 w-fit text-xs italic text-gray-muted">
-            <span className="font-medium not-italic">Phonetic </span>
-            ({labelForType(phonetic.type)})
-            {`: `}
-            {phonetic.pronunciation}
-          </div>
+          phonetic.type === "und" ? (
+            <div className="mt-1 w-fit text-xs text-gray-muted">
+              Language not supported for phonetics
+            </div>
+          ) : (
+            <div className="mt-1 w-fit text-xs italic text-gray-muted">
+              <span className="font-medium not-italic">Phonetic </span>
+              ({labelForType(phonetic.type)})
+              {`: `}
+              {phonetic.pronunciation}
+            </div>
+          )
         ) : null}
 
         {time ? (

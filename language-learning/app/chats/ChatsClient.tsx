@@ -142,14 +142,14 @@ export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
           messages: [
             ...c.messages,
             {
-              id: `tmp-${Date.now()}`,
+              id: body?.message?.id ?? `tmp-${Date.now()}`,
               sender: "me",
               text,
-              sentAt: new Date().toISOString(),
+              sentAt: body?.message?.created_at ?? new Date().toISOString(),
             },
           ],
           lastMessageText: text,
-          lastMessageAt: new Date().toISOString(),
+          lastMessageAt: body?.message?.created_at ?? new Date().toISOString(),
         };
       })
     );
