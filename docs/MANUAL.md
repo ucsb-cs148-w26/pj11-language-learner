@@ -1,0 +1,1 @@
+[Lingo Connect Manual](https://docs.google.com/document/d/1igx3aVtAwu3sI9o4p9uJtKKrC9KV27IS9-kRcIpeuQo/edit?usp=sharing)
