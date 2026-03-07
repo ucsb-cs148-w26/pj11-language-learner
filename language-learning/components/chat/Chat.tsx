@@ -43,18 +43,25 @@ export type Conversation = {
 
 type ChatProps = {
   conversations: Conversation[];
-  selectedConversationId: string;
+  selectedConversationId: string | null;
   onSelectConversationId?: (conversationId: string) => void;
   onSendMessage?: (conversationId: string, text: string) => Promise<void>;
+  myNativeLanguage?: string | null;
 };
 
-export default function Chat({ conversations, selectedConversationId, onSelectConversationId, onSendMessage }: ChatProps) {
+export default function Chat({
+  conversations,
+  selectedConversationId,
+  onSelectConversationId,
+  onSendMessage,
+  myNativeLanguage,
+}: ChatProps) {
   function handleSelectConversation(id: string) {
     onSelectConversationId?.(id);
   }
 
   const selected = useMemo(
-    () => conversations.find((c) => c.conversationId === selectedConversationId) ?? conversations[0],
+    () => selectedConversationId ? conversations.find((c) => c.conversationId === selectedConversationId) ?? null : null,
     [conversations, selectedConversationId]
   );
 
@@ -75,7 +82,7 @@ export default function Chat({ conversations, selectedConversationId, onSelectCo
               lastMessageAt: c.lastMessageAt,
               unreadCount: c.unreadCount,
             }))}
-            selectedConversationId={selectedConversationId}
+            //selectedConversationId={selectedConversationId}
             onSelectConversation={handleSelectConversation}
           />
         </div>
@@ -91,6 +98,7 @@ export default function Chat({ conversations, selectedConversationId, onSelectCo
               targetLanguages={selected.targetLanguages}
               messages={selected.messages}
               conversationId={selected.conversationId}
+              myNativeLanguage={myNativeLanguage ?? null}
               onSendMessage={async (conversationId, text) => {
                 await onSendMessage?.(conversationId, text); }}
             />

@@ -17,7 +17,8 @@ type MessagesProps = {
   messages: ChatMessage[];
   partnerFirstName: string;
   partnerLastName: string;
-  partnerAvatarUrl: string;
+  partnerAvatarUrl: string | null;
+  myNativeLanguage: string | null;
 };
 
 function dateKey(d: Date) {
@@ -56,6 +57,7 @@ export default function Messages({
   partnerFirstName,
   partnerLastName,
   partnerAvatarUrl,
+  myNativeLanguage,
 }: MessagesProps) {
   const endRef = useRef<HTMLDivElement | null>(null);
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
@@ -125,12 +127,14 @@ export default function Messages({
             {showDivider ? <DateDivider label={formatDateLabel(d)} /> : null}
 
             <MessageBubble
+              messageId={m.id}
               text={m.text}
               isMe={m.sender === "me"}
               time={showTime ? formatTimeLabel(d) : undefined}
               partnerFirstName={partnerFirstName}
               partnerLastName={partnerLastName}
               partnerAvatarUrl={partnerAvatarUrl}
+              myNativeLanguage={myNativeLanguage}
               isSpeaking={speakingMessageId === m.id}
               onSpeak={() => handleSpeak(m.id, m.text)}
             />
