@@ -9,6 +9,7 @@ import {
   englishDataset,
   englishRecommendedTransformers,
 } from "obscenity";
+import VoiceRecorder, { type VoiceRecorderHandle } from "./VoiceRecorder";
 
 const profanityMatcher = new RegExpMatcher({
   ...englishDataset.build(),
@@ -28,18 +29,28 @@ export function censorProfanity(input: string): string {
 }
 
 type MessageComposerProps = {
-  onSend: (text: string) => Promise<void> | void;
+  onSend: (
+    content: string,
+    type?: "text" | "voice",
+    extras?: { voicePath?: string; voiceBucket?: string }
+  ) => Promise<void> | void;
   onTypingChange?: (isTyping: boolean) => Promise<void> | void;
+  chatId: string;
+  userId: string;
 };
 
-export default function MessageComposer({ onSend, onTypingChange }: MessageComposerProps) {
+export default function MessageComposer({ onSend, onTypingChange, chatId, userId }: MessageComposerProps) {
   const [text, setText] = useState("");
   const [suppressDisabledStyle, setSuppressDisabledStyle] = useState(false);
+  const [hasVoiceDraft, setHasVoiceDraft] = useState(false);
+
+  const voiceRecorderRef = useRef<VoiceRecorderHandle | null>(null);
+
+  const canSendText = text.trim().length > 0;
+  const canSend = canSendText || hasVoiceDraft;
 
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isTypingRef = useRef(false);
-
-  const canSend = text.trim().length > 0;
 
   function clearTypingTimeout() {
     if (!typingTimeoutRef.current) return;
@@ -72,13 +83,21 @@ export default function MessageComposer({ onSend, onTypingChange }: MessageCompo
 
   async function handleSend() {
     if (!canSend) return;
-    const trimmed = text.trim();
-    const sanitized = censorProfanity(trimmed);
-    clearTypingTimeout();
-    emitTyping(false);
-    setText("");
-    await onSend(sanitized);
-    setSuppressDisabledStyle(true);
+
+    if (canSendText) {
+      const trimmed = text.trim();
+      const sanitized = censorProfanity(trimmed);
+      clearTypingTimeout();
+      emitTyping(false);
+      setText("");
+      await onSend(sanitized, "text");
+      setSuppressDisabledStyle(true);
+      return;
+    }
+
+    // voice draft path (uses existing Send button)
+    const sent = await voiceRecorderRef.current?.sendDraft();
+    if (sent) setSuppressDisabledStyle(true);
   }
 
   async function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -104,7 +123,7 @@ export default function MessageComposer({ onSend, onTypingChange }: MessageCompo
   }
 
   return (
-    <div className="flex items-stretch gap-3">
+    <div className="flex items-center gap-3">
         {/* Text box */}
         <div className="flex-1">
         <label className="sr-only">Message</label>
@@ -128,6 +147,16 @@ export default function MessageComposer({ onSend, onTypingChange }: MessageCompo
             "
         />
         </div>
+
+        {/* Voice Recorder button */}
+        <VoiceRecorder
+          ref={voiceRecorderRef}
+          userId={userId}
+          onDraftChange={setHasVoiceDraft}
+          onSendVoice={({ content, voicePath, voiceBucket }) =>
+            onSend(content ?? "", "voice", { voicePath, voiceBucket })
+          }
+        />
 
         {/* Send button */}
         <button

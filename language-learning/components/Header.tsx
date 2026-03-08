@@ -193,7 +193,7 @@ function HeaderContent() {
         <div className="flex items-center gap-3 flex-shrink-0">
           <ThemeToggle />
 
-          {!loading && session && (
+          {!loading && session && !isNewUserOnboarding && (
             <Link href="/profile" className="transition hover:opacity-80">
               <Avatar
                 src={userProfile?.profilePicture}
