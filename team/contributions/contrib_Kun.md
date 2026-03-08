@@ -39,6 +39,12 @@
   - Generates phonetic pronunciation
   - Added a **button bubble component next to message bubbles** to trigger pronunciation
 
+* **Led the development of [realtime typing indicator](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/195)**
+  - Subscribe to room SSE events from the chat client using `EventSource`
+  - Listen for `typing` events and update per-conversation typing state in the frontend
+  - Add debounce and timeout handling so typing status clears automatically
+  - Display `X is typing...` in the chat header
+
 ## Non-Code Contributions
 
 * **Documented retrospective**
