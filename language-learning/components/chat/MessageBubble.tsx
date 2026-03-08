@@ -51,6 +51,10 @@ export default function MessageBubble({
   const [phonetic, setPhonetic] = useState<PhoneticResponse | null>(null);
   const [phoneticOpen, setPhoneticOpen] = useState(false);
 
+  const [grammar, setGrammar] = useState<string | null>(null);
+  const [grammarOpen, setGrammarOpen] = useState(false);
+  const [isLoadingGrammar, setIsLoadingGrammar] = useState(false);
+
   // translation
   async function handleTranslateClick() {
     if (isTranslating) return;
@@ -101,6 +105,34 @@ export default function MessageBubble({
     }
   }
 
+  async function handleGrammarClick() {
+    if (grammar) {
+      setGrammarOpen((prev) => !prev);
+      return;
+    }
+
+    setIsLoadingGrammar(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/grammar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, nativeLanguage: myNativeLanguage }),
+      });
+
+      const body = await res.json();
+      if (!res.ok || body.error) throw new Error(body?.error || "AI help failed");
+
+      setGrammar(body.feedback ?? "");
+      setGrammarOpen(true);
+    } catch (e: any) {
+      setError(e?.message ?? "AI help failed");
+    } finally {
+      setIsLoadingGrammar(false);
+    }
+  }
+
   async function handleTogglePhonetic() {
     if (phonetic) {
       setPhoneticOpen((prev) => !prev);
@@ -144,7 +176,7 @@ export default function MessageBubble({
 
       <div
         className={[
-          "flex w-fit max-w-[75%] md:max-w-[70%] flex-col",
+          "flex w-full min-w-0 max-w-[75%] md:max-w-[70%] flex-col",
           isMe ? "items-end" : "items-start",
         ].join(" ")}
       >
@@ -159,6 +191,33 @@ export default function MessageBubble({
           >
             <span className="whitespace-pre-wrap break-all">{text}</span>
           </div>
+
+          {/* Grammar check button — only for own messages */}
+          {isMe && (
+            <button
+              type="button"
+              onClick={handleGrammarClick}
+              disabled={isLoadingGrammar}
+              aria-label={isLoadingGrammar ? "Checking grammar…" : grammarOpen ? "Hide grammar feedback" : "Check grammar"}
+              title={isLoadingGrammar ? "Checking grammar…" : grammarOpen ? "Hide grammar feedback" : "Check grammar"}
+              className={[
+                "mt-2 inline-flex h-6 w-6 items-center justify-center rounded-full transition disabled:opacity-60",
+                grammarOpen
+                  ? "bg-blue-dark text-white"
+                  : "bg-gray-soft-2 text-gray-muted hover:bg-gray-200",
+              ].join(" ")}
+            >
+              {isLoadingGrammar ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0z"/>
+                </svg>
+              )}
+            </button>
+          )}
 
           {/* Translate icon/button for partner messages */}
           {!isMe && myNativeLanguage && (
@@ -320,6 +379,13 @@ export default function MessageBubble({
             </div>
           )
         ) : null}
+
+        {grammarOpen && grammar && (
+          <div className="mt-1 w-full min-w-0 whitespace-normal break-words text-xs text-gray-muted">
+            <span className="font-medium not-italic">AI Tutor: </span>
+            {grammar}
+          </div>
+        )}
 
         {speakError && (
           <div className="mt-1 w-fit text-xs text-gray-muted">
