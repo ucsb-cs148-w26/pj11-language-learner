@@ -24,7 +24,7 @@ type MessageBubbleProps = {
   partnerAvatarUrl: string | null;
   myNativeLanguage: string | null;
   isSpeaking: boolean;
-  hasSpeakError: boolean;
+  speakError: string | null;
   onSpeak: () => void;
 };
 
@@ -38,7 +38,7 @@ export default function MessageBubble({
   partnerAvatarUrl,
   myNativeLanguage,
   isSpeaking,
-  hasSpeakError,
+  speakError,
   onSpeak,
 }: MessageBubbleProps) {
   const [error, setError] = useState<string | null>(null);
@@ -321,9 +321,9 @@ export default function MessageBubble({
           )
         ) : null}
 
-        {hasSpeakError && (
+        {speakError && (
           <div className="mt-1 w-fit text-xs text-gray-muted">
-            No voice available for this language
+            {speakError}
           </div>
         )}
 

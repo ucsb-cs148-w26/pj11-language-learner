@@ -1,8 +1,8 @@
 // app/(app)/profile/edit/page.tsx
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   RegExpMatcher,
   englishDataset,
@@ -107,8 +107,10 @@ function censorProfanity(input: string): string {
   return out;
 }
 
-export default function EditProfilePage() {
+function EditProfilePageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isNew = searchParams.get("new") === "true";
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [currentAvatarUrl, setCurrentAvatarUrl] = useState<string | null>(null);
@@ -555,14 +557,16 @@ export default function EditProfilePage() {
           </div>
 
           <div className="flex items-center justify-between pt-2">
-            <button
-              type="button"
-              className="rounded-xl border border-gray-border-soft bg-white px-4 py-2 text-sm font-medium hover:bg-off-white"
-              onClick={() => router.push("/profile")}
-              disabled={saving}
-            >
-              Cancel
-            </button>
+            {!isNew && (
+              <button
+                type="button"
+                className="rounded-xl border border-gray-border-soft bg-white px-4 py-2 text-sm font-medium hover:bg-off-white"
+                onClick={() => router.push("/profile")}
+                disabled={saving}
+              >
+                Cancel
+              </button>
+            )}
 
             <button
               type="submit"
@@ -576,6 +580,14 @@ export default function EditProfilePage() {
       </div>
       </main>
     </div>
+  );
+}
+
+export default function EditProfilePage() {
+  return (
+    <Suspense>
+      <EditProfilePageContent />
+    </Suspense>
   );
 }
 

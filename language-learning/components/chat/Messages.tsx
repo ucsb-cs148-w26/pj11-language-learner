@@ -75,7 +75,7 @@ export default function Messages({
 }: MessagesProps) {
   const endRef = useRef<HTMLDivElement | null>(null);
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
-  const [speakErrorId, setSpeakErrorId] = useState<string | null>(null);
+  const [speakError, setSpeakError] = useState<{ messageId: string; message: string } | null>(null);
   const speakTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
   const sorted = [...messages].sort((a, b) => a.sentAt.localeCompare(b.sentAt));
@@ -107,21 +107,34 @@ export default function Messages({
     return voices.some(v => v.lang === langTag || v.lang.startsWith(prefix + "-") || v.lang === prefix);
   }
 
-  function detectLangTag(text: string): string {
+  type LangDetectResult =
+    | { tag: string; kind: "detected" }
+    | { tag: string; kind: "too_short" }
+    | { tag: string; kind: "undetermined" };
+
+  function detectLangTag(text: string): LangDetectResult {
     // Fast Unicode checks for scripts with distinct character ranges
-    if (/[\u3040-\u309F\u30A0-\u30FF]/.test(text)) return "ja-JP";
-    if (/[\u4E00-\u9FFF]/.test(text)) return "zh-CN";
-    if (/[\uAC00-\uD7A3\u1100-\u11FF]/.test(text)) return "ko-KR";
-    if (/[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text)) return "ar-SA";
-    if (/[\u0400-\u04FF]/.test(text)) return "ru-RU";
+    if (/[\u3040-\u309F\u30A0-\u30FF]/.test(text)) return { tag: "ja-JP", kind: "detected" };
+    if (/[\u4E00-\u9FFF]/.test(text)) return { tag: "zh-CN", kind: "detected" };
+    if (/[\uAC00-\uD7A3\u1100-\u11FF]/.test(text)) return { tag: "ko-KR", kind: "detected" };
+    if (/[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text)) return { tag: "ar-SA", kind: "detected" };
+    if (/[\u0400-\u04FF]/.test(text)) return { tag: "ru-RU", kind: "detected" };
+    // Too short for franc to reliably detect
+    if (text.trim().length < 3) return { tag: "en-US", kind: "too_short" };
     // Use franc for Latin-script and anything else
     const code = franc(text, { minLength: 3, only: Object.keys(FRANC_TO_BCP47) });
-    return FRANC_TO_BCP47[code] ?? "";
+    const tag = FRANC_TO_BCP47[code];
+    if (tag) return { tag, kind: "detected" };
+    return { tag: "en-US", kind: "undetermined" };
+  }
+
+  function setErr(messageId: string, message: string) {
+    setSpeakError({ messageId, message });
   }
 
   function handleSpeak(messageId: string, text: string) {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) {
-      console.warn("Speech synthesis is not supported in this browser.");
+      setErr(messageId, "Your browser doesn't support text-to-speech.");
       return;
     }
 
@@ -135,21 +148,34 @@ export default function Messages({
     if (speakingMessageId === messageId && synth.speaking) {
       synth.cancel();
       setSpeakingMessageId(null);
-      setSpeakErrorId(null);
+      setSpeakError(null);
       return;
     }
 
     synth.cancel();
-    setSpeakErrorId(null);
+    setSpeakError(null);
 
-    const langTag = detectLangTag(text);
-    if (!langTag || !hasVoiceFor(langTag)) {
-      setSpeakErrorId(messageId);
+    const result = detectLangTag(text);
+
+    if (result.kind === "too_short") {
+      setErr(messageId, "Message is too short to detect language.");
+      return;
+    }
+
+    if (result.kind === "undetermined") {
+      setErr(messageId, "Language could not be identified.");
+      return;
+    }
+
+    // result.kind === "detected"
+    if (!hasVoiceFor(result.tag)) {
+      const langName = new Intl.DisplayNames(["en"], { type: "language" }).of(result.tag) ?? result.tag;
+      setErr(messageId, `Language detected: ${langName}, no matching voice installed.`);
       return;
     }
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = langTag;
+    utterance.lang = result.tag;
 
     let started = false;
     utterance.onstart = () => {
@@ -168,7 +194,7 @@ export default function Messages({
       }
       setSpeakingMessageId((current) => (current === messageId ? null : current));
       if (event.error !== "canceled" && event.error !== "interrupted") {
-        setSpeakErrorId(messageId);
+        setErr(messageId, "Speech failed.");
       }
     };
     synth.speak(utterance);
@@ -176,7 +202,7 @@ export default function Messages({
     speakTimeoutRef.current = setTimeout(() => {
       speakTimeoutRef.current = null;
       if (!started) {
-        setSpeakErrorId(messageId);
+        setErr(messageId, "Voice unavailable (may not be installed).");
         setSpeakingMessageId((current) => (current === messageId ? null : current));
       }
     }, 750);
@@ -220,7 +246,7 @@ export default function Messages({
               partnerAvatarUrl={partnerAvatarUrl}
               myNativeLanguage={myNativeLanguage}
               isSpeaking={speakingMessageId === m.id}
-              hasSpeakError={speakErrorId === m.id}
+              speakError={speakError?.messageId === m.id ? speakError.message : null}
               onSpeak={() => handleSpeak(m.id, m.text)}
             />
           </div>

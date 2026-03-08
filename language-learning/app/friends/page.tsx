@@ -5,7 +5,9 @@ import Link from "next/link";
 import FriendRequests, {
   type IncomingRequestItem,
   type OutgoingRequestItem,
+  type RequestUser,
 } from "@/components/friends/requests";
+import type { FriendListItem } from "@/components/friends/list";
 import FriendsList from "@/components/friends/list";
 
 type RequestsPayload = {
@@ -94,6 +96,7 @@ async function postJson<T = any>(url: string, payload: Record<string, unknown>):
 export default function RequestsPage() {
   const [state, setState] = useState<LoadState>({ status: "idle" });
   const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
+  const [optimisticFriends, setOptimisticFriends] = useState<FriendListItem[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -151,6 +154,21 @@ export default function RequestsPage() {
   const { requests, dashboard } = state.data;
   const convoIdByPartner = new Map(dashboard.chats.map((c) => [c.partnerId, c.id]));
 
+  const knownFriendIds = new Set(dashboard.friends.map((f) => f.id));
+  const mergedFriends = [
+    ...dashboard.friends.map((f) => {
+      const convoId = convoIdByPartner.get(f.id);
+      return {
+        id: f.id,
+        name: f.name,
+        profileHref: `/profile/${f.id}`,
+        chatHref: convoId ? `/chats?c=${encodeURIComponent(convoId)}` : "/chats",
+        avatarUrl: f.avatarUrl,
+      };
+    }),
+    ...optimisticFriends.filter((f) => !knownFriendIds.has(f.id)),
+  ];
+
   return (
     <div className="mx-auto w-full p-6 text-gray-text">
 
@@ -175,6 +193,18 @@ export default function RequestsPage() {
             onCancel={async (requestId) => {
               await postJson("/api/requests/cancel", { requestId });
             }}
+            onFriendAdded={(user: RequestUser, conversationId: string | null) => {
+              setOptimisticFriends((prev) => [
+                ...prev,
+                {
+                  id: user.id,
+                  name: user.name,
+                  profileHref: user.profileHref,
+                  chatHref: conversationId ? `/chats?c=${encodeURIComponent(conversationId)}` : "/chats",
+                  avatarUrl: user.avatarUrl,
+                },
+              ]);
+            }}
           />
         </section>
 
@@ -191,16 +221,7 @@ export default function RequestsPage() {
             showHeader={false}
             showSubHeader
             removingIds={removingIds}
-            friends={dashboard.friends.map((f) => {
-              const convoId = convoIdByPartner.get(f.id);
-              return {
-                id: f.id,
-                name: f.name,
-                profileHref: `/profile/${f.id}`,
-                chatHref: convoId ? `/chats?c=${encodeURIComponent(convoId)}` : "/chats",
-                avatarUrl: f.avatarUrl,
-              };
-            })}
+            friends={mergedFriends}
             onRemove={async (friendId) => {
               if (state.status !== "success") return;
 
