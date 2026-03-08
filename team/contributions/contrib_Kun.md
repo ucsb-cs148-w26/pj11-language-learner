@@ -32,7 +32,7 @@
   - Resolved database security vulnerabilities
   - Ensured proper access control for Supabase tables
 
-### Features
+### Fullstack Features
 * **Led the development of [phonetic pronunciation feature](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/177)**
   - Fetches message IDs
   - Detects message language automatically
@@ -50,12 +50,11 @@
 * **Documented retrospective**
   - [RETRO_01.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/retrospectives/RETRO_01.md)
 
-* **Authored project documentation**
+* **Authored documentation for preview bypass**
   - [Project doc](https://docs.google.com/document/d/12bR_fIMT6Sfb8ZqAwHO4UGjKN-k7G67H4C0hedCtdwA/edit?tab=t.0)
 
-* **Created design documentation**
+* **Created ProfileAPI design doc**
   - [Design doc](https://docs.google.com/document/d/1bR3xnFi6NT4vCoEXhvFsMZajdKARRHftYGmF2yp_Gbo/edit?tab=t.0)
 
 * **Active participation in team discussions**
-  - Contributed regularly to project coordination and technical discussions
   
