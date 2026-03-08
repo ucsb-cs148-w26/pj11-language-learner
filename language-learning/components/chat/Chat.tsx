@@ -46,7 +46,9 @@ type ChatProps = {
   selectedConversationId: string | null;
   onSelectConversationId?: (conversationId: string) => void;
   onSendMessage?: (conversationId: string, text: string) => Promise<void>;
+  onTypingChange?: (conversationId: string, isTyping: boolean) => Promise<void> | void;
   myNativeLanguage?: string | null;
+  isPartnerTyping?: boolean;
 };
 
 export default function Chat({
@@ -54,7 +56,9 @@ export default function Chat({
   selectedConversationId,
   onSelectConversationId,
   onSendMessage,
+  onTypingChange,
   myNativeLanguage,
+  isPartnerTyping = false,
 }: ChatProps) {
   function handleSelectConversation(id: string) {
     onSelectConversationId?.(id);
@@ -99,8 +103,13 @@ export default function Chat({
               messages={selected.messages}
               conversationId={selected.conversationId}
               myNativeLanguage={myNativeLanguage ?? null}
+              isPartnerTyping={isPartnerTyping}
               onSendMessage={async (conversationId, text) => {
-                await onSendMessage?.(conversationId, text); }}
+                await onSendMessage?.(conversationId, text);
+              }}
+              onTypingChange={(conversationId, typing) => {
+                return onTypingChange?.(conversationId, typing);
+              }}
             />
           ) : (
             <div className="flex h-full items-center justify-center rounded-2xl border bg-white px-6 text-gray-muted shadow-sm">

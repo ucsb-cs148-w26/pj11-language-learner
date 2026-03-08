@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Chat, { Conversation } from "@/components/chat/Chat";
 
@@ -16,6 +16,12 @@ type ProfileForChats = {
   nativeLanguage?: string | null;
 };
 
+type TypingEventPayload = {
+  userId?: string;
+  isTyping?: boolean;
+  ts?: number;
+};
+
 export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -26,6 +32,9 @@ export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [typingByConversationId, setTypingByConversationId] = useState<Record<string, boolean>>({});
+
+  const typingTimeoutsRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   const c = searchParams.get("c") ?? cFromUrl;
 
@@ -153,6 +162,24 @@ export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
         };
       })
     );
+
+    setTypingByConversationId((prev) =>
+      prev[conversationId] ? { ...prev, [conversationId]: false } : prev
+    );
+  }
+
+  async function handleTypingChange(conversationId: string, isTyping: boolean) {
+    if (!myUserId) return;
+
+    try {
+      await fetch(`/api/chats/room/${encodeURIComponent(conversationId)}/typing`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: myUserId, isTyping }),
+      });
+    } catch (error) {
+      console.error("typing update failed:", error);
+    }
   }
 
   // Load messages for initial selection once it is known
@@ -160,6 +187,63 @@ export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
     if (!selectedConversationId || !myUserId) return;
 
     loadMessagesForConversation(selectedConversationId, myUserId).catch(console.error);
+  }, [selectedConversationId, myUserId]);
+
+  useEffect(() => {
+    if (!selectedConversationId || !myUserId) return;
+
+    const conversationId = selectedConversationId;
+    const eventSource = new EventSource(
+      `/api/chats/room/${encodeURIComponent(conversationId)}/events?userId=${encodeURIComponent(myUserId)}`
+    );
+
+    const clearTypingTimeout = () => {
+      const timeout = typingTimeoutsRef.current[conversationId];
+      if (timeout) {
+        clearTimeout(timeout);
+        delete typingTimeoutsRef.current[conversationId];
+      }
+    };
+
+    const setPartnerTyping = (isTyping: boolean) => {
+      setTypingByConversationId((prev) =>
+        prev[conversationId] === isTyping ? prev : { ...prev, [conversationId]: isTyping }
+      );
+    };
+
+    const handleTyping = (event: MessageEvent<string>) => {
+      try {
+        const payload = JSON.parse(event.data) as TypingEventPayload;
+
+        if (payload.userId === myUserId || typeof payload.isTyping !== "boolean") {
+          return;
+        }
+
+        if (!payload.isTyping) {
+          clearTypingTimeout();
+          setPartnerTyping(false);
+          return;
+        }
+
+        setPartnerTyping(true);
+        clearTypingTimeout();
+        typingTimeoutsRef.current[conversationId] = setTimeout(() => {
+          setPartnerTyping(false);
+          delete typingTimeoutsRef.current[conversationId];
+        }, 4000);
+      } catch (error) {
+        console.error("invalid typing event:", error);
+      }
+    };
+
+    eventSource.addEventListener("typing", handleTyping as EventListener);
+
+    return () => {
+      clearTypingTimeout();
+      setPartnerTyping(false);
+      eventSource.removeEventListener("typing", handleTyping as EventListener);
+      eventSource.close();
+    };
   }, [selectedConversationId, myUserId]);
 
   if (loading) {
@@ -198,6 +282,10 @@ export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
           if (myUserId) loadMessagesForConversation(id, myUserId).catch(console.error);
         }}
         onSendMessage={handleSendMessage}
+        onTypingChange={handleTypingChange}
+        isPartnerTyping={
+          selectedConversationId ? Boolean(typingByConversationId[selectedConversationId]) : false
+        }
       />
     </div>
   );
