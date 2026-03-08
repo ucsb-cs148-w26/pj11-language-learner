@@ -21,7 +21,9 @@ type ChatLayoutProps = {
   messages: Message[];
   conversationId: string;
   onSendMessage: (conversationId: string, text: string) => Promise<void>;
+  onTypingChange?: (conversationId: string, isTyping: boolean) => Promise<void> | void;
   myNativeLanguage: string | null;
+  isPartnerTyping?: boolean;
 };
 
 export default function ChatRightPanel({
@@ -33,7 +35,9 @@ export default function ChatRightPanel({
   messages,
   conversationId,
   onSendMessage,
+  onTypingChange,
   myNativeLanguage,
+  isPartnerTyping = false,
 }: ChatLayoutProps) {
   return (
     <div className="h-[calc(100dvh-72px)] flex flex-col overflow-hidden">
@@ -44,6 +48,7 @@ export default function ChatRightPanel({
           partnerLastName={partnerLastName}
           partnerAvatarUrl={partnerAvatarUrl}
           targetLanguages={targetLanguages}
+          typingLabel={isPartnerTyping ? `${partnerFirstName} is typing...` : null}
         />
       </div>
 
@@ -58,7 +63,10 @@ export default function ChatRightPanel({
       </div>
 
       <div className="shrink-0 border-t border-gray-border-soft px-4 py-3">
-        <MessageComposer onSend={(text) => onSendMessage(conversationId, text)} />
+        <MessageComposer
+          onSend={(text) => onSendMessage(conversationId, text)}
+          onTypingChange={(isTyping) => onTypingChange?.(conversationId, isTyping)}
+        />
       </div>
     </div>
   );

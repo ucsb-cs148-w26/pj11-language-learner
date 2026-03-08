@@ -3,7 +3,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   RegExpMatcher,
   englishDataset,
@@ -29,21 +29,56 @@ export function censorProfanity(input: string): string {
 
 type MessageComposerProps = {
   onSend: (text: string) => Promise<void> | void;
+  onTypingChange?: (isTyping: boolean) => Promise<void> | void;
 };
 
-export default function MessageComposer({ onSend }: MessageComposerProps) {
+export default function MessageComposer({ onSend, onTypingChange }: MessageComposerProps) {
   const [text, setText] = useState("");
   const [suppressDisabledStyle, setSuppressDisabledStyle] = useState(false);
 
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isTypingRef = useRef(false);
+
   const canSend = text.trim().length > 0;
+
+  function clearTypingTimeout() {
+    if (!typingTimeoutRef.current) return;
+
+    clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = null;
+  }
+
+  function emitTyping(isTyping: boolean) {
+    if (isTypingRef.current === isTyping) return;
+
+    isTypingRef.current = isTyping;
+    void onTypingChange?.(isTyping);
+  }
+
+  function scheduleTypingStop() {
+    clearTypingTimeout();
+    typingTimeoutRef.current = setTimeout(() => {
+      emitTyping(false);
+      typingTimeoutRef.current = null;
+    }, 2200);
+  }
+
+  useEffect(() => {
+    return () => {
+      clearTypingTimeout();
+      emitTyping(false);
+    };
+  }, []);
 
   async function handleSend() {
     if (!canSend) return;
     const trimmed = text.trim();
     const sanitized = censorProfanity(trimmed);
+    clearTypingTimeout();
+    emitTyping(false);
     setText("");
     await onSend(sanitized);
-    setSuppressDisabledStyle(true)
+    setSuppressDisabledStyle(true);
   }
 
   async function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -55,6 +90,19 @@ export default function MessageComposer({ onSend }: MessageComposerProps) {
     }
   }
 
+  function handleChange(nextValue: string) {
+    setText(nextValue);
+
+    if (nextValue.trim().length === 0) {
+      clearTypingTimeout();
+      emitTyping(false);
+      return;
+    }
+
+    emitTyping(true);
+    scheduleTypingStop();
+  }
+
   return (
     <div className="flex items-stretch gap-3">
         {/* Text box */}
@@ -64,7 +112,11 @@ export default function MessageComposer({ onSend }: MessageComposerProps) {
             rows={1}
             placeholder="Type a message…"
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onBlur={() => {
+              clearTypingTimeout();
+              emitTyping(false);
+            }}
+            onChange={(e) => handleChange(e.target.value)}
             onKeyDown={handleKeyDown}
             className="
             h-12 w-full resize-none rounded-2xl px-4 py-3 text-sm leading-5
