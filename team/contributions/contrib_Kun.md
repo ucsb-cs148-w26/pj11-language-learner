@@ -17,12 +17,6 @@
   - Refactored backend code to enable multilingual functionality
   - Updated language handling logic across relevant endpoints
 
-* **Led development of the [phonetic pronunciation feature](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/177)**
-  - Fetches message IDs
-  - Detects message language automatically
-  - Generates phonetic pronunciation
-  - Added a **button bubble component next to message bubbles** to trigger pronunciation
-
 ### Infrastructure
 
 * **Developed a script for automatically fetching logs from failed deployments**
@@ -38,6 +32,13 @@
   - Resolved database security vulnerabilities
   - Ensured proper access control for Supabase tables
 
+### Features
+* **Led the development of [phonetic pronunciation feature](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/177)**
+  - Fetches message IDs
+  - Detects message language automatically
+  - Generates phonetic pronunciation
+  - Added a **button bubble component next to message bubbles** to trigger pronunciation
+
 ## Non-Code Contributions
 
 * **Documented retrospective**
@@ -51,3 +52,4 @@
 
 * **Active participation in team discussions**
   - Contributed regularly to project coordination and technical discussions
+  
