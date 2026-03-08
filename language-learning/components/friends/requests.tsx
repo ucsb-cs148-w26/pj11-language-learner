@@ -30,6 +30,7 @@ export default function FriendRequests({
   onAccept,
   onDeny,
   onCancel,
+  onFriendAdded,
 }: {
   incomingRequests?: IncomingRequestItem[];
   outgoingRequests?: OutgoingRequestItem[];
@@ -38,6 +39,7 @@ export default function FriendRequests({
   onAccept?: (requestId: string, name: string) => Promise<{ conversationId?: string | null } | void>;
   onDeny?: (requestId: string) => Promise<void> | void;
   onCancel?: (requestId: string) => Promise<void> | void;
+  onFriendAdded?: (user: RequestUser, conversationId: string | null) => void;
 }) {
   const router = useRouter();
 
@@ -97,12 +99,17 @@ export default function FriendRequests({
 
     await withRowLoading(setAcceptingIds, requestId, async () => {
       try {
+        const fromUser = incoming.find((r) => r.requestId === requestId)?.from ?? null;
         const result = await onAccept(requestId, name);
+        const conversationId = result?.conversationId ?? null;
 
         setIncoming((prev) => prev.filter((r) => r.requestId !== requestId));
 
-        if (result?.conversationId) {
-          setChatPrompt({ conversationId: result.conversationId, name });
+        if (fromUser) onFriendAdded?.(fromUser, conversationId);
+        window.dispatchEvent(new CustomEvent("requests-changed"));
+
+        if (conversationId) {
+          setChatPrompt({ conversationId, name });
         }
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Failed to accept request.";
@@ -119,6 +126,7 @@ export default function FriendRequests({
       try {
         await onDeny(requestId);
         setIncoming((prev) => prev.filter((r) => r.requestId !== requestId));
+        window.dispatchEvent(new CustomEvent("requests-changed"));
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Failed to deny request.";
         setError(msg);
@@ -162,7 +170,7 @@ export default function FriendRequests({
       )}
 
       {chatPrompt && (
-        <div className="mx-4 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-border bg-off-white px-4 py-3 text-sm text-gray-text">
+        <div className="mx-4 mt-4 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-border bg-off-white px-4 py-3 text-sm text-gray-text">
           <div>
             You’re now friends with <span className="font-semibold">{chatPrompt.name}</span>. Open
             your chat?
@@ -188,7 +196,14 @@ export default function FriendRequests({
 
       {showSubHeader && (
         <div className="grid grid-cols-[1fr_auto_auto] items-center gap-3 bg-off-white px-4 py-3 text-sm font-semibold text-gray-text">
-          <div className="pl-2">Incoming</div>
+          <div className="flex items-center gap-2 pl-2">
+            Incoming
+            {incoming.length > 0 && (
+              <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-bold leading-none text-white">
+                {incoming.length}
+              </span>
+            )}
+          </div>
           <div className="pr-[40px] text-right">Accept</div>
           <div className="pr-[40px] text-right">Deny</div>
         </div>

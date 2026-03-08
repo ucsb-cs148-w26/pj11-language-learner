@@ -134,6 +134,16 @@ function Landing() {
 
         <FeatureCard
           icon={
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0z"/>
+            </svg>
+          }
+          title="AI Tutor"
+          body="Get instant grammar feedback on your messages from an AI language tutor."
+        />
+
+        <FeatureCard
+          icon={
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
               <path d="M4 12c2.5-3 5.2-4.5 8-4.5s5.5 1.5 8 4.5c-2.5 3-5.2 4.5-8 4.5S6.5 15 4 12Z" />
               <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
@@ -143,7 +153,7 @@ function Landing() {
           body="See a pronunciation guide for the language you are learning in every message sent."
         />
 
-        <FeatureCard
+        {/* <FeatureCard
           icon={
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
@@ -151,7 +161,7 @@ function Landing() {
           }
           title="Make friends"
           body="Language learning is more fun with friends. Chat, learn, and get to know other UCSB students."
-        />
+        /> */}
 
       </section>
     </div>

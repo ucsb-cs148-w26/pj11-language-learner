@@ -23,6 +23,7 @@ function HeaderContent() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [pendingRequestCount, setPendingRequestCount] = useState(0);
 
   const isNewUserOnboarding = searchParams.get("new") === "true";
 
@@ -34,18 +35,28 @@ function HeaderContent() {
   ];
 
   useEffect(() => {
-    let currentUserId: string | null = null;
+    const fetchPendingCount = async () => {
+      try {
+        const res = await fetch("/api/requests");
+        if (res.ok) {
+          const body = await res.json();
+          setPendingRequestCount(body.incomingRequests?.length ?? 0);
+        }
+      } catch {
+        // ignore
+      }
+    };
 
-    const getProfile = async (userId: string) => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("profile_picture_url")
-        .eq("user_id", userId)
-        .single();
-
-      if (!error && data) {
-        setUserProfile({ profilePicture: data.profile_picture_url });
-      } else {
+    const getProfile = async () => {
+      try {
+        const res = await fetch("/api/profile/me");
+        if (res.ok) {
+          const body = await res.json();
+          setUserProfile({ profilePicture: body.profile?.profilePicture ?? null });
+        } else {
+          setUserProfile(null);
+        }
+      } catch {
         setUserProfile(null);
       }
     };
@@ -53,12 +64,12 @@ function HeaderContent() {
     supabase.auth.getSession().then(async ({ data }) => {
       const currentSession = data.session ?? null;
       setSession(currentSession);
-      currentUserId = currentSession?.user?.id ?? null;
-
       if (currentSession?.user) {
-        getProfile(currentSession.user.id);
+        getProfile();
+        fetchPendingCount();
       } else {
         setUserProfile(null);
+        setPendingRequestCount(0);
       }
 
       setLoading(false);
@@ -67,12 +78,12 @@ function HeaderContent() {
     const { data: sub } = supabase.auth.onAuthStateChange(
       async (_event, newSession) => {
         setSession(newSession);
-        currentUserId = newSession?.user?.id ?? null;
-
         if (newSession?.user) {
-          getProfile(newSession.user.id);
+          getProfile();
+          fetchPendingCount();
         } else {
           setUserProfile(null);
+          setPendingRequestCount(0);
         }
 
         setLoading(false);
@@ -80,14 +91,20 @@ function HeaderContent() {
     );
 
     function handleAvatarChanged() {
-      if (currentUserId) getProfile(currentUserId);
+      getProfile();
+    }
+
+    function handleRequestsChanged() {
+      fetchPendingCount();
     }
 
     window.addEventListener("avatar-changed", handleAvatarChanged);
+    window.addEventListener("requests-changed", handleRequestsChanged);
 
     return () => {
       sub.subscription.unsubscribe();
       window.removeEventListener("avatar-changed", handleAvatarChanged);
+      window.removeEventListener("requests-changed", handleRequestsChanged);
     };
   }, []);
 
@@ -149,6 +166,13 @@ function HeaderContent() {
                   }`}
                 >
                   {label}
+
+                  {/* Friend request badge */}
+                  {label === "Friends" && pendingRequestCount > 0 && (
+                    <span className="absolute -top-1 -right-4 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold leading-none text-white">
+                      {pendingRequestCount}
+                    </span>
+                  )}
 
                   {/* Active underline */}
                   {active && (
