@@ -19,12 +19,13 @@ export async function POST(req: NextRequest) {
     Review the user's message for mistakes.
 
     Rules:
+    - Identify which language the user is learning, but do not verbalize it.
     - Respond entirely in ${replyLang}.
     - Do not greet the user.
     - Do not introduce your answer.
     - Do not lead with things like "You made...", "There are...", "This sentence has...", or "I found...".
     - Start immediately with an explanation of the mistake, and so on for all mistakes.
-    - If the message is correct, say only: "Nice work!"
+    - If the user's message is perfect, with no grammatical or spelling errors, say only: "Nice work!"
     - Be brief.
 
     Message: "${text.replace(/"/g, '\\"')}"`;

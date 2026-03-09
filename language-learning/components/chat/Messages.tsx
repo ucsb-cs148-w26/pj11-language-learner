@@ -4,20 +4,34 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { franc } from "franc";
+import { detectAll } from "tinyld/light";
 import MessageBubble from "./MessageBubble";
 
-const FRANC_TO_BCP47: Record<string, string> = {
-  // Latin-script languages
-  eng: "en-US",
-  spa: "es-ES", fra: "fr-FR", deu: "de-DE", por: "pt-PT",
-  ita: "it-IT", nld: "nl-NL", pol: "pl-PL", swe: "sv-SE",
-  nor: "nb-NO", dan: "da-DK", fin: "fi-FI", tur: "tr-TR",
-  ron: "ro-RO", ces: "cs-CZ", slk: "sk-SK", hun: "hu-HU",
-  // Non-Latin (fallback in case Unicode check missed something)
-  cmn: "zh-CN", jpn: "ja-JP", kor: "ko-KR",
-  ara: "ar-SA", rus: "ru-RU", hin: "hi-IN", ben: "bn-BD",
-  vie: "vi-VN", tha: "th-TH",
+// Maps lowercase display language names (as stored in the DB) to ISO 639-1 codes
+const LANG_NAME_TO_ISO639: Record<string, string> = {
+  english: "en", spanish: "es", french: "fr", german: "de", portuguese: "pt",
+  italian: "it", dutch: "nl", polish: "pl", swedish: "sv", norwegian: "no",
+  danish: "da", finnish: "fi", turkish: "tr", romanian: "ro", czech: "cs",
+  slovak: "sk", hungarian: "hu", japanese: "ja", chinese: "zh", korean: "ko",
+  arabic: "ar", russian: "ru", hindi: "hi", bengali: "bn", vietnamese: "vi",
+  thai: "th", catalan: "ca", hebrew: "he", greek: "el", ukrainian: "uk",
+  croatian: "hr", serbian: "sr", bulgarian: "bg", latvian: "lv", lithuanian: "lt",
+  estonian: "et", slovenian: "sl", malay: "ms", indonesian: "id", tagalog: "tl",
+  swahili: "sw", persian: "fa", farsi: "fa", urdu: "ur", mandarin: "zh",
+  "mandarin chinese": "zh", "portuguese (brazil)": "pt", "portuguese (portugal)": "pt",
+};
+
+// Maps ISO 639-1 codes to BCP-47 language tags for SpeechSynthesis
+const ISO639_TO_BCP47: Record<string, string> = {
+  en: "en-US", es: "es-ES", fr: "fr-FR", de: "de-DE", pt: "pt-PT",
+  it: "it-IT", nl: "nl-NL", pl: "pl-PL", sv: "sv-SE", no: "nb-NO",
+  da: "da-DK", fi: "fi-FI", tr: "tr-TR", ro: "ro-RO", cs: "cs-CZ",
+  sk: "sk-SK", hu: "hu-HU", ja: "ja-JP", zh: "zh-CN", ko: "ko-KR",
+  ar: "ar-SA", ru: "ru-RU", hi: "hi-IN", bn: "bn-BD", vi: "vi-VN",
+  th: "th-TH", ca: "ca-ES", he: "he-IL", el: "el-GR", uk: "uk-UA",
+  hr: "hr-HR", sr: "sr-RS", bg: "bg-BG", lv: "lv-LV", lt: "lt-LT",
+  et: "et-EE", sl: "sl-SI", ms: "ms-MY", id: "id-ID", tl: "tl-PH",
+  sw: "sw-KE", fa: "fa-IR", ur: "ur-PK",
 };
 
 export type ChatMessage = {
@@ -33,6 +47,7 @@ type MessagesProps = {
   partnerLastName: string;
   partnerAvatarUrl: string | null;
   myNativeLanguage: string | null;
+  targetLanguages: string[];
 };
 
 function dateKey(d: Date) {
@@ -72,6 +87,7 @@ export default function Messages({
   partnerLastName,
   partnerAvatarUrl,
   myNativeLanguage,
+  targetLanguages,
 }: MessagesProps) {
   const endRef = useRef<HTMLDivElement | null>(null);
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
@@ -112,18 +128,45 @@ export default function Messages({
     | { tag: string; kind: "too_short" }
     | { tag: string; kind: "undetermined" };
 
+  // Convert hint language display names (e.g. "Spanish") to ISO 639-1 codes (e.g. "es")
+  function hintIsoCodes(): string[] {
+    const names = [
+      ...(myNativeLanguage ? [myNativeLanguage] : []),
+      ...targetLanguages,
+    ];
+    return names
+      .map((n) => LANG_NAME_TO_ISO639[n.toLowerCase().trim()])
+      .filter((code): code is string => !!code);
+  }
+
   function detectLangTag(text: string): LangDetectResult {
     // Fast Unicode checks for scripts with distinct character ranges
     if (/[\u3040-\u309F\u30A0-\u30FF]/.test(text)) return { tag: "ja-JP", kind: "detected" };
+    if (/[\uAC00-\uD7A3]/.test(text)) return { tag: "ko-KR", kind: "detected" };
     if (/[\u4E00-\u9FFF]/.test(text)) return { tag: "zh-CN", kind: "detected" };
-    if (/[\uAC00-\uD7A3\u1100-\u11FF]/.test(text)) return { tag: "ko-KR", kind: "detected" };
     if (/[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text)) return { tag: "ar-SA", kind: "detected" };
     if (/[\u0400-\u04FF]/.test(text)) return { tag: "ru-RU", kind: "detected" };
-    // Too short for franc to reliably detect
-    if (text.trim().length < 3) return { tag: "en-US", kind: "too_short" };
-    // Use franc for Latin-script and anything else
-    const code = franc(text, { minLength: 3, only: Object.keys(FRANC_TO_BCP47) });
-    const tag = FRANC_TO_BCP47[code];
+
+    const trimmed = text.trim();
+    if (trimmed.length < 10) return { tag: "en-US", kind: "too_short" };
+
+    const results = detectAll(trimmed);
+    if (results.length === 0) return { tag: "en-US", kind: "undetermined" };
+
+    const top = results[0];
+
+    // Prefer a hint language if it appears in results with >= 50% of the top accuracy.
+    // This biases toward known languages without overriding a confident detection.
+    const hints = new Set(hintIsoCodes());
+    if (hints.size > 0) {
+      const hintMatch = results.find((r) => hints.has(r.lang));
+      if (hintMatch && hintMatch.accuracy >= top.accuracy * 0.5) {
+        const tag = ISO639_TO_BCP47[hintMatch.lang];
+        if (tag) return { tag, kind: "detected" };
+      }
+    }
+
+    const tag = ISO639_TO_BCP47[top.lang];
     if (tag) return { tag, kind: "detected" };
     return { tag: "en-US", kind: "undetermined" };
   }

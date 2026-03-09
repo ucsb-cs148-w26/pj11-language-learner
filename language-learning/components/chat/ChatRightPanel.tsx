@@ -59,6 +59,7 @@ export default function ChatRightPanel({
             partnerLastName={partnerLastName}
             partnerAvatarUrl={partnerAvatarUrl}
             myNativeLanguage={myNativeLanguage}
+            targetLanguages={targetLanguages}
         />
       </div>
 

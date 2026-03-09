@@ -253,8 +253,8 @@ export default function MessageBubble({
                 </button>
               )}
 
-              {/* Translate button — only for partner messages */}
-              {!isMe && myNativeLanguage && (
+              {/* Translate button */}
+              { myNativeLanguage && (
                 <button
                   type="button"
                   onClick={handleTranslateClick}
@@ -369,7 +369,7 @@ export default function MessageBubble({
         ) : null}
 
         {grammarOpen && grammar && (
-          <div className="mt-1 w-full min-w-0 whitespace-normal break-words text-xs text-gray-muted">
+          <div className="mt-1 w-fit text-xs text-gray-muted">
             <span className="font-medium not-italic">AI Tutor: </span>
             {grammar}
           </div>
