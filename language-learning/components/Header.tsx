@@ -126,7 +126,7 @@ function HeaderContent() {
             alt="App Logo"
             height={60}
             width={120}
-            className="h-auto w-[120px] bg-transparent cursor-pointer"
+            className="h-auto w-[120px] bg-transparent"
             priority
           />
         </div>
