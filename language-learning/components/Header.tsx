@@ -13,9 +13,6 @@ type UserProfile = {
   profilePicture: string | null;
 };
 
-// logo color: #0f78c1
-// highlight color: #539bcd
-
 function HeaderContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -85,7 +82,7 @@ function HeaderContent() {
       if (currentSession?.user) {
         getProfile();
         fetchPendingCount();
-        if (!isChatsPage) fetchUnreadChatConversationCount(); // changed
+        if (!isChatsPage) fetchUnreadChatConversationCount(); 
       } else {
         setUserProfile(null);
         setPendingRequestCount(0);
@@ -101,7 +98,7 @@ function HeaderContent() {
         if (newSession?.user) {
           getProfile();
           fetchPendingCount();
-          if (!isChatsPage) fetchUnreadChatConversationCount(); // changed
+          if (!isChatsPage) fetchUnreadChatConversationCount();
         } else {
           setUserProfile(null);
           setPendingRequestCount(0);

@@ -59,6 +59,10 @@ type ConversationParticipantRow = {
   user_id: string;
 };
 
+type DbUnreadMessage = {
+  conversation_id: string;
+};
+
 function levelToDisplay(level: string | null | undefined): "Beginner" | "Intermediate" | "Advanced" | null {
   if (!level) return null;
   const lower = level.toLowerCase();
@@ -147,6 +151,25 @@ export async function GET() {
       return NextResponse.json({ error: partsErr.message || "Failed to load chat participants" }, { status: 500 });
     }
 
+    const unreadByConvo = new Map<string, number>();
+    const { data: unreadRows, error: unreadErr } = await supabase
+      .from("messages")
+      .select("conversation_id")
+      .in("conversation_id", convoIds)
+      .neq("sender_id", userId)
+      .is("read_at", null);
+
+    if (unreadErr) {
+      return NextResponse.json(
+        { error: unreadErr.message || "Failed to load unread counts" },
+        { status: 500 }
+      );
+    }
+
+    for (const row of (unreadRows as DbUnreadMessage[] | null) ?? []) {
+      unreadByConvo.set(row.conversation_id, (unreadByConvo.get(row.conversation_id) ?? 0) + 1);
+    }
+
     const partnerByConvo = new Map<string, string>();
     for (const p of (parts as ConversationParticipantRow[] | null) ?? []) {
       if (p.user_id !== userId) {
@@ -187,7 +210,7 @@ export async function GET() {
           lastMessage: c.last_message_text,
           lastMessageAt: c.last_message_at,
           createdAt: c.created_at,
-          unreadCount: 0,
+          unreadCount: unreadByConvo.get(c.id) ?? 0, // CHANGED
         };
       })
       .filter((c) => c.partnerId !== "");
@@ -263,5 +286,5 @@ export async function GET() {
   }
 
   const payload: DashboardData = { user: userProfile, friends, chats };
-  return NextResponse.json(payload);
+  return NextResponse.json(payload, { headers: { "Cache-Control": "no-store" } }); // CHANGED
 }
