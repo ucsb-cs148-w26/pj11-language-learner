@@ -5,12 +5,13 @@ import Kuroshiro from "kuroshiro";
 import KuromojiAnalyzer from "kuroshiro-analyzer-kuromoji";
 import { pinyin } from "pinyin-pro";
 import { dictionary } from "cmu-pronouncing-dictionary";
+import { transliterate } from "transliteration";
 
 export const runtime = "nodejs";
 
 /* ---------------- Types ---------------- */
 
-type LangType = "cmn" | "jpn" | "eng" | "und";
+type LangType = "cmn" | "jpn" | "eng" | "spa" | "kor" | "rus" | "und";
 
 type MessageRow = {
   id: string;
@@ -27,13 +28,13 @@ type PhoneticResponse = {
   pronunciation: string;
 };
 
-/* ---------------- Language Detection ---------------- */
-
-const FRANC_WHITELIST: LangType[] = ["cmn", "jpn", "eng"];
+/* ---------------- Utils ---------------- */
 
 function normalizeText(text: string) {
   return text.replace(/\s+/g, " ").trim();
 }
+
+/* ---------------- IPA mapping ---------------- */
 
 const ARPABET_TO_IPA: Record<string, string> = {
   AA: "ɑ",
@@ -87,43 +88,92 @@ function arpabetToIPA(arpabet: string): string {
     .join("");
 }
 
+/* ---------------- Script Detection ---------------- */
+
 function hasKana(text: string): boolean {
-  // Hiragana: 3040–309F
-  // Katakana: 30A0–30FF
   return /[\u3040-\u309F\u30A0-\u30FF]/.test(text);
 }
 
 function hasHan(text: string): boolean {
-  // CJK Unified Ideographs
   return /[\u4E00-\u9FFF]/.test(text);
 }
+
+function hasHangul(text: string): boolean {
+  return /[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/.test(text);
+}
+
+function hasCyrillic(text: string): boolean {
+  return /[\u0400-\u04FF]/.test(text);
+}
+
+function hasSpanishMarkers(text: string): boolean {
+  return /[ñÑáéíóúÁÉÍÓÚüÜ¡¿]/.test(text);
+}
+
+function hasRussianMarkers(text: string): boolean {
+  return /[ЁёЫыЭэЪъ]/.test(text);
+}
+
+/* ---------------- Korean helpers ---------------- */
+
+type HangulDecomposed = {
+  initial: number;
+  medial: number;
+  final: number;
+};
+
+function decomposeHangulSyllable(ch: string): HangulDecomposed | null {
+  if (!ch) return null;
+  const code = ch.charCodeAt(0);
+
+  if (code < 0xac00 || code > 0xd7a3) return null;
+
+  const sIndex = code - 0xac00;
+  const initial = Math.floor(sIndex / 588);
+  const medial = Math.floor((sIndex % 588) / 28);
+  const final = sIndex % 28;
+
+  return { initial, medial, final };
+}
+
+/* ---------------- Language Detection ---------------- */
 
 function detectLangType(textRaw: string): LangType {
   const text = normalizeText(textRaw);
 
   if (!text) return "und";
 
-  // Japanese kana detection
-  if (hasKana(text)) {
-    return "jpn";
-  }
+  if (hasKana(text)) return "jpn";
+  if (hasHangul(text)) return "kor";
+  if (hasHan(text)) return "cmn";
 
-  // Chinese Han detection
-  if (hasHan(text)) {
-    return "cmn";
-  }
+  // Strong Spanish character-based detection
+  if (hasSpanishMarkers(text)) return "spa";
 
-  // fallback to franc
+  // Strong Russian character-based detection
+  if (hasRussianMarkers(text)) return "rus";
+
   const code = franc(text, {
-    only: ["cmn", "jpn", "eng"],
+    only: ["cmn", "jpn", "eng", "spa", "kor", "rus"],
     minLength: 3,
   });
 
-  if (code === "cmn" || code === "jpn" || code === "eng") {
+  if (
+    code === "cmn" ||
+    code === "jpn" ||
+    code === "eng" ||
+    code === "spa" ||
+    code === "kor" ||
+    code === "rus"
+  ) {
     return code;
   }
 
+  // Fallback: any Cyrillic text is treated as Russian
+  if (hasCyrillic(text)) return "rus";
+
   if (/^[a-zA-Z\s]+$/.test(text)) return "eng";
+
   return "und";
 }
 
@@ -153,23 +203,45 @@ async function getKuroshiro() {
   return kuroshiroInstance!;
 }
 
-/* ---------------- Pronunciation ---------------- */
+/* ---------------- Pronunciation Engine ---------------- */
 
-async function toPronunciation(textRaw: string, type: LangType): Promise<string> {
+async function toPronunciation(
+  textRaw: string,
+  type: LangType
+): Promise<string> {
   const text = normalizeText(textRaw);
   if (!text) return "";
 
+  /* Chinese */
   if (type === "cmn") {
     return pinyin(text, { toneType: "symbol", type: "array" }).join(" ");
   }
 
+  /* Japanese */
   if (type === "jpn") {
     const ks = await getKuroshiro();
     const romaji = await ks.convert(text, { to: "romaji" });
     const kana = await ks.convert(text, { to: "hiragana" });
+
     return `${romaji} (${kana})`;
   }
 
+  /* Korean */
+  if (type === "kor") {
+    return transliterate(text);
+  }
+
+  /* Russian */
+  if (type === "rus") {
+    return transliterate(text);
+  }
+
+  /* Spanish */
+  if (type === "spa") {
+    return transliterate(text);
+  }
+
+  /* English → IPA */
   if (type === "eng") {
     return text
       .toLowerCase()
@@ -183,7 +255,8 @@ async function toPronunciation(textRaw: string, type: LangType): Promise<string>
       .join(" ");
   }
 
-  return text;
+  /* All other languages */
+  return transliterate(text);
 }
 
 /* ---------------- DB Loader ---------------- */
@@ -201,7 +274,6 @@ async function getMessageTextById(
   if (error || !data) return null;
 
   const row = data as MessageRow;
-
   return row.body;
 }
 
@@ -216,19 +288,13 @@ export async function GET(
   const { messageId } = await context.params;
 
   if (!messageId) {
-    return NextResponse.json(
-      { error: "missing_messageId" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "missing_messageId" }, { status: 400 });
   }
 
   const text = await getMessageTextById(supabase, messageId);
 
   if (!text) {
-    return NextResponse.json(
-      { error: "message_not_found" },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "message_not_found" }, { status: 404 });
   }
 
   const type = detectLangType(text);

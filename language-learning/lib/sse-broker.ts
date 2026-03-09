@@ -45,7 +45,7 @@ class SseBroker {
         this.removeClient(roomId, client.id);
       }
     }
-    console.log(this.rooms)
+    // console.log(this.rooms)
   }
 }
 

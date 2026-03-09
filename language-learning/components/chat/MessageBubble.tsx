@@ -11,7 +11,7 @@ import VoiceMessage from "./VoiceMessage";
 type PhoneticResponse = {
   messageId: string;
   text: string;
-  type: "cmn" | "jpn" | "eng" | "und";
+  type: "cmn" | "jpn" | "eng" | "kor" | "rus" | "und";
   pronunciation: string;
 };
 
@@ -116,6 +116,11 @@ export default function MessageBubble({
         return "Japanese";
       case "eng":
         return "English";
+      case "kor":
+        return "Korean";
+      case "rus":
+        return "Russian";
+      case "und":
       default:
         return "Unsupported";
     }
@@ -381,7 +386,7 @@ export default function MessageBubble({
           </div>
         )}
 
-        {phoneticOpen && phonetic ? (
+        {/* {phoneticOpen && phonetic ? (
           phonetic.type === "und" ? (
             <div className="mt-1 w-fit text-xs text-gray-muted">
               Language not supported for phonetics
@@ -394,6 +399,14 @@ export default function MessageBubble({
               {phonetic.pronunciation}
             </div>
           )
+        ) : null} */}
+        {phoneticOpen && phonetic && phonetic.pronunciation ? (
+          <div className="mt-1 w-fit text-xs italic text-gray-muted">
+            <span className="font-medium not-italic">Phonetic </span>
+            ({labelForType(phonetic.type)})
+            {`: `}
+            {phonetic.pronunciation}
+          </div>
         ) : null}
 
         {grammarOpen && grammar && (
