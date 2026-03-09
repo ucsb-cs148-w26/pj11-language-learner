@@ -19,14 +19,14 @@ import Link from 'next/link'
 type Message = {
   id: string;
   sender: "me" | "partner";
-  text: string;
+  content: string;
+  type: "text" | "voice";
   sentAt: string;
 };
 
 export type Conversation = {
   conversationId: string;
   createdAt: string;
-
   partnerId: string;
   partnerFirstName: string;
   partnerLastName: string;

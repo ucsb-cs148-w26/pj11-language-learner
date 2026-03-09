@@ -19,9 +19,8 @@ export default function VoiceMessage({ url, isMine }: { url: string; isMine: boo
     <div className={`flex flex-col gap-1 ${isMine ? "items-end" : "items-start"}`}>
       <div
         className={[
-          "rounded-2xl px-3 py-2 shadow-sm border",
-          // light-blue bubble style (similar feel to text bubble)
-          "bg-blue-soft border-blue/20",
+          // "rounded-2xl px-3 py-2 shadow-sm border",
+          // "bg-blue-soft border-blue/20",
         ].join(" ")}
       >
         <audio
