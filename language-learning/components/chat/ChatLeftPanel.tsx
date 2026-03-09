@@ -39,6 +39,25 @@ function formatRelative(iso: string | null) {
   return `${days}d`;
 }
 
+function formatLastMessagePreview(lastMessageText: string) {
+  const text = (lastMessageText || "").trim();
+  if (!text) return "No messages yet";
+
+  const lower = text.toLowerCase();
+
+  // new formats to detect voice
+  if (lower.startsWith("voice:")) return "Voice message";
+  if (lower.includes("/storage/v1/object/sign/voice/")) return "Voice message";
+  if (lower.includes("/storage/v1/object/authenticated/voice/")) return "Voice message";
+  if (lower.includes("/storage/v1/object/public/voice/")) return "Voice message";
+
+  const looksLikeUrl = /^https?:\/\//i.test(text);
+  const looksLikeAudio = /\.(webm|m4a|mp3|wav|ogg|aac|mp4)(\?|$)/i.test(lower);
+  if (looksLikeUrl && looksLikeAudio) return "Voice message";
+
+  return text;
+}
+
 export default function ChatLeftPanel({
   chats,
   selectedConversationId,
@@ -56,10 +75,10 @@ export default function ChatLeftPanel({
   });
 
   return (
-    <aside 
+    <aside
       className={[
         "h-full min-h-0 bg-white overflow-hidden",
-        outerBorder? "border-x border-b border-gray-border-soft" : "border-0",
+        outerBorder ? "border-x border-b border-gray-border-soft" : "border-0",
         containerClassName,
       ].join(" ")}
     >
@@ -95,7 +114,7 @@ export default function ChatLeftPanel({
 
                 <div className="mt-0.5 flex items-center justify-between gap-3">
                   <div className="truncate text-sm text-gray-muted-2">
-                    {c.lastMessageText || "No messages yet"}
+                    {formatLastMessagePreview(c.lastMessageText)}
                   </div>
 
                   {c.unreadCount > 0 ? (

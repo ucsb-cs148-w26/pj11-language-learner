@@ -8,7 +8,10 @@ type ApiMessage = {
   id: string;
   conversation_id: string;
   sender_id: string;
-  body: string;
+  body?: string;
+  content?: string;
+  type?: "text" | "voice";
+  voice_path?: string | null;
   created_at: string;
 };
 
@@ -21,6 +24,41 @@ type TypingEventPayload = {
   isTyping?: boolean;
   ts?: number;
 };
+
+type RealtimeMessagePayload = {
+  id?: string;
+  conversationId?: string;
+  senderId?: string;
+  content?: string;
+  type?: "text" | "voice";
+  createdAt?: string;
+};
+
+type UiMessage = {
+  id: string;
+  sender: "me" | "partner";
+  text: string;
+  content: string;
+  type: "text" | "voice";
+  sentAt: string;
+};
+
+function toUiMessage(args: {
+  id: string;
+  sender: "me" | "partner";
+  content: string;
+  type: "text" | "voice";
+  sentAt: string;
+}): UiMessage {
+  return {
+    id: args.id,
+    sender: args.sender,
+    text: args.content,
+    content: args.content,
+    type: args.type,
+    sentAt: args.sentAt,
+  };
+}
 
 export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
   const router = useRouter();
@@ -112,12 +150,22 @@ export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
 
     const data = (body?.messages ?? []) as ApiMessage[];
 
-    const ui = data.map((m) => ({
-      id: m.id,
-      sender: m.sender_id === userId ? ("me" as const) : ("partner" as const),
-      text: m.body,
-      sentAt: m.created_at,
-    }));
+    const ui = data.map((m) => {
+      const resolvedContent = m.content ?? m.body ?? "";
+      const inferredType: "text" | "voice" =
+        m.type === "voice" || !!m.voice_path || resolvedContent.startsWith("voice:")
+          ? "voice"
+          : "text";
+
+      return {
+        id: m.id,
+        sender: m.sender_id === userId ? ("me" as const) : ("partner" as const),
+        text: resolvedContent,      // required by Conversation.Message
+        content: resolvedContent,   // keep new field too
+        type: inferredType,
+        sentAt: m.created_at,
+      };
+    });
 
     setConversations((prev) =>
       prev.map((c) =>
@@ -131,35 +179,51 @@ export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
     );
   }
 
-  async function handleSendMessage(conversationId: string, text: string) {
-    if (!myUserId) return;
-
-    const res = await fetch(`/api/chats/${encodeURIComponent(conversationId)}/messages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
-    });
-    const body = await res.json();
-    if (!res.ok) throw new Error(body?.error || "Failed to send message");
-
+  function appendMessage(conversationId: string, message: UiMessage) {
     setConversations((prev) =>
       prev.map((c) => {
         if (c.conversationId !== conversationId) return c;
+        if (c.messages.some((m) => m.id === message.id)) return c; // dedupe
+        return { ...c, messages: [...c.messages, message] };
+      })
+    );
+  }
 
-        return {
-          ...c,
-          messages: [
-            ...c.messages,
-            {
-              id: body?.message?.id ?? `tmp-${Date.now()}`,
-              sender: "me",
-              text,
-              sentAt: body?.message?.created_at ?? new Date().toISOString(),
-            },
-          ],
-          lastMessageText: text,
-          lastMessageAt: body?.message?.created_at ?? new Date().toISOString(),
-        };
+  async function handleSendMessage(
+    conversationId: string,
+    content: string,
+    type: "text" | "voice" = "text",
+    extras?: { voicePath?: string; voiceBucket?: string }
+  ) {
+    const res = await fetch(`/api/chats/${conversationId}/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        content,
+        type,
+        voicePath: extras?.voicePath,
+        voiceBucket: extras?.voiceBucket,
+      }),
+    });
+
+    const body = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      console.error("send failed:", body);
+      throw new Error(body?.error || "Failed to send message");
+    }
+
+    const resolvedContent = body?.message?.content ?? content;
+    const resolvedType = (body?.message?.type as "text" | "voice") ?? type;
+
+    appendMessage(
+      conversationId,
+      toUiMessage({
+        id: body?.message?.id ?? `tmp-${Date.now()}`,
+        sender: "me",
+        content: resolvedContent,
+        type: resolvedType,
+        sentAt: body?.message?.created_at ?? new Date().toISOString(),
       })
     );
 
@@ -236,12 +300,48 @@ export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
       }
     };
 
+    eventSource.onopen = () => {
+      console.log("[sse] connected:", conversationId);
+    };
+
+    eventSource.onerror = (err) => {
+      console.error("[sse] error:", conversationId, err);
+      // optional safety refresh if socket is unstable
+      if (myUserId) loadMessagesForConversation(conversationId, myUserId).catch(console.error);
+    };
+
+    const handleMessage = (event: MessageEvent<string>) => {
+      try {
+        const payload = JSON.parse(event.data) as RealtimeMessagePayload;
+        if (!payload?.id || !payload?.conversationId) return;
+        if (payload.conversationId !== conversationId) return;
+
+        const resolvedContent = payload.content ?? "";
+        const resolvedType: "text" | "voice" = payload.type === "voice" ? "voice" : "text";
+
+        appendMessage(
+          conversationId,
+          toUiMessage({
+            id: payload.id,
+            sender: payload.senderId === myUserId ? "me" : "partner",
+            content: resolvedContent,
+            type: resolvedType,
+            sentAt: payload.createdAt ?? new Date().toISOString(),
+          })
+        );
+      } catch (error) {
+        console.error("invalid message event:", error);
+      }
+    };
+
     eventSource.addEventListener("typing", handleTyping as EventListener);
+    eventSource.addEventListener("message", handleMessage as EventListener);
 
     return () => {
       clearTypingTimeout();
       setPartnerTyping(false);
       eventSource.removeEventListener("typing", handleTyping as EventListener);
+      eventSource.removeEventListener("message", handleMessage as EventListener);
       eventSource.close();
     };
   }, [selectedConversationId, myUserId]);

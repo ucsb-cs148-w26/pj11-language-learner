@@ -23,8 +23,10 @@ const FRANC_TO_BCP47: Record<string, string> = {
 export type ChatMessage = {
   id: string;
   sender: "me" | "partner";
-  text: string;
-  sentAt: string; // ISO string
+  content?: string;
+  text?: string; // backward compatibility
+  type?: "text" | "voice";
+  sentAt: string;
 };
 
 type MessagesProps = {
@@ -78,11 +80,27 @@ export default function Messages({
   const [speakError, setSpeakError] = useState<{ messageId: string; message: string } | null>(null);
   const speakTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
-  const sorted = [...messages].sort((a, b) => a.sentAt.localeCompare(b.sentAt));
+  const normalized = messages.map((m) => {
+    const content =
+      (typeof m.content === "string" && m.content) ||
+      (typeof m.text === "string" && m.text) ||
+      "";
+
+    const type: "text" | "voice" =
+      m.type === "voice" || m.type === "text"
+        ? m.type
+        : /^https?:\/\//i.test(content)
+          ? "voice"
+          : "text";
+
+    return { ...m, content, type };
+  });
+
+  const sorted = [...normalized].sort((a, b) => a.sentAt.localeCompare(b.sentAt));
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [sorted.length]);
+  }, [sorted.length, sorted[sorted.length - 1]?.id]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
@@ -132,7 +150,8 @@ export default function Messages({
     setSpeakError({ messageId, message });
   }
 
-  function handleSpeak(messageId: string, text: string) {
+  function handleSpeak(messageId: string, text: string, type: "text" | "voice") {
+    if (type === "voice") return;
     if (typeof window === "undefined" || !("speechSynthesis" in window)) {
       setErr(messageId, "Your browser doesn't support text-to-speech.");
       return;
@@ -211,7 +230,7 @@ export default function Messages({
   let lastDay: string | null = null;
 
   return (
-    <div className="space-y-3">
+    <div className="w-full space-y-3">
       {sorted.map((m, idx) => {
         const d = new Date(m.sentAt);
         const day = dateKey(d);
@@ -233,12 +252,13 @@ export default function Messages({
         }
 
         return (
-          <div key={m.id}>
+          <div key={m.id} className="w-full">
             {showDivider ? <DateDivider label={formatDateLabel(d)} /> : null}
 
             <MessageBubble
               messageId={m.id}
-              text={m.text}
+              content={m.content}
+              type={m.type}
               isMe={m.sender === "me"}
               time={showTime ? formatTimeLabel(d) : undefined}
               partnerFirstName={partnerFirstName}
@@ -247,7 +267,7 @@ export default function Messages({
               myNativeLanguage={myNativeLanguage}
               isSpeaking={speakingMessageId === m.id}
               speakError={speakError?.messageId === m.id ? speakError.message : null}
-              onSpeak={() => handleSpeak(m.id, m.text)}
+              onSpeak={m.type === "text" ? () => handleSpeak(m.id, m.content, m.type) : undefined}
             />
           </div>
         );
