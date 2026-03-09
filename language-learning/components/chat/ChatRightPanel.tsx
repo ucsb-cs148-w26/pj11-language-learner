@@ -4,11 +4,14 @@
 import ChatHeader from "./ChatHeader";
 import Messages from "./Messages";
 import MessageComposer from "./MessageComposer";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
 type Message = {
   id: string;
   sender: "me" | "partner";
-  text: string;
+  content: string; 
+  type: "text" | "voice";
   sentAt: string; // ISO string
 };
 
@@ -20,7 +23,12 @@ type ChatLayoutProps = {
   targetLanguages: string[];
   messages: Message[];
   conversationId: string;
-  onSendMessage: (conversationId: string, text: string) => Promise<void>;
+  onSendMessage: (
+    conversationId: string,
+    content: string,
+    type?: "text" | "voice",
+    extras?: { voicePath?: string; voiceBucket?: string }
+  ) => Promise<void>;
   onTypingChange?: (conversationId: string, isTyping: boolean) => Promise<void> | void;
   myNativeLanguage: string | null;
   isPartnerTyping?: boolean;
@@ -39,6 +47,13 @@ export default function ChatRightPanel({
   myNativeLanguage,
   isPartnerTyping = false,
 }: ChatLayoutProps) {
+  const [myId, setMyId] = useState<string | null>(null);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setMyId(data.session?.user.id ?? null);
+    });
+  }, []);
+
   return (
     <div className="h-[calc(100dvh-72px)] flex flex-col overflow-hidden">
       <div className="shrink-0">
@@ -64,10 +79,14 @@ export default function ChatRightPanel({
       </div>
 
       <div className="shrink-0 border-t border-gray-border-soft px-4 py-3">
-        <MessageComposer
-          onSend={(text) => onSendMessage(conversationId, text)}
-          onTypingChange={(isTyping) => onTypingChange?.(conversationId, isTyping)}
-        />
+        {myId && (
+          <MessageComposer
+            onSend={(content, type = "text", extras) => onSendMessage(conversationId, content, type, extras)}
+            onTypingChange={(isTyping) => onTypingChange?.(conversationId, isTyping)}
+            chatId={conversationId}
+            userId={myId}
+          />
+        )}
       </div>
     </div>
   );

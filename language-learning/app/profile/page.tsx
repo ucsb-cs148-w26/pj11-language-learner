@@ -180,7 +180,8 @@ export default function ProfilePage() {
         setDeleteLoading(false);
         return;
       }
-
+      
+      await supabase.auth.signOut();
       router.push("/");
     } catch (e) {
       const msg =
