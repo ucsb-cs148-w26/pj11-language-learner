@@ -216,7 +216,7 @@ const VoiceRecorder = forwardRef<VoiceRecorderHandle, VoiceRecorderProps>(functi
           type="button"
           onClick={toggleRecording}
           className={`flex items-center justify-center h-10 w-10 rounded-full transition-all ${
-            isRecording ? "bg-red-600 scale-110" : "bg-blue hover:bg-blue-dark"
+            isRecording ? "bg-red-600 scale-110" : "bg-blue-dark hover:bg-blue-dark"
           } text-white shadow-md disabled:opacity-60`}
           disabled={uploading}
           title={isRecording ? "Click to stop recording" : "Click to start recording"}

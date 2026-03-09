@@ -33,6 +33,10 @@ type Conversation = {
   unreadCount: number;
 };
 
+type DbUnreadMessage = {
+  conversation_id: string;
+};
+
 export async function GET() {
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -122,6 +126,24 @@ export async function GET() {
     }
   }
 
+  const unreadByConvo = new Map<string, number>();
+  if (convoIds.length > 0) {
+    const { data: unreadRows, error: unreadErr } = await supabase
+      .from("messages")
+      .select("conversation_id")
+      .in("conversation_id", convoIds)
+      .neq("sender_id", userId)
+      .is("read_at", null);
+
+    if (unreadErr) {
+      return NextResponse.json({ error: unreadErr.message || "Failed to load unread counts" }, { status: 500 });
+    }
+
+    for (const row of (unreadRows as DbUnreadMessage[] | null) ?? []) {
+      unreadByConvo.set(row.conversation_id, (unreadByConvo.get(row.conversation_id) ?? 0) + 1);
+    }
+  }
+
   const conversations: Conversation[] = ((convos as DbConversation[]) ?? []).map((c) => {
     const partnerId = partnerByConvo.get(c.id) ?? "unknown";
     const p = profilesById.get(partnerId);
@@ -140,9 +162,12 @@ export async function GET() {
       targetLanguages: targetLangNamesByUser.get(partnerId) ?? [],
       lastMessageText: c.last_message_text ?? "No messages yet",
       lastMessageAt: c.last_message_at,
-      unreadCount: 0,
+      unreadCount: unreadByConvo.get(c.id) ?? 0,
     };
   });
 
-  return NextResponse.json({ myUserId: userId, conversations });
+  return NextResponse.json(
+    { myUserId: userId, conversations },
+    { headers: { "Cache-Control": "no-store" } }
+  );
 }

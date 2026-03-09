@@ -24,6 +24,8 @@ function HeaderContent() {
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [pendingRequestCount, setPendingRequestCount] = useState(0);
+  const [unreadChatConversationCount, setUnreadChatConversationCount] = useState(0);
+  const isChatsPage = pathname.startsWith("/chats");
 
   const isNewUserOnboarding = searchParams.get("new") === "true";
 
@@ -41,6 +43,22 @@ function HeaderContent() {
         if (res.ok) {
           const body = await res.json();
           setPendingRequestCount(body.incomingRequests?.length ?? 0);
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    const fetchUnreadChatConversationCount = async () => {
+      try {
+        const res = await fetch("/api/chats", { cache: "no-store" });
+        if (res.ok) {
+          const body = await res.json();
+          const count =
+            (body.conversations ?? []).filter(
+              (c: { unreadCount?: number }) => (c.unreadCount ?? 0) > 0
+            ).length ?? 0;
+          setUnreadChatConversationCount(count);
         }
       } catch {
         // ignore
@@ -67,9 +85,11 @@ function HeaderContent() {
       if (currentSession?.user) {
         getProfile();
         fetchPendingCount();
+        if (!isChatsPage) fetchUnreadChatConversationCount(); // changed
       } else {
         setUserProfile(null);
         setPendingRequestCount(0);
+        setUnreadChatConversationCount(0);
       }
 
       setLoading(false);
@@ -81,9 +101,11 @@ function HeaderContent() {
         if (newSession?.user) {
           getProfile();
           fetchPendingCount();
+          if (!isChatsPage) fetchUnreadChatConversationCount(); // changed
         } else {
           setUserProfile(null);
           setPendingRequestCount(0);
+          setUnreadChatConversationCount(0);
         }
 
         setLoading(false);
@@ -98,15 +120,47 @@ function HeaderContent() {
       fetchPendingCount();
     }
 
+    function handleChatsChanged() {
+      fetchUnreadChatConversationCount();
+    }
+
     window.addEventListener("avatar-changed", handleAvatarChanged);
     window.addEventListener("requests-changed", handleRequestsChanged);
+    window.addEventListener("chats-changed", handleChatsChanged);
 
     return () => {
       sub.subscription.unsubscribe();
       window.removeEventListener("avatar-changed", handleAvatarChanged);
       window.removeEventListener("requests-changed", handleRequestsChanged);
+      window.removeEventListener("chats-changed", handleChatsChanged);
     };
-  }, []);
+  }, [isChatsPage]); // changed
+
+  // Refetch when user leaves chats page
+  useEffect(() => {
+    if (!session?.user || isChatsPage) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/chats", { cache: "no-store" });
+        if (!res.ok) return;
+        const body = await res.json();
+        if (cancelled) return;
+        const count =
+          (body.conversations ?? []).filter(
+            (c: { unreadCount?: number }) => (c.unreadCount ?? 0) > 0
+          ).length ?? 0;
+        setUnreadChatConversationCount(count);
+      } catch {
+        // ignore
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname, session?.user?.id, isChatsPage]);
 
   const navItems =
     isNewUserOnboarding || loading
@@ -169,7 +223,12 @@ function HeaderContent() {
                 >
                   {label}
 
-                  {/* Friend request badge */}
+                  {label === "Chats" && !isChatsPage && unreadChatConversationCount > 0 && (
+                    <span className="absolute -top-1 -right-4 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold leading-none text-white">
+                      {unreadChatConversationCount}
+                    </span>
+                  )}
+
                   {label === "Friends" && pendingRequestCount > 0 && (
                     <span className="absolute -top-1 -right-4 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold leading-none text-white">
                       {pendingRequestCount}
