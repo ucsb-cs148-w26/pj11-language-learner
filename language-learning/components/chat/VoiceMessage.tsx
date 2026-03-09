@@ -17,18 +17,15 @@ export default function VoiceMessage({ url, isMine }: { url: string; isMine: boo
 
   return (
     <div className={`flex flex-col gap-1 ${isMine ? "items-end" : "items-start"}`}>
-      <div
-        className={[
-          // "rounded-2xl px-3 py-2 shadow-sm border",
-          // "bg-blue-soft border-blue/20",
-        ].join(" ")}
-      >
+      <div className={[].join(" ")}>
         <audio
           key={url}
           controls
+          controlsList="nodownload noplaybackrate"
           preload="metadata"
           className="h-9 w-56 sm:w-72"
           onError={() => setLoadError(true)}
+          onContextMenu={(e) => e.preventDefault()}
         >
           {mimeGuess ? <source src={url} type={mimeGuess} /> : <source src={url} />}
           Your browser does not support audio playback.
