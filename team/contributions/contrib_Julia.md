@@ -5,7 +5,7 @@
 - Tuned header appearance (colors, logo, profile icon) [PR #146](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/146)
 
 ## Non-Code Contributions
-- Documented problem scenario [README.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/README.md)
+- Documented [problem_scenario.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/problem_scenario.md)
 - Documented 2 team meetings. [lect03.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/sprint01/lect03.md)
 [lect11.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/sprint01/lect11.md)
 - Led Retro 2 [RETRO_02.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/retrospectives/RETRO_02.md)
