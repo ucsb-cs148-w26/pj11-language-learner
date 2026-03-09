@@ -6,7 +6,7 @@
 
 # By-Person
 
-## Natalie Forte
+## Natalie Forte <span style="font-size: 50%;">id: fortenatalie</span>
 
 ### Natalie's Code Contributions
 
@@ -16,7 +16,7 @@
   * Set up corresponding Chat database tables and connected the database to the UI in [PR #79](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/79).
   * Added an AI Tutor option to messages, to let users get direct feedback on their grammar/spelling in [PR #192](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/192).
   * Built the button UI (but not the functionality) for translate, text-to-speech, and phonetics in [commit](https://github.com/ucsb-cs148-w26/pj11-language-learner/commit/7aceb8ec101a1eac396aafb316217132ebe4dc58) and [commit](https://github.com/ucsb-cs148-w26/pj11-language-learner/commit/6fc67fd72d5a020c87632e316679c4717e8ac708), as well as the hamburger icon to optionally hide them in [PR #192](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/164).
-  * Fixed text-to-speech, so that it would work in languages other than English in [commit](https://github.com/ucsb-cs148-w26/pj11-language-learner/commit/ee39c3c4e39b7920065d13cb57580f9c046d669c). 
+  * Fixed text-to-speech, so that it would work in languages other than English in [commit](https://github.com/ucsb-cs148-w26/pj11-language-learner/commit/ee39c3c4e39b7920065d13cb57580f9c046d669c) and [PR #199](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/199). 
 
 * **Friends Integration**
 
@@ -42,15 +42,19 @@
 
 ---
 
-## Julia Lin
+## Julia Lin <span style="font-size: 50%;">id: jml557</span>
 
 ### Julia's Code Contributions
 
-* Set up SSR and proxy in [PR #114](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/114).
-* Implemented the Discover frontend and the initial backend iteration for filtering, search, and on-page request making in [PR #58](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/58), [PR #81](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/81), and [PR #132](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/132).
-* Implemented onboarding-phase login redirection in [PR #132](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/132).
-* Tuned the header appearance, including colors, logo, and profile icon, in [PR #146](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/146).
-* Added voice messages in [PR #196](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/196).
+* **Discover**
+  * Set up SSR and proxy in [PR #114](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/114).
+  * Implemented the Discover frontend and the initial backend iteration for filtering, search, and on-page request making in [PR #58](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/58), [PR #81](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/81), and [PR #132](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/132).
+* **Chats**
+  * Added voice messages in [PR #196](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/196).
+  * Added notifications for unread chats in [PR #200](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/200).
+* **Misc**  
+  * Implemented onboarding-phase login redirection in [PR #132](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/132).
+  * Tuned the header appearance, including colors, logo, and profile icon, in [PR #146](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/146).
 
 ### Julia's Non-Code Contributions
 
@@ -61,22 +65,24 @@
 
 ---
 
-## Jovia Low
+## Jovia Low <span style="font-size: 50%;">id: mintoku</span>
 
 ### Jovia's Code Contributions
 
 * Created the Dashboard in [PR #62](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/62).
-* Created the personal profile page for [Issue #32](https://github.com/ucsb-cs148-w26/pj11-language-learner/issues/32).
-* Created the profile edit page for [Issue #49](https://github.com/ucsb-cs148-w26/pj11-language-learner/issues/49).
-* Implemented a public profile page in [PR #111](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/111).
-* Added logout and delete-account buttons in [Issue #83](https://github.com/ucsb-cs148-w26/pj11-language-learner/issues/83).
 * Added the translation feature to chat messages in [PR #187](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/187).
 * Created the app logo using Canva for [issue #104](https://github.com/ucsb-cs148-w26/pj11-language-learner/issues/104).
-* Implemented higher-level testing using Playwright for chat and authentication components, documented in [PR #137](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/137).
-* Implemented unit tests for the messages component using Jest, documented in [PR #124](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/124).
-* Bugs
+* **Profiles**
+  * Created the personal profile page for [Issue #32](https://github.com/ucsb-cs148-w26/pj11-language-learner/issues/32).
+  * Created the profile edit page for [Issue #49](https://github.com/ucsb-cs148-w26/pj11-language-learner/issues/49).
+  * Implemented a public profile page in [PR #111](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/111).
+  * Added logout and delete-account buttons in [Issue #83](https://github.com/ucsb-cs148-w26/pj11-language-learner/issues/83).
+* **Testing**
+  * Implemented higher-level testing using Playwright for chat and authentication components, documented in [PR #137](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/137).
+  * Implemented unit tests for the messages component using Jest, documented in [PR #124](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/124).
+* **Bug Fixes**
   * Adjusted the browser tab title in [PR #129](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/129).
-  * Fixed a sign-out in [PR #176](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/176) by adding state tracking so the header reloads correctly and restricted pages are no longer accessible after sign-out.
+  * Fixed a sign-out bug in [PR #176](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/176) by adding state tracking so the header reloads correctly and restricted pages are no longer accessible after sign-out.
 
 ### Jovia's Non-Code Contributions
 
@@ -89,7 +95,7 @@
 
 ---
 
-## Kun Cheng
+## Kun Cheng <span style="font-size: 50%;">id: BruceGorman</span>
 
 ### Kun's Code Contributions
 
@@ -113,7 +119,7 @@
 
 ---
 
-## Benny (Luandayou) Zhang
+## Benny (Luandayou) Zhang <span style="font-size: 50%;">id: BennyZll</span>
 
 ### Benny's Code Contributions
 
@@ -126,7 +132,7 @@
 
 ---
 
-## Ryan Choi
+## Ryan Choi <span style="font-size: 50%;">id: ryanchoi07</span>
 
 ### Ryan's Code Contributions
 
@@ -141,7 +147,7 @@
 
 ---
 
-## Annie (Shuhan) Yang
+## Annie (Shuhan) Yang <span style="font-size: 50%;">id: GuaziBai</span>
 
 ### Annie's Code Contributions
 
@@ -158,7 +164,7 @@
 
 ---
 
-## Abhiram Agina
+## Abhiram Agina <span style="font-size: 50%;">id: abhirama02</span>
 
 ### Abhiram's Code Contributions
 
@@ -191,7 +197,7 @@
 ## Header
 
 * **Benny:** Initialized the header in [PR #60](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/60).
-* **Julia:** Tuned header appearance, including colors, logo, and profile icon, in [PR #146](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/146).
+* **Julia:** Revamped header appearance, including colors, logo, and profile icon, in [PR #146](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/146).
 * **Jovia:** Fixed a sign-out bug in [Issue #175](https://github.com/ucsb-cs148-w26/pj11-language-learner/issues/175) so the header reloads correctly after sign-out.
 * **Abhiram:** Added the header sign-in button in [PR #77](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/77).
 
@@ -224,9 +230,9 @@
 
 ## Chats
 
-* **Natalie:** Built the [chat page components](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/57), connected the [database](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/79), restricted [profanity](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/164), added an AI Tutor option to messages in [PR #192](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/192), built button UI for translate, text-to-speech, and phonetics in [commit](https://github.com/ucsb-cs148-w26/pj11-language-learner/commit/7aceb8ec101a1eac396aafb316217132ebe4dc58) and [commit](https://github.com/ucsb-cs148-w26/pj11-language-learner/commit/6fc67fd72d5a020c87632e316679c4717e8ac708), as well as the hamburger icon to optionally hide them in [PR #192](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/164), and fixed text-to-speech, so that it would work in languages other than English in [commit](https://github.com/ucsb-cs148-w26/pj11-language-learner/commit/ee39c3c4e39b7920065d13cb57580f9c046d669c).
+* **Natalie:** Built the [chat page components](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/57), connected the [database](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/79), restricted [profanity](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/164), added an AI Tutor option to messages in [PR #192](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/192), built button UI for translate, text-to-speech, and phonetics in [commit](https://github.com/ucsb-cs148-w26/pj11-language-learner/commit/7aceb8ec101a1eac396aafb316217132ebe4dc58) and [commit](https://github.com/ucsb-cs148-w26/pj11-language-learner/commit/6fc67fd72d5a020c87632e316679c4717e8ac708), as well as the hamburger icon to optionally hide them in [PR #192](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/164), and fixed text-to-speech, so that it would work in languages other than English in [commit](https://github.com/ucsb-cs148-w26/pj11-language-learner/commit/ee39c3c4e39b7920065d13cb57580f9c046d669c) and [PR #199](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/199).
 * **Kun:** Refactored chats API architecture for backend separation and security in [PR #163](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/163).
-* **Julia:** Added [voice messages](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/196).
+* **Julia:** Added [voice messages](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/196) and [notifications for unread chats](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/200).
 * **Jovia:** Added [translation](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/187).
 * **Kun:** Added [phonetics](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/177).
 * **Abhiram:** Added [English text-to-speech](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/184).
