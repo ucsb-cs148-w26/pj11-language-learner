@@ -1,8 +1,12 @@
 # Team 11: Lingo Connect Contributions
 
+"by-person": Summary of each individual's contributions
+
+"by-area": Same contributions, but organized by area (signing-in, chatting, friending, non-code, etc.) rather than person
+
 # By-Person
 
-## Natalie Forte
+## Natalie Forte <span style="font-size: 50%;">id: fortenatalie</span>
 
 ### Natalie's Code Contributions
 
@@ -12,14 +16,14 @@
   * Set up corresponding Chat database tables and connected the database to the UI in [PR #79](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/79).
   * Added an AI Tutor option to messages, to let users get direct feedback on their grammar/spelling in [PR #192](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/192).
   * Built the button UI (but not the functionality) for translate, text-to-speech, and phonetics in [commit](https://github.com/ucsb-cs148-w26/pj11-language-learner/commit/7aceb8ec101a1eac396aafb316217132ebe4dc58) and [commit](https://github.com/ucsb-cs148-w26/pj11-language-learner/commit/6fc67fd72d5a020c87632e316679c4717e8ac708), as well as the hamburger icon to optionally hide them in [PR #192](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/164).
-  * Fixed text-to-speech, so that it would work in languages other than English in [commit](https://github.com/ucsb-cs148-w26/pj11-language-learner/commit/ee39c3c4e39b7920065d13cb57580f9c046d669c). 
+  * Fixed text-to-speech, so that it would work in languages other than English in [commit](https://github.com/ucsb-cs148-w26/pj11-language-learner/commit/ee39c3c4e39b7920065d13cb57580f9c046d669c) and [PR #199](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/199). 
 
 * **Friends Integration**
 
   * Wrote the calls to the Friends database in the backend in [PR #130](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/130).
   * Moved old calls out of the frontend and into the backend for security purposes in [PR #164](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/164).
   * Added both existing friend components to a new "Friends" page in [PR #164](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/164).
-  * Added notifications for friend requests to the header and requests component in [PR #192]((https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/164)
+  * Added notifications for friend requests to the header and requests component in [PR #192](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/164)
 
 * **Misc**
 
@@ -33,18 +37,24 @@
 
 * Reviewed [50+ PRs](https://github.com/ucsb-cs148-w26/pj11-language-learner/pulls?q=is%3Apr+reviewed-by%3Afortenatalie), including solving merge conflicts, protecting security practices, ensuring UI consistency, and finding and resolving edge cases.
 * Authored [40 issues](https://github.com/ucsb-cs148-w26/pj11-language-learner/issues?q=is%3Aissue%20author%3Afortenatalie) with detailed acceptance criteria.
-* Designed [MANUAL.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/docs/MANUAL.md), [MVP_FOLLOWUP.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/MVP_FOLLOWUP.md), [AGREEMENTS.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/AGREEMENTS.md), [LEADERSHIP.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/LEADERSHIP.md), [LEARNING.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/LEARNING.md), [EVAL_RESPONSE.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/evaluation/EVAL_RESPONSE.md), and [LICENSE.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/LICENSE.md).
+* Designed [CONTRIBS.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/contributions/CONTRIBS.md), [MANUAL.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/docs/MANUAL.md), [MVP_FOLLOWUP.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/MVP_FOLLOWUP.md), [AGREEMENTS.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/AGREEMENTS.md), [LEADERSHIP.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/LEADERSHIP.md), [LEARNING.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/LEARNING.md), [EVAL_RESPONSE.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/evaluation/EVAL_RESPONSE.md), and [LICENSE.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/LICENSE.md).
 * Documented two team meetings: [sec02.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/sprint01/sec02.md) and [lect09.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/sprint01/lect09.md).
 
-## Julia Lin
+---
+
+## Julia Lin <span style="font-size: 50%;">id: jml557</span>
 
 ### Julia's Code Contributions
 
-* Set up SSR and proxy in [PR #114](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/114).
-* Implemented the Discover frontend and the initial backend iteration for filtering, search, and on-page request making in [PR #58](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/58), [PR #81](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/81), and [PR #132](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/132).
-* Implemented onboarding-phase login redirection in [PR #132](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/132).
-* Tuned the header appearance, including colors, logo, and profile icon, in [PR #146](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/146).
-* Added voice messages in [PR #196](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/196).
+* **Discover**
+  * Set up SSR and proxy in [PR #114](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/114).
+  * Implemented the Discover frontend and the initial backend iteration for filtering, search, and on-page request making in [PR #58](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/58), [PR #81](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/81), and [PR #136](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/136).
+* **Chats**
+  * Added voice messages in [PR #196](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/196).
+  * Added notifications for unread chats in [PR #200](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/200).
+* **Misc**  
+  * Implemented onboarding-phase login redirection in [PR #132](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/132).
+  * Tuned the header appearance, including colors, logo, and profile icon, in [PR #146](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/146).
 
 ### Julia's Non-Code Contributions
 
@@ -53,22 +63,26 @@
 * Led Retro 2 in [RETRO_02.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/retrospectives/RETRO_02.md).
 * Reviewed [8 PRs](https://github.com/ucsb-cs148-w26/pj11-language-learner/pulls?q=is%3Apr+reviewed-by%3Ajml557+)
 
-## Jovia Low
+---
+
+## Jovia Low <span style="font-size: 50%;">id: mintoku</span>
 
 ### Jovia's Code Contributions
 
 * Created the Dashboard in [PR #62](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/62).
-* Created the personal profile page for [Issue #32](https://github.com/ucsb-cs148-w26/pj11-language-learner/issues/32).
-* Created the profile edit page for [Issue #49](https://github.com/ucsb-cs148-w26/pj11-language-learner/issues/49).
-* Implemented a public profile page in [PR #111](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/111).
-* Added logout and delete-account buttons in [Issue #83](https://github.com/ucsb-cs148-w26/pj11-language-learner/issues/83).
 * Added the translation feature to chat messages in [PR #187](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/187).
 * Created the app logo using Canva for [issue #104](https://github.com/ucsb-cs148-w26/pj11-language-learner/issues/104).
-* Implemented higher-level testing using Playwright for chat and authentication components, documented in [PR #137](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/137).
-* Implemented unit tests for the messages component using Jest, documented in [PR #124](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/124).
-* Bugs
+* **Profiles**
+  * Created the personal profile page for [Issue #32](https://github.com/ucsb-cs148-w26/pj11-language-learner/issues/32).
+  * Created the profile edit page for [Issue #49](https://github.com/ucsb-cs148-w26/pj11-language-learner/issues/49).
+  * Implemented a public profile page in [PR #111](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/111).
+  * Added logout and delete-account buttons in [Issue #83](https://github.com/ucsb-cs148-w26/pj11-language-learner/issues/83).
+* **Testing**
+  * Implemented higher-level testing using Playwright for chat and authentication components, documented in [PR #137](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/137).
+  * Implemented unit tests for the messages component using Jest, documented in [PR #124](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/124).
+* **Bug Fixes**
   * Adjusted the browser tab title in [PR #129](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/129).
-  * Fixed a sign-out in [PR #176](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/176) by adding state tracking so the header reloads correctly and restricted pages are no longer accessible after sign-out.
+  * Fixed a sign-out bug in [PR #176](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/176) by adding state tracking so the header reloads correctly and restricted pages are no longer accessible after sign-out.
 
 ### Jovia's Non-Code Contributions
 
@@ -79,7 +93,9 @@
 * Documented two team meetings: [lect02.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/sprint01/lect02.md), and [lect12.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/sprint01/lect12.md).
 * Added project set-up instructions to [README.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/README.md)
 
-## Kun Cheng
+---
+
+## Kun Cheng <span style="font-size: 50%;">id: BruceGorman</span>
 
 ### Kun's Code Contributions
 
@@ -101,7 +117,9 @@
 * Authored the [vercel sharing doc](https://docs.google.com/document/d/12bR_fIMT6Sfb8ZqAwHO4UGjKN-k7G67H4C0hedCtdwA/edit?tab=t.0).
 * Created the [profile database schema](https://docs.google.com/document/d/1bR3xnFi6NT4vCoEXhvFsMZajdKARRHftYGmF2yp_Gbo/edit?tab=t.0).
 
-## Benny (Luandayou) Zhang
+---
+
+## Benny (Luandayou) Zhang <span style="font-size: 50%;">id: BennyZll</span>
 
 ### Benny's Code Contributions
 
@@ -112,7 +130,9 @@
 
 * Documented one team meeting: [lect07.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/sprint01/lect07.md)
 
-## Ryan Choi
+---
+
+## Ryan Choi <span style="font-size: 50%;">id: ryanchoi07</span>
 
 ### Ryan's Code Contributions
 
@@ -125,7 +145,9 @@
 
 * Screen-recorded and uploaded the MVP video.
 
-## Annie (Shuhan) Yang
+---
+
+## Annie (Shuhan) Yang <span style="font-size: 50%;">id: GuaziBai</span>
 
 ### Annie's Code Contributions
 
@@ -140,7 +162,9 @@
 * Updated the [README.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/README.md) with the project plan, including MVP scope and long-term direction.
 * Documented one team meeting: [lect04.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/sprint01/lect04.md)
 
-## Abhiram Agina
+---
+
+## Abhiram Agina <span style="font-size: 50%;">id: abhirama02</span>
 
 ### Abhiram's Code Contributions
 
@@ -173,7 +197,7 @@
 ## Header
 
 * **Benny:** Initialized the header in [PR #60](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/60).
-* **Julia:** Tuned header appearance, including colors, logo, and profile icon, in [PR #146](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/146).
+* **Julia:** Revamped header appearance, including colors, logo, and profile icon, in [PR #146](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/146).
 * **Jovia:** Fixed a sign-out bug in [Issue #175](https://github.com/ucsb-cs148-w26/pj11-language-learner/issues/175) so the header reloads correctly after sign-out.
 * **Abhiram:** Added the header sign-in button in [PR #77](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/77).
 
@@ -206,9 +230,9 @@
 
 ## Chats
 
-* **Natalie:** Built the [chat page components](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/57), connected the [database](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/79), restricted [profanity](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/164), added an AI Tutor option to messages in [PR #192](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/192), built button UI for translate, text-to-speech, and phonetics in [commit](https://github.com/ucsb-cs148-w26/pj11-language-learner/commit/7aceb8ec101a1eac396aafb316217132ebe4dc58) and [commit](https://github.com/ucsb-cs148-w26/pj11-language-learner/commit/6fc67fd72d5a020c87632e316679c4717e8ac708), as well as the hamburger icon to optionally hide them in [PR #192](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/164), and fixed text-to-speech, so that it would work in languages other than English in [commit](https://github.com/ucsb-cs148-w26/pj11-language-learner/commit/ee39c3c4e39b7920065d13cb57580f9c046d669c).
+* **Natalie:** Built the [chat page components](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/57), connected the [database](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/79), restricted [profanity](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/164), added an AI Tutor option to messages in [PR #192](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/192), built button UI for translate, text-to-speech, and phonetics in [commit](https://github.com/ucsb-cs148-w26/pj11-language-learner/commit/7aceb8ec101a1eac396aafb316217132ebe4dc58) and [commit](https://github.com/ucsb-cs148-w26/pj11-language-learner/commit/6fc67fd72d5a020c87632e316679c4717e8ac708), as well as the hamburger icon to optionally hide them in [PR #192](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/164), and fixed text-to-speech, so that it would work in languages other than English in [commit](https://github.com/ucsb-cs148-w26/pj11-language-learner/commit/ee39c3c4e39b7920065d13cb57580f9c046d669c) and [PR #199](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/199).
 * **Kun:** Refactored chats API architecture for backend separation and security in [PR #163](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/163).
-* **Julia:** Added [voice messages](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/196).
+* **Julia:** Added [voice messages](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/196) and [notifications for unread chats](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/200).
 * **Jovia:** Added [translation](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/187).
 * **Kun:** Added [phonetics](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/177).
 * **Abhiram:** Added [English text-to-speech](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/184).
@@ -227,16 +251,15 @@
 
 ## Theming / Branding
 
-* **Annie:** Standardized app-wide theming and created dark mode in [PR #147](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/147).
 * **Jovia:** Created the project [logo](https://github.com/ucsb-cs148-w26/pj11-language-learner/issues/104).
-* **Julia:** Made transparent logo version #1.
-* **Annie:** Made transparent logo version #2.
+* **Annie:** Standardized app-wide theming and created dark mode in [PR #147](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/147). Also made logo version #1 (main logo) transparent.
+* **Julia:** Made transparent logos versions #2 and #3 (medium header logo and favicon).
 
 # Team Non-Code Contributions
 
-* **Natalie:** [MANUAL.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/docs/MANUAL.md), [MVP_FOLLOWUP.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/MVP_FOLLOWUP.md), [AGREEMENTS.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/AGREEMENTS.md), [LEADERSHIP.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/LEADERSHIP.md), [LEARNING.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/LEARNING.md), [EVAL_RESPONSE.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/evaluation/EVAL_RESPONSE.md), [LICENSE.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/LICENSE.md), [sec02.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/sprint01/sec02.md), [lect09.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/sprint01/lect09.md), [50+ PR reviews](https://github.com/ucsb-cs148-w26/pj11-language-learner/pulls?q=is%3Apr+reviewed-by%3Afortenatalie), and [40 authored issues](https://github.com/ucsb-cs148-w26/pj11-language-learner/issues?q=is%3Aissue%20author%3Afortenatalie).
+* **Natalie:** [MANUAL.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/docs/MANUAL.md), [CONTRIBS.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/contributions/CONTRIBS.md), [MVP_FOLLOWUP.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/MVP_FOLLOWUP.md), [AGREEMENTS.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/AGREEMENTS.md), [LEADERSHIP.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/LEADERSHIP.md), [LEARNING.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/LEARNING.md), [EVAL_RESPONSE.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/evaluation/EVAL_RESPONSE.md), [LICENSE.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/LICENSE.md), [sec02.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/sprint01/sec02.md), [lect09.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/sprint01/lect09.md), [50+ PR reviews](https://github.com/ucsb-cs148-w26/pj11-language-learner/pulls?q=is%3Apr+reviewed-by%3Afortenatalie), and [40 authored issues](https://github.com/ucsb-cs148-w26/pj11-language-learner/issues?q=is%3Aissue%20author%3Afortenatalie).
 * **Julia:** [problem_scenario.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/problem_scenario.md), [lect03.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/sprint01/lect03.md), [lect11.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/sprint01/lect11.md), and [RETRO_02.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/retrospectives/RETRO_02.md).
-* **Jovia:** [DESIGN.md](https://docs.google.com/document/d/18FsU7Cv5MufPqlASusmm09IwLsJYYzbUEppnzWM0o_M/edit?tab=t.0#heading=h.wzadak4hcb9c) (including project architecture diagram), project set-up instructions in [README.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/README.md), [lect02.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/sprint01/lect02.md), and [lect12.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/sprint01/lect12.md).
+* **Jovia:** [DESIGN.md](https://docs.google.com/document/d/18FsU7Cv5MufPqlASusmm09IwLsJYYzbUEppnzWM0o_M/edit?tab=t.0#heading=h.wzadak4hcb9c) (including project architecture diagram), [TESTING.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/TESTING.md), project set-up instructions in [README.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/README.md), [lect02.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/sprint01/lect02.md), and [lect12.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/sprint01/lect12.md).
 * **Kun:** [RETRO_01.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/retrospectives/RETRO_01.md), [vercel sharing doc](https://docs.google.com/document/d/12bR_fIMT6Sfb8ZqAwHO4UGjKN-k7G67H4C0hedCtdwA/edit?tab=t.0), and [profile database schema](https://docs.google.com/document/d/1bR3xnFi6NT4vCoEXhvFsMZajdKARRHftYGmF2yp_Gbo/edit?tab=t.0).
 * **Benny:** [lect07.md](https://github.com/ucsb-cs148-w26/pj11-language-learner/blob/main/team/sprint01/lect07.md).
 * **Ryan:** Screen-recorded MVP video and documented project audience.
