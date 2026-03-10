@@ -197,7 +197,7 @@ export default function MessageBubble({
           isMe ? "items-end" : "items-start",
         ].join(" ")}
       >
-        <div className={["flex min-w-0 flex-wrap items-start gap-2", isMe ? "flex-row-reverse" : "flex-row"].join(" ")}>
+        <div className={["flex min-w-0 items-start gap-2", isMe ? "flex-row-reverse" : "flex-row"].join(" ")}>
           {type === "voice" ? (
             displayContent ? (
               <div className="max-w-full">
@@ -216,7 +216,7 @@ export default function MessageBubble({
                 isMe ? "bg-blue-dark text-white" : "bg-gray-soft-2 text-gray-text",
               ].join(" ")}
             >
-              <span className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+              <span className="whitespace-pre-wrap [overflow-wrap:anywhere] text-sm leading-relaxed">
                 {displayContent || (isMe ? "Sending..." : "")}
               </span>
             </div>
@@ -249,9 +249,8 @@ export default function MessageBubble({
                 </svg>
               </button>
 
-              {/* Action buttons — shown when menu is open */}
-              {menuOpen && (
-                <>
+              {/* Action buttons — invisible when menu is closed */}
+              <div className={["flex items-start gap-1", isMe ? "flex-row-reverse" : "flex-row", menuOpen ? "" : "invisible pointer-events-none"].join(" ")}>
                   {/* Grammar check button — only for own messages */}
                   {isMe && (
                     <button
@@ -279,47 +278,47 @@ export default function MessageBubble({
                     </button>
                   )}
 
-              {/* Translate button */}
-              { myNativeLanguage && (
-                <button
-                  type="button"
-                  onClick={handleTranslateClick}
-                  disabled={isTranslating}
-                  aria-label={
-                    isTranslating
-                      ? `Translating to ${myNativeLanguage}`
-                      : translated && translationOpen
-                        ? `Hide translation`
-                        : translated
-                          ? `Show translation`
-                          : `Translate to ${myNativeLanguage}`
-                  }
-                  title={
-                    isTranslating
-                      ? `Translating to ${myNativeLanguage}`
-                      : translated && translationOpen
-                        ? `Hide translation`
-                        : translated
-                          ? `Show translation`
-                          : `Translate to ${myNativeLanguage}`
-                  }
-                  className={[
-                    "mt-2 inline-flex h-6 w-6 items-center justify-center rounded-full transition disabled:opacity-60",
-                    translated && translationOpen
-                      ? "bg-blue-dark text-white"
-                      : "bg-gray-soft-2 text-gray-muted hover:bg-gray-200",
-                  ].join(" ")}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M5 8l6 6" />
-                    <path d="M4 14l6-6 2-3" />
-                    <path d="M2 5h12" />
-                    <path d="M7 2h1" />
-                    <path d="M22 22l-5-10-5 10" />
-                    <path d="M14 18h6" />
-                  </svg>
-                </button>
-              )}
+                  {/* Translate button */}
+                  { myNativeLanguage && (
+                    <button
+                      type="button"
+                      onClick={handleTranslateClick}
+                      disabled={isTranslating}
+                      aria-label={
+                        isTranslating
+                          ? `Translating to ${myNativeLanguage}`
+                          : translated && translationOpen
+                            ? `Hide translation`
+                            : translated
+                              ? `Show translation`
+                              : `Translate to ${myNativeLanguage}`
+                      }
+                      title={
+                        isTranslating
+                          ? `Translating to ${myNativeLanguage}`
+                          : translated && translationOpen
+                            ? `Hide translation`
+                            : translated
+                              ? `Show translation`
+                              : `Translate to ${myNativeLanguage}`
+                      }
+                      className={[
+                        "mt-2 inline-flex h-6 w-6 items-center justify-center rounded-full transition disabled:opacity-60",
+                        translated && translationOpen
+                          ? "bg-blue-dark text-white"
+                          : "bg-gray-soft-2 text-gray-muted hover:bg-gray-200",
+                      ].join(" ")}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M5 8l6 6" />
+                        <path d="M4 14l6-6 2-3" />
+                        <path d="M2 5h12" />
+                        <path d="M7 2h1" />
+                        <path d="M22 22l-5-10-5 10" />
+                        <path d="M14 18h6" />
+                      </svg>
+                    </button>
+                  )}
 
                   {/* Phonetic button */}
                   <button
@@ -366,8 +365,7 @@ export default function MessageBubble({
                       <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
                     </svg>
                   </button>
-                </>
-              )}
+              </div>
             </div>
           )}
         </div>
