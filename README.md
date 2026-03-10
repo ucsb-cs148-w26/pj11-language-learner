@@ -1,8 +1,11 @@
-# Language Learner
+# Lingo Connect
 
 A website for students learning the same language to connect and practice together. 
 
+## Deployment 
 URL: [https://pj11-language-learner.vercel.app/](https://pj11-language-learner-natalie-fortes-projects.vercel.app?_vercel_share=35X2ayZwlC2iBYuwHVsbvtMFCIj6RG8R)
+
+## Team
 
 | Name          | GitHub ID    |
 |---------------|--------------|
