@@ -4,21 +4,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { franc } from "franc";
+import { detectLangTag } from "../../lib/languageDetection";
 import MessageBubble from "./MessageBubble";
-
-const FRANC_TO_BCP47: Record<string, string> = {
-  // Latin-script languages
-  eng: "en-US",
-  spa: "es-ES", fra: "fr-FR", deu: "de-DE", por: "pt-PT",
-  ita: "it-IT", nld: "nl-NL", pol: "pl-PL", swe: "sv-SE",
-  nor: "nb-NO", dan: "da-DK", fin: "fi-FI", tur: "tr-TR",
-  ron: "ro-RO", ces: "cs-CZ", slk: "sk-SK", hun: "hu-HU",
-  // Non-Latin (fallback in case Unicode check missed something)
-  cmn: "zh-CN", jpn: "ja-JP", kor: "ko-KR",
-  ara: "ar-SA", rus: "ru-RU", hin: "hi-IN", ben: "bn-BD",
-  vie: "vi-VN", tha: "th-TH",
-};
 
 export type ChatMessage = {
   id: string;
@@ -35,6 +22,7 @@ type MessagesProps = {
   partnerLastName: string;
   partnerAvatarUrl: string | null;
   myNativeLanguage: string | null;
+  targetLanguages: string[];
 };
 
 function dateKey(d: Date) {
@@ -74,6 +62,7 @@ export default function Messages({
   partnerLastName,
   partnerAvatarUrl,
   myNativeLanguage,
+  targetLanguages,
 }: MessagesProps) {
   const endRef = useRef<HTMLDivElement | null>(null);
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
@@ -125,27 +114,6 @@ export default function Messages({
     return voices.some(v => v.lang === langTag || v.lang.startsWith(prefix + "-") || v.lang === prefix);
   }
 
-  type LangDetectResult =
-    | { tag: string; kind: "detected" }
-    | { tag: string; kind: "too_short" }
-    | { tag: string; kind: "undetermined" };
-
-  function detectLangTag(text: string): LangDetectResult {
-    // Fast Unicode checks for scripts with distinct character ranges
-    if (/[\u3040-\u309F\u30A0-\u30FF]/.test(text)) return { tag: "ja-JP", kind: "detected" };
-    if (/[\u4E00-\u9FFF]/.test(text)) return { tag: "zh-CN", kind: "detected" };
-    if (/[\uAC00-\uD7A3\u1100-\u11FF]/.test(text)) return { tag: "ko-KR", kind: "detected" };
-    if (/[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text)) return { tag: "ar-SA", kind: "detected" };
-    if (/[\u0400-\u04FF]/.test(text)) return { tag: "ru-RU", kind: "detected" };
-    // Too short for franc to reliably detect
-    if (text.trim().length < 3) return { tag: "en-US", kind: "too_short" };
-    // Use franc for Latin-script and anything else
-    const code = franc(text, { minLength: 3, only: Object.keys(FRANC_TO_BCP47) });
-    const tag = FRANC_TO_BCP47[code];
-    if (tag) return { tag, kind: "detected" };
-    return { tag: "en-US", kind: "undetermined" };
-  }
-
   function setErr(messageId: string, message: string) {
     setSpeakError({ messageId, message });
   }
@@ -174,7 +142,12 @@ export default function Messages({
     synth.cancel();
     setSpeakError(null);
 
-    const result = detectLangTag(text);
+    const result = detectLangTag(text, {
+      hintLanguageNames: [
+        ...(myNativeLanguage ? [myNativeLanguage] : []),
+        ...targetLanguages,
+      ],
+    });
 
     if (result.kind === "too_short") {
       setErr(messageId, "Message is too short to detect language.");

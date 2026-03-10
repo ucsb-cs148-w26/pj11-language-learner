@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabaseServer";
-import { franc } from "franc";
+import { detectLangTag } from "../../../../lib/languageDetection";
 import Kuroshiro from "kuroshiro";
 import KuromojiAnalyzer from "kuroshiro-analyzer-kuromoji";
 import { pinyin } from "pinyin-pro";
@@ -11,7 +11,7 @@ export const runtime = "nodejs";
 
 /* ---------------- Types ---------------- */
 
-type LangType = "cmn" | "jpn" | "eng" | "spa" | "kor" | "rus" | "und";
+type LangType = "cmn" | "jpn" | "eng" | "spa" | "kor" | "cyr" | "und";
 
 type MessageRow = {
   id: string;
@@ -29,6 +29,17 @@ type PhoneticResponse = {
 };
 
 /* ---------------- Utils ---------------- */
+
+const UNSUPPORTED_PHONETICS_MESSAGE = "This language not supported for phonetics, sorry";
+
+const BCP47_PREFIX_TO_LANG_TYPE: Record<string, LangType> = {
+  zh: "cmn",
+  ja: "jpn",
+  en: "eng",
+  es: "spa",
+  ko: "kor",
+  ru: "cyr",
+};
 
 function normalizeText(text: string) {
   return text.replace(/\s+/g, " ").trim();
@@ -88,54 +99,6 @@ function arpabetToIPA(arpabet: string): string {
     .join("");
 }
 
-/* ---------------- Script Detection ---------------- */
-
-function hasKana(text: string): boolean {
-  return /[\u3040-\u309F\u30A0-\u30FF]/.test(text);
-}
-
-function hasHan(text: string): boolean {
-  return /[\u4E00-\u9FFF]/.test(text);
-}
-
-function hasHangul(text: string): boolean {
-  return /[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/.test(text);
-}
-
-function hasCyrillic(text: string): boolean {
-  return /[\u0400-\u04FF]/.test(text);
-}
-
-function hasSpanishMarkers(text: string): boolean {
-  return /[ñÑáéíóúÁÉÍÓÚüÜ¡¿]/.test(text);
-}
-
-function hasRussianMarkers(text: string): boolean {
-  return /[ЁёЫыЭэЪъ]/.test(text);
-}
-
-/* ---------------- Korean helpers ---------------- */
-
-type HangulDecomposed = {
-  initial: number;
-  medial: number;
-  final: number;
-};
-
-function decomposeHangulSyllable(ch: string): HangulDecomposed | null {
-  if (!ch) return null;
-  const code = ch.charCodeAt(0);
-
-  if (code < 0xac00 || code > 0xd7a3) return null;
-
-  const sIndex = code - 0xac00;
-  const initial = Math.floor(sIndex / 588);
-  const medial = Math.floor((sIndex % 588) / 28);
-  const final = sIndex % 28;
-
-  return { initial, medial, final };
-}
-
 /* ---------------- Language Detection ---------------- */
 
 function detectLangType(textRaw: string): LangType {
@@ -143,34 +106,12 @@ function detectLangType(textRaw: string): LangType {
 
   if (!text) return "und";
 
-  if (hasKana(text)) return "jpn";
-  if (hasHangul(text)) return "kor";
-  if (hasHan(text)) return "cmn";
-
-  // Strong Spanish character-based detection
-  if (hasSpanishMarkers(text)) return "spa";
-
-  // Strong Russian character-based detection
-  if (hasRussianMarkers(text)) return "rus";
-
-  const code = franc(text, {
-    only: ["cmn", "jpn", "eng", "spa", "kor", "rus"],
-    minLength: 3,
-  });
-
-  if (
-    code === "cmn" ||
-    code === "jpn" ||
-    code === "eng" ||
-    code === "spa" ||
-    code === "kor" ||
-    code === "rus"
-  ) {
-    return code;
+  const result = detectLangTag(text, { minimumTextLength: 3 });
+  if (result.kind === "detected") {
+    const langPrefix = result.tag.split("-")[0];
+    const mappedType = BCP47_PREFIX_TO_LANG_TYPE[langPrefix];
+    if (mappedType) return mappedType;
   }
-
-  // Fallback: any Cyrillic text is treated as Russian
-  if (hasCyrillic(text)) return "rus";
 
   if (/^[a-zA-Z\s]+$/.test(text)) return "eng";
 
@@ -231,8 +172,8 @@ async function toPronunciation(
     return transliterate(text);
   }
 
-  /* Russian */
-  if (type === "rus") {
+  /* Cyrillic */
+  if (type === "cyr") {
     return transliterate(text);
   }
 
@@ -255,8 +196,7 @@ async function toPronunciation(
       .join(" ");
   }
 
-  /* All other languages */
-  return transliterate(text);
+  return UNSUPPORTED_PHONETICS_MESSAGE;
 }
 
 /* ---------------- DB Loader ---------------- */

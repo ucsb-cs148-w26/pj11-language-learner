@@ -50,9 +50,9 @@ function Landing() {
     <div className={`${bodyFont.className} min-h-[calc(100dvh-80px)] w-full bg-background`}>
 
       {/* Hero */}
-      <section className="flex flex-col items-center text-center px-6 pt-14 pb-16">
+      <section className="flex flex-col items-center text-center px-6 pt-14 pb-14">
         <Image
-          src="/logo.png"
+          src="/logov2.png"
           alt="Lingo Connect logo"
           width={300}
           height={300}

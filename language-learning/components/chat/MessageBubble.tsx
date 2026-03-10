@@ -11,9 +11,11 @@ import VoiceMessage from "./VoiceMessage";
 type PhoneticResponse = {
   messageId: string;
   text: string;
-  type: "cmn" | "jpn" | "eng" | "kor" | "rus" | "und";
+  type: "cmn" | "jpn" | "eng" | "kor" | "cyr" | "spa" | "und";
   pronunciation: string;
 };
+
+const UNSUPPORTED_PHONETICS_MESSAGE = "This language not supported for phonetics, sorry";
 
 type MessageBubbleProps = {
   messageId: string;
@@ -118,8 +120,10 @@ export default function MessageBubble({
         return "English";
       case "kor":
         return "Korean";
-      case "rus":
-        return "Russian";
+      case "cyr":
+        return "Cyrillic";
+      case "spa":
+        return "Spanish";
       case "und":
       default:
         return "Unsupported";
@@ -202,7 +206,7 @@ export default function MessageBubble({
           isMe ? "items-end" : "items-start",
         ].join(" ")}
       >
-        <div className={["flex min-w-0 flex-wrap items-start gap-2", isMe ? "flex-row-reverse" : "flex-row"].join(" ")}>
+        <div className={["flex min-w-0 items-start gap-2", isMe ? "flex-row-reverse" : "flex-row"].join(" ")}>
           {type === "voice" ? (
             displayContent ? (
               <div className="max-w-full">
@@ -221,7 +225,7 @@ export default function MessageBubble({
                 isMe ? "bg-blue-dark text-white" : "bg-gray-soft-2 text-gray-text",
               ].join(" ")}
             >
-              <span className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+              <span className="whitespace-pre-wrap [overflow-wrap:anywhere] text-sm leading-relaxed">
                 {displayContent || (isMe ? "Sending..." : "")}
               </span>
             </div>
@@ -243,8 +247,8 @@ export default function MessageBubble({
                 className={[
                   "mt-2 inline-flex h-6 w-6 items-center justify-center rounded-full transition",
                   menuOpen
-                    ? "bg-gray-200 text-gray-text"
-                    : "bg-gray-soft-2 text-gray-muted hover:bg-gray-200",
+                    ? "bg-gray-hover text-gray-text"
+                    : "bg-gray-soft-2 text-gray-muted hover:bg-gray-hover",
                 ].join(" ")}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
@@ -254,9 +258,8 @@ export default function MessageBubble({
                 </svg>
               </button>
 
-              {/* Action buttons — shown when menu is open */}
-              {menuOpen && (
-                <>
+              {/* Action buttons — invisible when menu is closed */}
+              <div className={["flex items-start gap-1", isMe ? "flex-row-reverse" : "flex-row", menuOpen ? "" : "invisible pointer-events-none"].join(" ")}>
                   {/* Grammar check button — only for own messages */}
                   {isMe && (
                     <button
@@ -269,7 +272,7 @@ export default function MessageBubble({
                         "mt-2 inline-flex h-6 w-6 items-center justify-center rounded-full transition disabled:opacity-60",
                         grammarOpen
                           ? "bg-blue-dark text-white"
-                          : "bg-gray-soft-2 text-gray-muted hover:bg-gray-200",
+                          : "bg-gray-soft-2 text-gray-muted hover:bg-gray-hover",
                       ].join(" ")}
                     >
                       {isLoadingGrammar ? (
@@ -284,8 +287,8 @@ export default function MessageBubble({
                     </button>
                   )}
 
-                  {/* Translate button — only for partner messages */}
-                  {!isMe && myNativeLanguage && (
+                  {/* Translate button */}
+                  { myNativeLanguage && (
                     <button
                       type="button"
                       onClick={handleTranslateClick}
@@ -337,7 +340,7 @@ export default function MessageBubble({
                       "mt-2 inline-flex h-6 w-6 items-center justify-center rounded-full transition disabled:opacity-60",
                       phoneticOpen
                         ? "bg-blue-dark text-white"
-                        : "bg-gray-soft-2 text-gray-muted hover:bg-gray-200",
+                        : "bg-gray-soft-2 text-gray-muted hover:bg-gray-hover",
                     ].join(" ")}
                   >
                     {isLoading ? (
@@ -362,7 +365,7 @@ export default function MessageBubble({
                       "mt-2 inline-flex h-6 w-6 items-center justify-center rounded-full transition",
                       isSpeaking
                         ? "bg-blue-dark text-white"
-                        : "bg-gray-soft-2 text-gray-muted hover:bg-gray-200",
+                        : "bg-gray-soft-2 text-gray-muted hover:bg-gray-hover",
                     ].join(" ")}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 ${isSpeaking ? "opacity-100" : "opacity-80"}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -371,8 +374,7 @@ export default function MessageBubble({
                       <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
                     </svg>
                   </button>
-                </>
-              )}
+              </div>
             </div>
           )}
         </div>
@@ -386,31 +388,23 @@ export default function MessageBubble({
           </div>
         )}
 
-        {/* {phoneticOpen && phonetic ? (
+        {phoneticOpen && phonetic ? (
           phonetic.type === "und" ? (
             <div className="mt-1 w-fit text-xs text-gray-muted">
-              Language not supported for phonetics
+              {phonetic.pronunciation || UNSUPPORTED_PHONETICS_MESSAGE}
             </div>
-          ) : (
+          ) : phonetic.pronunciation ? (
             <div className="mt-1 w-fit text-xs italic text-gray-muted">
               <span className="font-medium not-italic">Phonetic </span>
               ({labelForType(phonetic.type)})
               {`: `}
               {phonetic.pronunciation}
             </div>
-          )
-        ) : null} */}
-        {phoneticOpen && phonetic && phonetic.pronunciation ? (
-          <div className="mt-1 w-fit text-xs italic text-gray-muted">
-            <span className="font-medium not-italic">Phonetic </span>
-            ({labelForType(phonetic.type)})
-            {`: `}
-            {phonetic.pronunciation}
-          </div>
+          ) : null
         ) : null}
 
         {grammarOpen && grammar && (
-          <div className="mt-1 w-full min-w-0 whitespace-normal break-words text-xs text-gray-muted">
+          <div className="mt-1 w-fit text-xs text-gray-muted">
             <span className="font-medium not-italic">AI Tutor: </span>
             {grammar}
           </div>

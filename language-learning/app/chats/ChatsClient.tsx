@@ -85,8 +85,8 @@ export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
 
       try {
         const [chatsRes, profileRes] = await Promise.all([
-          fetch("/api/chats"),
-          fetch("/api/profile/me"),
+          fetch("/api/chats", { cache: "no-store" }),
+          fetch("/api/profile/me", { cache: "no-store" }),
         ]);
 
         const chatsBody = await chatsRes.json();
@@ -144,7 +144,9 @@ export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
 
   // Fetch messages for a given conversation and patch into state
   async function loadMessagesForConversation(conversationId: string, userId: string) {
-    const res = await fetch(`/api/chats/${encodeURIComponent(conversationId)}/messages`);
+    const res = await fetch(`/api/chats/${encodeURIComponent(conversationId)}/messages`, {
+      cache: "no-store",
+    });
     const body = await res.json();
     if (!res.ok) throw new Error(body?.error || "Failed to load messages");
 
@@ -160,8 +162,8 @@ export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
       return {
         id: m.id,
         sender: m.sender_id === userId ? ("me" as const) : ("partner" as const),
-        text: resolvedContent,      // required by Conversation.Message
-        content: resolvedContent,   // keep new field too
+        text: resolvedContent,
+        content: resolvedContent,
         type: inferredType,
         sentAt: m.created_at,
       };
@@ -173,18 +175,32 @@ export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
           ? {
               ...c,
               messages: ui,
+              unreadCount: 0,
             }
           : c
       )
     );
+
+    // single place to mark read
+    await markConversationRead(conversationId);
   }
 
   function appendMessage(conversationId: string, message: UiMessage) {
     setConversations((prev) =>
       prev.map((c) => {
         if (c.conversationId !== conversationId) return c;
-        if (c.messages.some((m) => m.id === message.id)) return c; // dedupe
-        return { ...c, messages: [...c.messages, message] };
+
+        // prevent duplicates (e.g. optimistic + realtime echo)
+        if (c.messages.some((m) => m.id === message.id)) {
+          return c;
+        }
+
+        return {
+          ...c,
+          messages: [...c.messages, message],
+          lastMessageText: message.content,
+          lastMessageAt: message.sentAt,
+        };
       })
     );
   }
@@ -245,6 +261,49 @@ export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
       console.error("typing update failed:", error);
     }
   }
+
+  async function markConversationRead(conversationId: string) {
+    try {
+      const res = await fetch(`/api/chats/${encodeURIComponent(conversationId)}/read`, {
+        method: "POST",
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        console.error("markConversationRead failed:", body?.error || res.statusText);
+        return; // don't fake local success
+      }
+
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.conversationId === conversationId ? { ...c, unreadCount: 0 } : c
+        )
+      );
+
+      window.dispatchEvent(new Event("chats-changed"));
+    } catch (e) {
+      console.error("markConversationRead error:", e);
+    }
+  }
+
+  useEffect(() => {
+    if (!selectedConversationId) return;
+
+    const refreshRead = () => {
+      if (document.visibilityState === "visible") {
+        markConversationRead(selectedConversationId);
+      }
+    };
+
+    window.addEventListener("focus", refreshRead);
+    document.addEventListener("visibilitychange", refreshRead);
+
+    return () => {
+      window.removeEventListener("focus", refreshRead);
+      document.removeEventListener("visibilitychange", refreshRead);
+    };
+  }, [selectedConversationId]);
 
   // Load messages for initial selection once it is known
   useEffect(() => {
@@ -329,6 +388,11 @@ export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
             sentAt: payload.createdAt ?? new Date().toISOString(),
           })
         );
+
+        // NEW: if partner sent it and this convo is open, mark read immediately
+        if (payload.senderId && payload.senderId !== myUserId && document.visibilityState === "visible") {
+          markConversationRead(conversationId);
+        }
       } catch (error) {
         console.error("invalid message event:", error);
       }
@@ -379,7 +443,8 @@ export default function ChatsClient({ cFromUrl }: { cFromUrl: string | null }) {
         onSelectConversationId={(id) => {
           setSelectedConversationId(id);
           router.replace(`/chats?c=${encodeURIComponent(id)}`);
-          if (myUserId) loadMessagesForConversation(id, myUserId).catch(console.error);
+          // do not call loadMessagesForConversation here;
+          // the selectedConversationId effect handles it once
         }}
         onSendMessage={handleSendMessage}
         onTypingChange={handleTypingChange}
