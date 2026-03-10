@@ -157,7 +157,7 @@ export default function ProfilePage() {
       // Also hit the server route to clear any auth cookies/session server-side
       await fetch("/api/auth/signout", { method: "POST" });
 
-      router.push("/auth/signin");
+      router.push("/");
     } catch (e) {
       const msg =
         e instanceof Error ? e.message : "An unexpected error occurred";

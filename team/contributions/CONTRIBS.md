@@ -48,7 +48,7 @@
 
 * **Discover**
   * Set up SSR and proxy in [PR #114](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/114).
-  * Implemented the Discover frontend and the initial backend iteration for filtering, search, and on-page request making in [PR #58](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/58), [PR #81](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/81), and [PR #132](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/132).
+  * Implemented the Discover frontend and the initial backend iteration for filtering, search, and on-page request making in [PR #58](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/58), [PR #81](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/81), and [PR #136](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/136).
 * **Chats**
   * Added voice messages in [PR #196](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/196).
   * Added notifications for unread chats in [PR #200](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/200).

@@ -23,6 +23,7 @@
   --gray-muted-2: #71717a;
   --gray-soft: #fafafa;
   --gray-soft-2: #f4f4f5;
+  --gray-hover: #e5e7ebdd;
 
   /* Surfaces */
   --white: #ffffff;
@@ -57,6 +58,7 @@
   --color-gray-muted-2: var(--gray-muted-2);
   --color-gray-soft: var(--gray-soft);
   --color-gray-soft-2: var(--gray-soft-2);
+  --color-gray-hover: var(--gray-hover);
 
   /* White */
   --color-white: var(--white);
@@ -95,6 +97,7 @@
   --gray-muted-2: #a1a1aa;
   --gray-soft: #18181b;
   --gray-soft-2: #27272a;
+  --gray-hover: #d1d3d857;
 
   /* Surfaces */
   --white: #18181b;

@@ -13,7 +13,7 @@ class SseBroker {
       this.rooms.set(roomId, new Map());
     }
     this.rooms.get(roomId)!.set(client.id, client);
-    console.log(this.rooms)
+    // console.log(this.rooms)
   }
 
   removeClient(roomId: string, clientId: string) {
@@ -24,7 +24,7 @@ class SseBroker {
     if (room.size === 0) {
       this.rooms.delete(roomId);
     }
-    console.log(this.rooms)
+    // console.log(this.rooms)
   }
 
   broadcast(
@@ -45,7 +45,7 @@ class SseBroker {
         this.removeClient(roomId, client.id);
       }
     }
-    console.log(this.rooms)
+    // console.log(this.rooms)
   }
 }
 

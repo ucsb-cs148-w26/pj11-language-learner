@@ -238,8 +238,8 @@ export default function MessageBubble({
                 className={[
                   "mt-2 inline-flex h-6 w-6 items-center justify-center rounded-full transition",
                   menuOpen
-                    ? "bg-gray-200 text-gray-text"
-                    : "bg-gray-soft-2 text-gray-muted hover:bg-gray-200",
+                    ? "bg-gray-hover text-gray-text"
+                    : "bg-gray-soft-2 text-gray-muted hover:bg-gray-hover",
                 ].join(" ")}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
@@ -264,7 +264,7 @@ export default function MessageBubble({
                         "mt-2 inline-flex h-6 w-6 items-center justify-center rounded-full transition disabled:opacity-60",
                         grammarOpen
                           ? "bg-blue-dark text-white"
-                          : "bg-gray-soft-2 text-gray-muted hover:bg-gray-200",
+                          : "bg-gray-soft-2 text-gray-muted hover:bg-gray-hover",
                       ].join(" ")}
                     >
                       {isLoadingGrammar ? (
@@ -332,7 +332,7 @@ export default function MessageBubble({
                       "mt-2 inline-flex h-6 w-6 items-center justify-center rounded-full transition disabled:opacity-60",
                       phoneticOpen
                         ? "bg-blue-dark text-white"
-                        : "bg-gray-soft-2 text-gray-muted hover:bg-gray-200",
+                        : "bg-gray-soft-2 text-gray-muted hover:bg-gray-hover",
                     ].join(" ")}
                   >
                     {isLoading ? (
@@ -357,7 +357,7 @@ export default function MessageBubble({
                       "mt-2 inline-flex h-6 w-6 items-center justify-center rounded-full transition",
                       isSpeaking
                         ? "bg-blue-dark text-white"
-                        : "bg-gray-soft-2 text-gray-muted hover:bg-gray-200",
+                        : "bg-gray-soft-2 text-gray-muted hover:bg-gray-hover",
                     ].join(" ")}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 ${isSpeaking ? "opacity-100" : "opacity-80"}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

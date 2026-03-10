@@ -43,14 +43,20 @@ export default function DiscoverPage() {
           <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
             {loadingRecs ? (
               [1, 2, 3].map(i => (
-                <div key={i} className="h-40 min-w-[280px] animate-pulse rounded-2xl bg-gray-soft-2 border border-gray-border-soft" />
+                <div key={i} className="w-[300px] h-50 animate-pulse rounded-2xl bg-gray-soft-2 border border-gray-border-soft" />
               ))
             ) : (
-              recommended.map((partner) => (
-                <Link 
+              recommended.map((partner) => {
+                const learningText =
+                  partner.target_languages.length > 0
+                    ? partner.target_languages
+                        .map((target) => `${target.name} (${target.level})`)
+                        .join(", ")
+                    : `${partner.target_language} (${partner.level})`;
+                return <Link 
                   key={partner.id} 
                   href={`/profile/${partner.id}`}
-                  className="min-w-[280px] flex-shrink-0 border border-gray-border-soft rounded-2xl p-6 bg-off-white hover:border-gray-border transition-all shadow-sm cursor-pointer"
+                  className="w-[300px] h-[210px] flex-shrink-0 border border-gray-border-soft rounded-2xl p-6 bg-off-white hover:border-gray-border transition-all shadow-sm cursor-pointer flex flex-col"
                 >
                   <div className="flex items-center gap-3 mb-3">
                     <Avatar
@@ -60,25 +66,30 @@ export default function DiscoverPage() {
                       iconSize="w-5 h-5"
                       imgClassName="border border-gray-border-soft"
                     />
-                    <p className="font-semibold text-gray-text">{partner.first_name}</p>
+                    <p className="font-semibold text-gray-text truncate">{partner.first_name}</p>
                   </div>
+
                   <p className="text-sm text-gray-muted">
                     Native: <span className="text-gray-text font-medium">{partner.native_language || "Unknown"}</span>
                   </p>
-                  <p className="text-sm text-gray-muted mb-4">
+
+                  <p className="text-sm text-gray-muted mt-1" title={`Learning: ${learningText}`}>
                     Learning:{" "}
-                    <span className="text-gray-text font-medium">
-                      {partner.target_languages.length > 0
-                        ? partner.target_languages.map((target) => `${target.name} (${target.level})`).join(", ")
-                        : `${partner.target_language} (${partner.level})`}
+                    <span
+                      className="inline-block max-w-[180px] align-bottom overflow-hidden text-ellipsis whitespace-nowrap text-gray-text font-medium"
+                    >
+                      {learningText}
                     </span>
                   </p>
-                  <FriendActionButton 
-                    partner={partner} 
-                    onAction={handleFriendAction} 
-                  />
+
+                  <div className="mt-auto pt-3">
+                    <FriendActionButton 
+                      partner={partner} 
+                      onAction={handleFriendAction} 
+                    />
+                  </div>
                 </Link>
-              ))
+              })
             )}
           </div>
         </section>
@@ -92,7 +103,7 @@ export default function DiscoverPage() {
               
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs font-medium text-gray-muted-2 uppercase mb-1.5 block">Language</label>
+                  <label className="text-xs font-medium text-gray-muted-2 uppercase mb-1.5 block">Target Language</label>
                   <select
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
