@@ -65,6 +65,7 @@ export function detectLangTag(
   if (/[\u4E00-\u9FFF]/.test(text)) return { tag: "zh-CN", kind: "detected" };
   if (/[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text)) return { tag: "ar-SA", kind: "detected" };
   if (/[\u0400-\u04FF]/.test(text)) return { tag: "ru-RU", kind: "detected" };
+  if (/[\u0900-\u097F]/.test(text)) return { tag: "hi-IN", kind: "detected" };
 
   const trimmed = text.trim();
   if (trimmed.length < minimumTextLength) {

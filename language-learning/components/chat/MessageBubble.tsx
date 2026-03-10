@@ -11,7 +11,7 @@ import VoiceMessage from "./VoiceMessage";
 type PhoneticResponse = {
   messageId: string;
   text: string;
-  type: "cmn" | "jpn" | "eng" | "kor" | "cyr" | "spa" | "und";
+  type: "cmn" | "jpn" | "eng" | "kor" | "cyr" | "spa" | "ita" | "deu" | "hin" | "und";
   pronunciation: string;
 };
 
@@ -124,6 +124,12 @@ export default function MessageBubble({
         return "Cyrillic";
       case "spa":
         return "Spanish";
+      case "ita":
+        return "Italian";
+      case "deu":
+        return "German";
+      case "hin":
+        return "Hindi";
       case "und":
       default:
         return "Unsupported";
