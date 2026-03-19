@@ -6,11 +6,6 @@
 - Added text-to-speech functionality to chat messages using the Web Speech API with interactive playback controls in [PR #184](https://github.com/ucsb-cs148-w26/pj11-language-learner/pull/184).
 
 ## Non-Code Contributions
-- Designed the following files: user_feedback_needs.md, conventions.md, user_journey.md, norms.md, mvp_demo.md
-- Documented the following meetings: lect06.md, lect11.md, retro_03.md
-- Active Participation in Team Discussions
-
-## Non-Code Contributions
 - Designed the following files: user_feedback_needs.md, conventions.md, user_journey.md, norms.md,  mvp_demo.md
 - Documented the following meetings: lect06.md, lect11.md, retro_03.md
 - Active Participation in Team Discussions
